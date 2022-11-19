@@ -2,8 +2,10 @@ import React from 'react';
 import logo from './logo.svg';
 import { Counter } from './features/counter/Counter';
 import './App.css';
+import { Canvas } from './features/canvas/Canvas';
 
 function App() {
+
   return (
     <div className="App">
       <header className="App-header">
@@ -12,8 +14,8 @@ function App() {
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
-
       </header>
+        <Canvas />
     </div>
   );
 }
