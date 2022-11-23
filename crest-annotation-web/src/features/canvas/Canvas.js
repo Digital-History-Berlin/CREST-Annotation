@@ -141,6 +141,15 @@ export function Canvas() {
               stroke={"red"}
             />
           ))}
+          {boundingCirclesToDraw.map((value) => (
+            <Circle
+              x={value.x}
+              y={value.y}
+              radius={value.radius}
+              fill={"transparent"}
+              stroke={"red"}
+            />
+          ))}
           {lines.map((line, i) => (
             <Line
               key={i}
@@ -152,15 +161,6 @@ export function Canvas() {
               globalCompositeOperation={
                 line.tool === "eraser" ? "destination-out" : "source-over"
               }
-            />
-          ))}
-          {boundingCirclesToDraw.map((value) => (
-            <Circle
-              x={value.x}
-              y={value.y}
-              radius={value.radius}
-              fill={"transparent"}
-              stroke={"red"}
             />
           ))}
         </Layer>
