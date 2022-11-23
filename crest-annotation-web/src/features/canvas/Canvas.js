@@ -1,5 +1,5 @@
 import React from "react";
-import { Stage, Layer, Line, Text, Rect } from "react-konva";
+import { Stage, Layer, Line, Text, Rect, Circle } from "react-konva";
 import { BackgroundImage } from "../backgroundImage/BackgroundImage";
 
 export function Canvas() {
@@ -7,6 +7,8 @@ export function Canvas() {
   const [lines, setLines] = React.useState([]);
   const [boundingBoxes, setBoundingBoxes] = React.useState([]);
   const [newBoundingBox, setNewBoundingBox] = React.useState([]);
+  const [boundingCircles, setBoundingCircles] = React.useState([]);
+  const [newBoundingCircle, setNewBoundingCircle] = React.useState([]);
 
   const isDrawing = React.useRef(false);
 
@@ -21,6 +23,13 @@ export function Canvas() {
         isDrawing.current = true;
         const { x, y } = e.target.getStage().getPointerPosition();
         setNewBoundingBox([{ x, y, width: 0, height: 0, key: "-1" }]);
+      }
+    } else if (tool === "boundingCircle") {
+      // if just started drawing a bounding circle
+      if (isDrawing.current === false) {
+        isDrawing.current = true;
+        const { x, y } = e.target.getStage().getPointerPosition();
+        setNewBoundingCircle([{ x, y, radius: 0, key: "-1" }]);
       }
     }
   };
@@ -43,15 +52,30 @@ export function Canvas() {
     } else if (tool === "boundingBox") {
       if (isDrawing.current === true) {
         // update so user can see the bounding box live
-        const sx = newBoundingBox[0].x;
-        const sy = newBoundingBox[0].y;
+        const old_x = newBoundingBox[0].x;
+        const old_y = newBoundingBox[0].y;
         const { x, y } = e.target.getStage().getPointerPosition();
         setNewBoundingBox([
           {
-            x: sx,
-            y: sy,
-            width: x - sx,
-            height: y - sy,
+            x: old_x,
+            y: old_y,
+            width: x - old_x,
+            height: y - old_y,
+            key: "-1",
+          },
+        ]);
+      }
+    } else if (tool === "boundingCircle") {
+      if (isDrawing.current === true) {
+        // update so user can see the bounding circle live
+        const old_x = newBoundingCircle[0].x;
+        const old_y = newBoundingCircle[0].y;
+        const { x, y } = e.target.getStage().getPointerPosition();
+        setNewBoundingCircle([
+          {
+            x: old_x,
+            y: old_y,
+            radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
             key: "-1",
           },
         ]);
@@ -62,24 +86,39 @@ export function Canvas() {
   const handleMouseUp = (e) => {
     isDrawing.current = false;
     if (tool === "boundingBox") {
-      const sx = newBoundingBox[0].x;
-      const sy = newBoundingBox[0].y;
+      const old_x = newBoundingBox[0].x;
+      const old_y = newBoundingBox[0].y;
       const { x, y } = e.target.getStage().getPointerPosition();
       const boundingBoxToAdd = {
-        x: sx,
-        y: sy,
-        width: x - sx,
-        height: y - sy,
+        x: old_x,
+        y: old_y,
+        width: x - old_x,
+        height: y - old_y,
         // give it a unique key when finished drawing
         key: boundingBoxes.length + 1,
       };
       boundingBoxes.push(boundingBoxToAdd);
       setBoundingBoxes(boundingBoxes);
       setNewBoundingBox([]);
+    } else if (tool === "boundingCircle") {
+      const old_x = newBoundingCircle[0].x;
+      const old_y = newBoundingCircle[0].y;
+      const { x, y } = e.target.getStage().getPointerPosition();
+      const boundingCircleToAdd = {
+        x: old_x,
+        y: old_y,
+        radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
+        // give it a unique key when finished drawing
+        key: boundingCircles.length + 1,
+      };
+      boundingCircles.push(boundingCircleToAdd);
+      setBoundingCircles(boundingCircles);
+      setNewBoundingCircle([]);
     }
   };
 
   const boundingBoxesToDraw = boundingBoxes.concat(newBoundingBox);
+  const boundingCirclesToDraw = boundingCircles.concat(newBoundingCircle);
   return (
     <div>
       <Stage
@@ -115,6 +154,15 @@ export function Canvas() {
               }
             />
           ))}
+          {boundingCirclesToDraw.map((value) => (
+            <Circle
+              x={value.x}
+              y={value.y}
+              radius={value.radius}
+              fill={"transparent"}
+              stroke={"red"}
+            />
+          ))}
         </Layer>
       </Stage>
       <select
@@ -127,6 +175,7 @@ export function Canvas() {
         <option value="pen">Pen</option>
         <option value="eraser">Eraser</option>
         <option value="boundingBox">Bounding-Box</option>
+        <option value="boundingCircle">Bounding-Circle</option>
       </select>
     </div>
   );
