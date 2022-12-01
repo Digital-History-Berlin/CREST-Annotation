@@ -113,20 +113,25 @@ export function Canvas() {
     isDrawing.current = false;
     const x = event.evt.x;
     const y = event.evt.y;
-    if (tool === "boundingBox") {
+
+    if(tool === "line" || tool === "eraser") {
+      let lastLine = lines[lines.length - 1];
+      lastLine.key = lines.length;
+
+    } else if (tool === "boundingBox") {
       const old_x = newBoundingBox[0].x;
       const old_y = newBoundingBox[0].y;
-
       const boundingBoxToAdd = {
         x: old_x,
         y: old_y,
         width: x - old_x,
         height: y - old_y,
         // give it a unique key when finished drawing
-        key: boundingBoxes.length + 1,
+        key: boundingBoxes.length,
       };
       setBoundingBoxes([...boundingBoxes, boundingBoxToAdd]);
       setNewBoundingBox([]);
+
     } else if (tool === "boundingCircle") {
       const old_x = newBoundingCircle[0].x;
       const old_y = newBoundingCircle[0].y;
@@ -135,7 +140,7 @@ export function Canvas() {
         y: old_y,
         radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
         // give it a unique key when finished drawing
-        key: boundingCircles.length + 1,
+        key: boundingCircles.length,
       };
       setBoundingCircles([...boundingCircles, boundingCircleToAdd]);
       setNewBoundingCircle([]);
