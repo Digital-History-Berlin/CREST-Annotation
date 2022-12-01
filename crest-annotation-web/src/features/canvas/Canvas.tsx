@@ -27,7 +27,7 @@ export function Canvas() {
   const [tool, setTool] = React.useState<string>("pen");
   const [lines, setLines] = React.useState<BoundingLine[]>([]);
   const [boundingBoxes, setBoundingBoxes] = React.useState<BoundingBox[]>([]);
-  const [newBoundingBox, setNewBoundingBox] = React.useState<BoundingBox[]>([]); //Technically array is not needed
+  const [newBoundingBox, setNewBoundingBox] = React.useState<BoundingBox[]>([]);
   const [boundingCircles, setBoundingCircles] = React.useState<
     BoundingCircle[]
   >([]);
@@ -48,13 +48,15 @@ export function Canvas() {
       // if just started drawing a bounding box
       if (!isDrawing.current) {
         isDrawing.current = true;
-        setNewBoundingBox([{ x, y, width: 0, height: 0, key: -1 }]);
+        const newBoundingBox: BoundingBox = {x, y, width: 0, height: 0, key: -1};
+        setNewBoundingBox([newBoundingBox]);
       }
     } else if (tool === "boundingCircle") {
       // if just started drawing a bounding circle
       if (!isDrawing.current) {
         isDrawing.current = true;
-        setNewBoundingCircle([{ x, y, radius: 0, key: -1 }]);
+        const newBoundingCircle: BoundingCircle = {x, y, radius: 0, key: -1};
+        setNewBoundingCircle([newBoundingCircle]);
       }
     }
   };
@@ -82,29 +84,21 @@ export function Canvas() {
         // update so user can see the bounding box live
         const old_x = newBoundingBox[0].x;
         const old_y = newBoundingBox[0].y;
-        setNewBoundingBox([
-          {
-            x: old_x,
-            y: old_y,
-            width: x - old_x,
-            height: y - old_y,
-            key: -1,
-          },
-        ]);
+        const updatedBoundingBox: BoundingBox = {x: old_x, y: old_y, width: x - old_x, height: y - old_y, key: -1,};
+        setNewBoundingBox([updatedBoundingBox]);
       }
     } else if (tool === "boundingCircle") {
       if (!isDrawing.current) {
         // update so user can see the bounding circle live
         const old_x = newBoundingCircle[0].x;
         const old_y = newBoundingCircle[0].y;
-        setNewBoundingCircle([
-          {
-            x: old_x,
-            y: old_y,
-            radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
-            key: -1,
-          },
-        ]);
+        const updatedBoundingCircle: BoundingCircle ={
+          x: old_x,
+          y: old_y,
+          radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
+          key: -1,
+        }
+        setNewBoundingCircle([updatedBoundingCircle]);
       }
     }
   };
@@ -114,14 +108,18 @@ export function Canvas() {
     const x = event.evt.x;
     const y = event.evt.y;
 
-    if(tool === "line" || tool === "eraser") {
+    if(tool === "pen" || tool === "eraser") {
+      console.log("here");
       let lastLine = lines[lines.length - 1];
-      lastLine.key = lines.length;
+      lastLine.key = lines.length -1;
+      // replace last
+      lines.splice(lines.length - 1, 1, lastLine);
+      setLines(lines.concat());
 
     } else if (tool === "boundingBox") {
       const old_x = newBoundingBox[0].x;
       const old_y = newBoundingBox[0].y;
-      const boundingBoxToAdd = {
+      const boundingBoxToAdd: BoundingBox = {
         x: old_x,
         y: old_y,
         width: x - old_x,
@@ -135,7 +133,7 @@ export function Canvas() {
     } else if (tool === "boundingCircle") {
       const old_x = newBoundingCircle[0].x;
       const old_y = newBoundingCircle[0].y;
-      const boundingCircleToAdd = {
+      const boundingCircleToAdd : BoundingCircle = {
         x: old_x,
         y: old_y,
         radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
@@ -164,28 +162,30 @@ export function Canvas() {
         <Layer>
           <BackgroundImage />
           <Text text="Just start drawing" x={5} y={30} />
-          {boundingBoxesToDraw.map((value) => (
+          {boundingBoxesToDraw.map((box) => (
             <Rect
-              x={value.x}
-              y={value.y}
-              width={value.width}
-              height={value.height}
+              key={box.key}
+              x={box.x}
+              y={box.y}
+              width={box.width}
+              height={box.height}
               fill={"transparent"}
               stroke={"red"}
             />
           ))}
-          {boundingCirclesToDraw.map((value) => (
+          {boundingCirclesToDraw.map((circle) => (
             <Circle
-              x={value.x}
-              y={value.y}
-              radius={value.radius}
+              key={circle.key}
+              x={circle.x}
+              y={circle.y}
+              radius={circle.radius}
               fill={"transparent"}
               stroke={"red"}
             />
           ))}
-          {lines.map((line, i) => (
+          {lines.map((line) => (
             <Line
-              key={i}
+              key={line.key}
               points={line.points}
               stroke="#df4b26"
               strokeWidth={5}
