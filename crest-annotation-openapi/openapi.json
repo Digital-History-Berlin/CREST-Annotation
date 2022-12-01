@@ -1,0 +1,31 @@
+{
+ "openapi": "3.0.2",
+ "info": {
+  "title": "FastAPI",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/data/random": {
+   "get": {
+    "tags": [
+     "data"
+    ],
+    "summary": "Get Random Data",
+    "operationId": "get_random_data",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     }
+    }
+   }
+  }
+ }
+}
