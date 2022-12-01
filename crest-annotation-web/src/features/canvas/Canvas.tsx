@@ -1,94 +1,122 @@
 import React from "react";
 import { Stage, Layer, Line, Text, Rect, Circle } from "react-konva";
 import { BackgroundImage } from "../backgroundImage/BackgroundImage";
+import Konva from "konva";
+import KonvaEventObject = Konva.KonvaEventObject;
 
 export function Canvas() {
-  const [tool, setTool] = React.useState("pen");
-  const [lines, setLines] = React.useState([]);
-  const [boundingBoxes, setBoundingBoxes] = React.useState([]);
-  const [newBoundingBox, setNewBoundingBox] = React.useState([]);
-  const [boundingCircles, setBoundingCircles] = React.useState([]);
-  const [newBoundingCircle, setNewBoundingCircle] = React.useState([]);
+  type BoundingBox = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    key: number;
+  };
+  type BoundingCircle = {
+    x: number;
+    y: number;
+    radius: number;
+    key: number;
+  };
+  type BoundingLine = {
+    tool: string;
+    points: number[];
+    key: number;
+  };
 
+  const [tool, setTool] = React.useState<string>("pen");
+  const [lines, setLines] = React.useState<BoundingLine[]>([]);
+  const [boundingBoxes, setBoundingBoxes] = React.useState<BoundingBox[]>([]);
+  const [newBoundingBox, setNewBoundingBox] = React.useState<BoundingBox[]>([]); //Technically array is not needed
+  const [boundingCircles, setBoundingCircles] = React.useState<
+    BoundingCircle[]
+  >([]);
+  const [newBoundingCircle, setNewBoundingCircle] = React.useState<
+    BoundingCircle[]
+  >([]);
   const isDrawing = React.useRef(false);
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
+    const x = event.evt.x;
+    const y = event.evt.y;
+
     if (tool === "pen" || tool === "eraser") {
       isDrawing.current = true;
-      const pos = e.target.getStage().getPointerPosition();
-      setLines([...lines, { tool, points: [pos.x, pos.y] }]);
+      const newLine: BoundingLine = { tool, points: [x, y], key: -1 };
+      setLines([...lines, newLine]);
     } else if (tool === "boundingBox") {
       // if just started drawing a bounding box
-      if (isDrawing.current === false) {
+      if (!isDrawing.current) {
         isDrawing.current = true;
-        const { x, y } = e.target.getStage().getPointerPosition();
-        setNewBoundingBox([{ x, y, width: 0, height: 0, key: "-1" }]);
+        setNewBoundingBox([{ x, y, width: 0, height: 0, key: -1 }]);
       }
     } else if (tool === "boundingCircle") {
       // if just started drawing a bounding circle
-      if (isDrawing.current === false) {
+      if (!isDrawing.current) {
         isDrawing.current = true;
-        const { x, y } = e.target.getStage().getPointerPosition();
-        setNewBoundingCircle([{ x, y, radius: 0, key: "-1" }]);
+        setNewBoundingCircle([{ x, y, radius: 0, key: -1 }]);
       }
     }
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (event: KonvaEventObject<MouseEvent>) => {
+    // console.log("mouse move");
     // no drawing - skipping
     if (!isDrawing.current) {
       return;
     }
+
+    const x = event.evt.x;
+    const y = event.evt.y;
+
     if (tool === "pen" || tool === "eraser") {
-      const stage = e.target.getStage();
-      const point = stage.getPointerPosition();
       let lastLine = lines[lines.length - 1];
       // add point
-      lastLine.points = lastLine.points.concat([point.x, point.y]);
+      lastLine.points = lastLine.points.concat([x, y]);
 
       // replace last
       lines.splice(lines.length - 1, 1, lastLine);
       setLines(lines.concat());
     } else if (tool === "boundingBox") {
-      if (isDrawing.current === true) {
+      if (!isDrawing.current) {
         // update so user can see the bounding box live
         const old_x = newBoundingBox[0].x;
         const old_y = newBoundingBox[0].y;
-        const { x, y } = e.target.getStage().getPointerPosition();
         setNewBoundingBox([
           {
             x: old_x,
             y: old_y,
             width: x - old_x,
             height: y - old_y,
-            key: "-1",
+            key: -1,
           },
         ]);
       }
     } else if (tool === "boundingCircle") {
-      if (isDrawing.current === true) {
+      if (!isDrawing.current) {
         // update so user can see the bounding circle live
         const old_x = newBoundingCircle[0].x;
         const old_y = newBoundingCircle[0].y;
-        const { x, y } = e.target.getStage().getPointerPosition();
         setNewBoundingCircle([
           {
             x: old_x,
             y: old_y,
             radius: Math.sqrt(Math.pow(x - old_x, 2) + Math.pow(y - old_y, 2)),
-            key: "-1",
+            key: -1,
           },
         ]);
       }
     }
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = (event: KonvaEventObject<MouseEvent>) => {
     isDrawing.current = false;
+    const x = event.evt.x;
+    const y = event.evt.y;
     if (tool === "boundingBox") {
       const old_x = newBoundingBox[0].x;
       const old_y = newBoundingBox[0].y;
-      const { x, y } = e.target.getStage().getPointerPosition();
+
       const boundingBoxToAdd = {
         x: old_x,
         y: old_y,
@@ -97,13 +125,11 @@ export function Canvas() {
         // give it a unique key when finished drawing
         key: boundingBoxes.length + 1,
       };
-      boundingBoxes.push(boundingBoxToAdd);
-      setBoundingBoxes(boundingBoxes);
+      setBoundingBoxes([...boundingBoxes, boundingBoxToAdd]);
       setNewBoundingBox([]);
     } else if (tool === "boundingCircle") {
       const old_x = newBoundingCircle[0].x;
       const old_y = newBoundingCircle[0].y;
-      const { x, y } = e.target.getStage().getPointerPosition();
       const boundingCircleToAdd = {
         x: old_x,
         y: old_y,
@@ -111,8 +137,7 @@ export function Canvas() {
         // give it a unique key when finished drawing
         key: boundingCircles.length + 1,
       };
-      boundingCircles.push(boundingCircleToAdd);
-      setBoundingCircles(boundingCircles);
+      setBoundingCircles([...boundingCircles, boundingCircleToAdd]);
       setNewBoundingCircle([]);
     }
   };
@@ -127,6 +152,9 @@ export function Canvas() {
         onMouseDown={handleMouseDown}
         onMousemove={handleMouseMove}
         onMouseup={handleMouseUp}
+        //onTouchStart={handleMouseDown}
+        //onTouchMove={handleMouseMove}
+        //onTouchEnd={handleMouseUp}
       >
         <Layer>
           <BackgroundImage />
