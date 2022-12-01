@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.get("/of/{project_id}", response_model=schemas.Label)
+@router.get("/of/{project_id}", response_model=List[schemas.Label])
 async def get_project_labels(project_id: str, db: Session = Depends(get_db)):
     projects: List[Label] = db.query(Label).filter_by(project_id=project_id)
 

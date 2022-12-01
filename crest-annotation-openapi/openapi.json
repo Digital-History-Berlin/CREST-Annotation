@@ -29,7 +29,11 @@
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/Label"
+         "title": "Response Get Project Labels Labels Of  Project Id  Get",
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/Label"
+         }
         }
        }
       }
