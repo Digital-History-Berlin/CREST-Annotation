@@ -1,0 +1,8 @@
+{
+  "schemaFile": "../crest-annotation-openapi/openapi.json",
+  "apiImport": "rootApi",
+  "apiFile": "./src/api/rootApi.ts",
+  "outputFile": "./src/api/openApi.ts",
+  "exportName": "crestApi",
+  "hooks": true
+}

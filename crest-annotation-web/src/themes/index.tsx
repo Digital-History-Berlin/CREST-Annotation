@@ -5,6 +5,7 @@ import { CssBaseline, StyledEngineProvider, ThemeOptions } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 // project import
+import Palette from "./palette";
 import Typography from "./typography";
 import ComponentsOverrides from "./overrides";
 
@@ -16,6 +17,7 @@ const defaultProps = {};
 
 const Theme = ({ children }: IProps) => {
   const typography = Typography(`'Public Sans', sans-serif`);
+  const palette = Palette();
 
   const themeOptions = useMemo(
     () => ({
@@ -28,8 +30,9 @@ const Theme = ({ children }: IProps) => {
         },
       },
       typography: typography,
+      palette: palette,
     }),
-    [typography]
+    [typography, palette]
   ) as ThemeOptions;
 
   const theme = createTheme(themeOptions);

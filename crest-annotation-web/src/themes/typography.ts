@@ -1,5 +1,4 @@
 const Typography = (fontFamily: string) => ({
-  htmlFontSize: 16,
   fontFamily,
   fontWeightLight: 300,
   fontWeightRegular: 400,

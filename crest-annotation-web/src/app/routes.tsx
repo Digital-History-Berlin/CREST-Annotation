@@ -18,7 +18,7 @@ export const router = createBrowserRouter(
       //errorElement={<ErrorPage />}
     >
       <Route index element={<AnnotatePage />} />
-      <Route path="annotate" element={<AnnotatePage />} />
+      <Route path="annotate/:projectId/:objectId" element={<AnnotatePage />} />
     </Route>
   )
 );
