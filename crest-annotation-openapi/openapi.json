@@ -54,7 +54,7 @@
     }
    }
   },
-  "/collect-of/{project_id}": {
+  "/objects/collect-of/{project_id}": {
    "get": {
     "tags": [
      "object"
@@ -97,7 +97,7 @@
     }
    }
   },
-  "/random-of/{project_id}": {
+  "/objects/random-of/{project_id}": {
    "get": {
     "tags": [
      "object"
@@ -142,7 +142,7 @@
     }
    }
   },
-  "/image/{id}": {
+  "/objects/image/{id}": {
    "get": {
     "tags": [
      "object"

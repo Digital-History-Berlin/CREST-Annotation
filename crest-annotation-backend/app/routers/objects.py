@@ -13,6 +13,7 @@ from ..models.objects import Object
 from .. import schemas
 
 router = APIRouter(
+    prefix='/objects',
     tags=['object'],
     responses={404: {"description": "Not found"}},
 )
@@ -76,7 +77,7 @@ async def get_image(id: str, db=Depends(get_db)):
         raise HTTPException(status_code=404, detail="Image not found")
 
     # ensure that the image file is still available
-    if not os.path.is_file(object.file):
+    if not os.path.isfile(object.uri):
         raise HTTPException(status_code=404, detail="Image missing")
 
-    return FileResponse(object.file)
+    return FileResponse(object.uri)
