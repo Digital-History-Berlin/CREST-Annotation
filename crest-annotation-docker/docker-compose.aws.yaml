@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  backend:
+    # use ECR image instead of building from Dockerfile
+    image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+  web:
+    # use ECR image instead of building from Dockerfile
+    image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+    environment:
+      - REACT_APP_BACKEND=http://crest-LoadB-B023ZX5DKKZV-d31ac2f2ee5049a8.elb.eu-central-1.amazonaws.com:8000
