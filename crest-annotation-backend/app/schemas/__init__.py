@@ -1,3 +1,3 @@
-from .label import Label
-from .object import Object
-from .project import Project
+from .label import Label, ShallowLabel
+from .object import Object, ShallowObject
+from .project import Project, ShallowProject

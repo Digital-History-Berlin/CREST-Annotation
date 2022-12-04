@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Stack, Box, useTheme, Typography } from "@mui/material";
+import { Stack, Box, useTheme, Typography, styled } from "@mui/material";
 
 interface IProps {
   title?: string;
@@ -15,21 +15,24 @@ const defaultProps = {};
  * All containers will equally share the available height.
  */
 const SidebarContainer = ({ title, children }: IProps) => {
-  const theme = useTheme();
+  const TitleBox = styled(Box)(({ theme }) => ({
+    "&": {
+      padding: theme.spacing(1),
+      color: theme.palette.primary.contrastText,
+      backgroundColor: theme.palette.secondary.main,
+      font: theme.typography.h6,
+    },
+  }));
 
   return (
-    <Stack sx={{ overflow: "hidden", flex: "1" }}>
-      <Typography
-        sx={{
-          backgroundColor: theme.palette.secondary.main,
-          color: theme.palette.secondary.contrastText,
-          padding: theme.spacing(1),
-        }}
-        variant="h6"
-      >
-        {title}
-      </Typography>
-      <Box sx={{ overflow: "auto", flexGrow: "1" }}>{children}</Box>
+    // stretch stack to available size
+    // share equally between multiple stacks
+    <Stack flex="1 1 0" sx={{ overflow: "hidden" }}>
+      <TitleBox>{title}</TitleBox>
+      {/* make sure content always stretches over full height */}
+      <Box flex="1" sx={{ overflow: "auto" }}>
+        {children}
+      </Box>
     </Stack>
   );
 };

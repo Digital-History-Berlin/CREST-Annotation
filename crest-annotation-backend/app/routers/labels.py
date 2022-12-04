@@ -9,8 +9,8 @@ from ..models.labels import Label
 from .. import schemas
 
 router = APIRouter(
-    prefix='/labels',
-    tags=['label'],
+    prefix="/labels",
+    tags=["label"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -19,7 +19,14 @@ router = APIRouter(
 async def get_project_labels(project_id: str, db: Session = Depends(get_db)):
     projects: List[Label] = db.query(Label).filter_by(project_id=project_id)
 
-    return JSONResponse(list(map(lambda label: {
-        'id': label.id,
-        'name': label.name,
-    }, projects)))
+    return JSONResponse(
+        list(
+            map(
+                lambda label: {
+                    "id": label.id,
+                    "name": label.name,
+                },
+                projects,
+            )
+        )
+    )

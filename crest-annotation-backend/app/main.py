@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import labels, objects, projects
 from .database import Base, engine
+from .environment import env
 
 # initialize SQLalchemy
 # TODO: use Alembic
@@ -11,10 +12,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = [
-    # TODO: define list of origins
-    "http://localhost:3000",
-]
+origins = env.cors_origins.split(",")
 
 app.add_middleware(
     CORSMiddleware,

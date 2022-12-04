@@ -8,8 +8,8 @@ from ..models.projects import Project
 from .. import schemas
 
 router = APIRouter(
-    prefix='/projects',
-    tags=['project'],
+    prefix="/projects",
+    tags=["project"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -18,7 +18,20 @@ router = APIRouter(
 async def get_projects(db=Depends(get_db)):
     projects: List[Project] = db.query(Project)
 
-    return JSONResponse(list(map(lambda project: {
-        'id': project.id,
-        'name': project.name,
-    }, projects)))
+    return JSONResponse(
+        list(
+            map(
+                lambda project: {
+                    "id": project.id,
+                    "name": project.name,
+                },
+                projects,
+            )
+        )
+    )
+
+
+@router.post("/")
+async def create_project(project: schemas.ShallowProject, db=Depends(get_db)):
+    db_project = db.add(Project(**project))
+    db.commit()

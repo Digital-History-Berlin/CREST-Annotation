@@ -105,7 +105,9 @@ const AnnotatePage = () => {
       <Canvas
         imageUri={
           objectId &&
-          `${process.env.REACT_APP_BACKEND}/objects/image/${objectId}`
+          `${
+            global.config?.REACT_APP_BACKEND || process.env.REACT_APP_BACKEND
+          }/objects/image/${objectId}`
         }
       />
     </Layout>

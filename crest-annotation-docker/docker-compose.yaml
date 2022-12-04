@@ -1,0 +1,39 @@
+version: "3.9"
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${PG_USER:-crest}
+      POSTGRES_PASSWORD: ${PG_USER:-crest}
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+  backend:
+    depends_on:
+      - db
+    image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+    build:
+      # allow access to crest-annotatio-backend
+      context: ../
+      dockerfile: ./crest-annotation-docker/backend/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://${PG_USER:-crest}@db:5432
+      - DATABASE_PASSWORD=${PG_PASS:-crest}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    ports:
+      - 8000:8000
+    restart: always
+  web:
+    image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+    build:
+      # allow access to crest-annotatio-web
+      context: ../
+      dockerfile: ./crest-annotation-docker/web/Dockerfile
+      args:
+        # image is statically build and served by nginx
+        # environment variables need to be defined at build time
+        - NODE_ENV=${NODE_ENV:-development}
+        - REACT_APP_BACKEND=${REACT_APP_BACKEND:-http://localhost:8000}
+    ports:
+      - 80:80
+    restart: always

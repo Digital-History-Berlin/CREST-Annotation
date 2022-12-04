@@ -14,7 +14,7 @@ class Settings:
     def get(self, key):
         setting: Setting = self._db.query(Setting).filter_by(key=key).first()
 
-        self._logger.debug(f'setting {key} = {setting.value}')
+        self._logger.debug(f"setting {key} = {setting.value}")
 
         # TODO: handle missing setting
         return setting.value
