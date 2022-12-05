@@ -11,4 +11,5 @@ export const {
   useGetRandomObjectQuery,
   useGetImageQuery,
   useGetProjectsQuery,
+  useCreateProjectMutation,
 } = enhancedApi;

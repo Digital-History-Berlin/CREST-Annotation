@@ -3,9 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { selectActiveTool, setActiveTool, Tool } from "./slice";
 import {
-  Dialog,
-  DialogTitle,
+  Button,
+  DialogActions,
+  DialogContent,
   Stack,
+  TextField,
   ToggleButton,
   useTheme,
 } from "@mui/material";
@@ -20,9 +22,10 @@ import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
 import SidebarContainer from "../../components/SidebarContainer";
 import ProjectsList from "./components/ProjectsList";
-import { enhancedApi } from "../../api/enhancedApi";
+import { enhancedApi, useCreateProjectMutation } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import LabelsList from "./components/LabelsList";
+import DefaultDialog from "../../components/DefaultDialog";
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
@@ -34,8 +37,13 @@ const AnnotatePage = () => {
   const { projectId, objectId } = useParams();
 
   const [showProjects, setShowProjects] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [projectName, setProjectName] = useState("");
 
-  const handleSelectProject = async (project: Project) => {
+  const [requestCreateProject, { isLoading: createLoading }] =
+    useCreateProjectMutation();
+
+  const selectProject = async (project: Project) => {
     if (project.id === projectId) return;
 
     // TODO: this should maybe move somewhere else
@@ -44,6 +52,20 @@ const AnnotatePage = () => {
     // another project was selected, start with random object
     const random = await getRandom({ projectId: project.id }).unwrap();
     navigate(`/annotate/${project.id}/${random.id}`);
+  };
+
+  const createProject = async () => {
+    const project = await requestCreateProject({
+      shallowProject: { name: projectName },
+    }).unwrap();
+
+    // TODO: redirect to project
+    navigate(`/annotate/${project.id}`);
+  };
+
+  const showCreateDialog = async () => {
+    setShowProjects(false);
+    setShowCreate(true);
   };
 
   const renderTools = () => (
@@ -85,23 +107,47 @@ const AnnotatePage = () => {
         </Stack>
       }
     >
-      <Dialog
-        onClose={() => setShowProjects(false)}
-        open={!projectId || showProjects}
+      <DefaultDialog
+        onClose={() => setShowCreate(false)}
+        open={showCreate}
         maxWidth="sm"
         fullWidth={true}
+        title="Create Project"
       >
-        <div
-          style={{
-            paddingLeft: theme.spacing(2),
-            paddingRight: theme.spacing(2),
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <h4>Select Project</h4>
-        </div>
-        <ProjectsList selectProject={handleSelectProject} />
-      </Dialog>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            variant="standard"
+            label="Project Title"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowCreate(false)} disabled={createLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={createProject}
+            disabled={createLoading || !projectName}
+          >
+            Add
+          </Button>
+        </DialogActions>
+      </DefaultDialog>
+      <DefaultDialog
+        onClose={() => setShowProjects(false)}
+        open={!showCreate && (!projectId || showProjects)}
+        maxWidth="sm"
+        fullWidth={true}
+        title="Select Project"
+      >
+        <ProjectsList
+          selectProject={selectProject}
+          addProject={showCreateDialog}
+        />
+      </DefaultDialog>
       <Canvas
         imageUri={
           objectId &&

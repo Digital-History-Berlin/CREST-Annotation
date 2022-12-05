@@ -29,6 +29,16 @@ const injectedRtkApi = api.injectEndpoints({
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
       query: () => ({ url: `/projects/` }),
     }),
+    createProject: build.mutation<
+      CreateProjectApiResponse,
+      CreateProjectApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/projects/`,
+        method: "POST",
+        body: queryArg.shallowProject,
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -55,9 +65,14 @@ export type GetImageApiArg = {
 export type GetProjectsApiResponse =
   /** status 200 Successful Response */ Project[];
 export type GetProjectsApiArg = void;
+export type CreateProjectApiResponse =
+  /** status 200 Successful Response */ Project;
+export type CreateProjectApiArg = {
+  shallowProject: ShallowProject;
+};
 export type Label = {
-  id: string;
   name: string;
+  id: string;
 };
 export type ValidationError = {
   loc: (string | number)[];
@@ -68,12 +83,17 @@ export type HttpValidationError = {
   detail?: ValidationError[];
 };
 export type Object = {
-  id: string;
   annotationData: string;
+  id: string;
 };
 export type Project = {
-  id: string;
   name: string;
+  id: string;
+};
+export type ShallowProject = {
+  name: string;
+  id?: string;
+  source?: string;
 };
 export const {
   useGetProjectLabelsQuery,
@@ -81,4 +101,5 @@ export const {
   useGetRandomObjectQuery,
   useGetImageQuery,
   useGetProjectsQuery,
+  useCreateProjectMutation,
 } = injectedRtkApi;

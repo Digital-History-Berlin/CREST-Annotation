@@ -18,7 +18,7 @@ const SidebarContainer = ({ title, children }: IProps) => {
   const TitleBox = styled(Box)(({ theme }) => ({
     "&": {
       padding: theme.spacing(1),
-      color: theme.palette.primary.contrastText,
+      color: theme.palette.secondary.contrastText,
       backgroundColor: theme.palette.secondary.main,
       font: theme.typography.h6,
     },

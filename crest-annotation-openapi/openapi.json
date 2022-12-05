@@ -211,6 +211,48 @@
       "description": "Not found"
      }
     }
+   },
+   "post": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Create Project",
+    "operationId": "create_project",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowProject"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
    }
   }
  },
@@ -232,17 +274,17 @@
    "Label": {
     "title": "Label",
     "required": [
-     "id",
-     "name"
+     "name",
+     "id"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "name": {
       "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
       "type": "string"
      }
     }
@@ -250,17 +292,17 @@
    "Object": {
     "title": "Object",
     "required": [
-     "id",
-     "annotationData"
+     "annotationData",
+     "id"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "annotationData": {
       "title": "Annotationdata",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
       "type": "string"
      }
     }
@@ -268,17 +310,38 @@
    "Project": {
     "title": "Project",
     "required": [
-     "id",
+     "name",
+     "id"
+    ],
+    "type": "object",
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     }
+    }
+   },
+   "ShallowProject": {
+    "title": "ShallowProject",
+    "required": [
      "name"
     ],
     "type": "object",
     "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
      "id": {
       "title": "Id",
       "type": "string"
      },
-     "name": {
-      "title": "Name",
+     "source": {
+      "title": "Source",
       "type": "string"
      }
     }

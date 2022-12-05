@@ -11,9 +11,9 @@ import {
   Shape,
   Tool,
 } from "../slice";
-import { Line as LineShape } from "../../tools/line";
-import { Rectangle as RectangleShape } from "../../tools/rectangle";
-import { Circle as CircleShape } from "../../tools/circle";
+import { Line as LineShape } from "../tools/line";
+import { Rectangle as RectangleShape } from "../tools/rectangle";
+import { Circle as CircleShape } from "../tools/circle";
 
 interface IProps {
   imageUri?: string;

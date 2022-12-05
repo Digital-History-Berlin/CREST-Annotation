@@ -14,6 +14,13 @@ router = APIRouter(
 )
 
 
+def map_project(project: Project) -> schemas.Project:
+    return {
+        "id": project.id,
+        "name": project.name,
+    }
+
+
 @router.get("/", response_model=List[schemas.Project])
 async def get_projects(db=Depends(get_db)):
     projects: List[Project] = db.query(Project)
@@ -21,17 +28,21 @@ async def get_projects(db=Depends(get_db)):
     return JSONResponse(
         list(
             map(
-                lambda project: {
-                    "id": project.id,
-                    "name": project.name,
-                },
+                map_project,
                 projects,
             )
         )
     )
 
 
-@router.post("/")
-async def create_project(project: schemas.ShallowProject, db=Depends(get_db)):
-    db_project = db.add(Project(**project))
+@router.post("/", response_model=schemas.Project)
+async def create_project(
+    shallow: schemas.ShallowProject, db=Depends(get_db), logger=Depends(get_logger)
+):
+    project = Project(**shallow.dict())
+
+    db.add(project)
     db.commit()
+    db.refresh(project)
+
+    return JSONResponse(map_project(project))
