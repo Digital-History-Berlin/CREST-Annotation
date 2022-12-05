@@ -38,7 +38,7 @@ const initialState: InspectionSlice = {
 };
 
 const replaceAnnotation = (state: InspectionSlice, annotation: Annotation) =>
-  state.annotations.splice(annotation.position, 1, annotation);
+  state.annotations.map((a) => (a.id === annotation.id ? annotation : a));
 
 export const slice = createSlice({
   name: "inspection",
@@ -57,9 +57,9 @@ export const slice = createSlice({
       });
     },
     updateAnnotation: (state, action) => {
-      replaceAnnotation(state, action.payload);
+      state.annotations = replaceAnnotation(state, action.payload);
     },
-    removeAnnotation: (state, action) => {
+    deleteAnnotation: (state, action) => {
       state.annotations = state.annotations.filter(
         (a) => a.id !== action.payload.id
       );
@@ -71,35 +71,35 @@ export const slice = createSlice({
       }));
     },
     unselectAnnotation: (state, action) => {
-      replaceAnnotation(state, {
+      state.annotations = replaceAnnotation(state, {
         ...action.payload,
         selected: false,
       });
     },
     lockAnnotation: (state, action) => {
-      replaceAnnotation(state, {
+      state.annotations = replaceAnnotation(state, {
         ...action.payload,
         locked: true,
         selected: false,
       });
     },
     unlockAnnotation: (state, action) => {
-      replaceAnnotation(state, {
+      state.annotations = replaceAnnotation(state, {
         ...action.payload,
         locked: false,
       });
     },
     hideAnnotation: (state, action) => {
-      replaceAnnotation(state, {
+      state.annotations = replaceAnnotation(state, {
         ...action.payload,
-        hide: true,
+        hidden: true,
         selected: false,
       });
     },
     showAnnotation: (state, action) => {
-      replaceAnnotation(state, {
+      state.annotations = replaceAnnotation(state, {
         ...action.payload,
-        hide: true,
+        hidden: false,
       });
     },
   },
@@ -111,7 +111,7 @@ export const {
   setActiveTool,
   addAnnotation,
   updateAnnotation,
-  removeAnnotation,
+  deleteAnnotation,
   selectAnnotation,
   unselectAnnotation,
   lockAnnotation,

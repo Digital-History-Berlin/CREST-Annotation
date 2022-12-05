@@ -21,6 +21,7 @@ const defaultProps = {};
 const ProjectsList = ({ selectProject, addProject }: IProps) => {
   return (
     <Loader
+      emptyPlaceholder={"Start by creating your first project!"}
       query={useGetProjectsQuery()}
       render={({ data: projects }) => (
         <List>

@@ -1,5 +1,11 @@
 import React from "react";
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import {
+  Link,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+} from "@mui/material";
 import { Label, useGetProjectLabelsQuery } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
 
@@ -13,6 +19,13 @@ const defaultProps = {};
 const LabelsList = ({ projectId, selectLabel }: IProps) => {
   return (
     <Loader
+      emptyPlaceholder={
+        <div>
+          This project contains no labels. Go to the{" "}
+          <Link href={`/project/{projectId}`}>project settings</Link> to create
+          some and start annotating!
+        </div>
+      }
       query={useGetProjectLabelsQuery(
         { projectId: projectId! },
         { skip: !projectId }

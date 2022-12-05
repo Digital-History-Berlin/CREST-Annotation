@@ -2,6 +2,7 @@ import React from "react";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   selectAnnotations,
+  deleteAnnotation,
   selectAnnotation,
   unselectAnnotation,
   lockAnnotation,
@@ -23,6 +24,7 @@ import LockedIcon from "@mui/icons-material/Lock";
 import UnlockedIcon from "@mui/icons-material/LockOpen";
 import VisibleIcon from "@mui/icons-material/Visibility";
 import HiddenIcon from "@mui/icons-material/VisibilityOff";
+import Loader from "../../../components/Loader";
 
 const AnnotationsList = () => {
   const dispatch = useAppDispatch();
@@ -33,57 +35,58 @@ const AnnotationsList = () => {
       ? dispatch(unselectAnnotation(annotation))
       : dispatch(selectAnnotation(annotation));
 
-  return (
-    <List>
-      {annotations.map((annotation) => (
-        <ListItem
-          disablePadding
-          key={annotation.id}
-          secondaryAction={
-            <Stack direction="row">
-              {annotation.locked ? (
-                <IconButton
-                  onClick={() => dispatch(unlockAnnotation(annotation))}
-                >
-                  <LockedIcon />
-                </IconButton>
-              ) : (
-                <IconButton
-                  onClick={() => dispatch(lockAnnotation(annotation))}
-                >
-                  <UnlockedIcon />
-                </IconButton>
-              )}
+  const renderActions = (annotation: Annotation) => (
+    <Stack direction="row">
+      {annotation.locked ? (
+        <IconButton onClick={() => dispatch(unlockAnnotation(annotation))}>
+          <LockedIcon />
+        </IconButton>
+      ) : (
+        <IconButton onClick={() => dispatch(lockAnnotation(annotation))}>
+          <UnlockedIcon />
+        </IconButton>
+      )}
 
-              {annotation.hidden ? (
-                <IconButton
-                  onClick={() => dispatch(showAnnotation(annotation))}
-                >
-                  <HiddenIcon />
-                </IconButton>
-              ) : (
-                <IconButton
-                  onClick={() => dispatch(hideAnnotation(annotation))}
-                >
-                  <VisibleIcon />
-                </IconButton>
-              )}
-              <IconButton>
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
-          }
-        >
-          <ListItemButton
-            onClick={() => toggleAnnotationSelection(annotation)}
-            selected={annotation.selected}
-            disableRipple
-          >
-            <ListItemText primary={annotation.label ?? "Unnamed"} />
-          </ListItemButton>
-        </ListItem>
-      ))}
-    </List>
+      {annotation.hidden ? (
+        <IconButton onClick={() => dispatch(showAnnotation(annotation))}>
+          <HiddenIcon />
+        </IconButton>
+      ) : (
+        <IconButton onClick={() => dispatch(hideAnnotation(annotation))}>
+          <VisibleIcon />
+        </IconButton>
+      )}
+
+      <IconButton onClick={() => dispatch(deleteAnnotation(annotation))}>
+        <DeleteIcon />
+      </IconButton>
+    </Stack>
+  );
+
+  return (
+    <Loader
+      emptyPlaceholder={"Start drawing to create annotations."}
+      query={{ data: annotations }}
+      render={({ data: annotations }) => (
+        <List>
+          {annotations.map((annotation) => (
+            <ListItem
+              disablePadding
+              key={annotation.id}
+              secondaryAction={renderActions(annotation)}
+            >
+              <ListItemButton
+                onClick={() => toggleAnnotationSelection(annotation)}
+                selected={annotation.selected}
+                disableRipple
+              >
+                <ListItemText primary={annotation.label ?? "Unnamed"} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      )}
+    />
   );
 };
 

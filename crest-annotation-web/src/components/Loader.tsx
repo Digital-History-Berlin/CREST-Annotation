@@ -1,18 +1,24 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, ReactNode } from "react";
 import { CircularProgress, Container, styled } from "@mui/material";
 
 interface IProps<T> {
   query: {
-    isLoading: boolean;
-    isFetching: boolean;
-    isError: boolean;
+    isLoading?: boolean;
+    isFetching?: boolean;
+    isError?: boolean;
     data?: T;
   };
-  render: (data: { isFetching: boolean; data: T }) => ReactElement;
-  error?: string;
+  render: (data: { isFetching?: boolean; data: T }) => ReactElement;
+  emptyPlaceholder?: ReactNode;
+  errorPlaceholder?: ReactNode;
 }
 
-export default function Loader<T>({ query, render, error }: IProps<T>) {
+export default function Loader<T>({
+  query,
+  render,
+  emptyPlaceholder,
+  errorPlaceholder,
+}: IProps<T>) {
   const { isLoading, isFetching, isError, data } = query;
 
   const CenterContainer = styled(Container)(({ theme }) => ({
@@ -33,7 +39,14 @@ export default function Loader<T>({ query, render, error }: IProps<T>) {
   if (data === undefined || isError)
     return (
       <CenterContainer>
-        <div>{error ?? "Failed to data"}</div>
+        {errorPlaceholder ?? <div>Failed to data</div>}
+      </CenterContainer>
+    );
+
+  if (Array.isArray(data) && data.length === 0)
+    return (
+      <CenterContainer>
+        {emptyPlaceholder ?? <div>No data</div>}
       </CenterContainer>
     );
 
