@@ -6,11 +6,13 @@ interface IProps<T> {
     isLoading?: boolean;
     isFetching?: boolean;
     isError?: boolean;
+    isDisabled?: boolean;
     data?: T;
   };
   render: (data: { isFetching?: boolean; data: T }) => ReactElement;
   emptyPlaceholder?: ReactNode;
   errorPlaceholder?: ReactNode;
+  disabledPlaceholder?: ReactNode;
 }
 
 export default function Loader<T>({
@@ -18,8 +20,9 @@ export default function Loader<T>({
   render,
   emptyPlaceholder,
   errorPlaceholder,
+  disabledPlaceholder,
 }: IProps<T>) {
-  const { isLoading, isFetching, isError, data } = query;
+  const { isLoading, isFetching, isError, isDisabled, data } = query;
 
   const CenterContainer = styled(Container)(({ theme }) => ({
     "&": {
@@ -33,6 +36,13 @@ export default function Loader<T>({
     return (
       <CenterContainer>
         <CircularProgress />
+      </CenterContainer>
+    );
+
+  if (isDisabled)
+    return (
+      <CenterContainer>
+        {disabledPlaceholder ?? <div>Not available</div>}
       </CenterContainer>
     );
 

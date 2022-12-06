@@ -6,8 +6,9 @@ import {
   ListItemButton,
   ListItemText,
 } from "@mui/material";
-import { Label, useGetProjectLabelsQuery } from "../../../api/openApi";
+import { Label } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
+import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 
 interface IProps {
   projectId?: string;
@@ -22,18 +23,22 @@ const LabelsList = ({ projectId, selectLabel }: IProps) => {
       emptyPlaceholder={
         <div>
           This project contains no labels. Go to the{" "}
-          <Link href={`/project/{projectId}`}>project settings</Link> to create
+          <Link href={`/project/${projectId}`}>project settings</Link> to create
           some and start annotating!
         </div>
       }
-      query={useGetProjectLabelsQuery(
-        { projectId: projectId! },
-        { skip: !projectId }
-      )}
+      disabledPlaceholder={"No project selected"}
+      query={{
+        ...useGetProjectLabelsQuery(
+          { projectId: projectId! },
+          { skip: !projectId }
+        ),
+        isDisabled: !projectId,
+      }}
       render={({ data: labels }) => (
-        <List>
+        <List disablePadding>
           {labels.map((label) => (
-            <ListItem disablePadding key={label.id}>
+            <ListItem divider disablePadding key={label.id}>
               <ListItemButton
                 onClick={selectLabel && (() => selectLabel(label))}
               >

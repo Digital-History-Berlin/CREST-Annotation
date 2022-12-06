@@ -1,6 +1,7 @@
 import os
 
 from glob import iglob
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
@@ -19,7 +20,15 @@ router = APIRouter(
 )
 
 
-@router.get("/collect-of/{project_id}")
+def map_object(object: Object) -> schemas.Object:
+    return {
+        "id": object.id,
+        "annotated": object.annotated,
+        "annotation_data": object.annotation_data,
+    }
+
+
+@router.post("/collect-of/{project_id}")
 async def collect_objects(
     project_id: str, db: Session = Depends(get_db), logger=Depends(get_logger)
 ):
@@ -55,24 +64,25 @@ async def collect_objects(
 
 
 @router.get("/random-of/{project_id}", response_model=schemas.Object)
-async def get_random_object(project_id: str, db=Depends(get_db)):
+async def get_random_object(project_id: str, db: Session = Depends(get_db)):
     object: Object = (
         db.query(Object).filter_by(project_id=project_id, annotated=False).first()
     )
     if not object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return JSONResponse(
-        {
-            "id": object.id,
-            "annotated": object.annotated,
-            "annotation_data": object.annotation_data,
-        }
-    )
+    return JSONResponse(map_object(object))
+
+
+@router.get("/of/{project_id}", response_model=List[schemas.Object])
+async def get_objects(project_id: str, db: Session = Depends(get_db)):
+    objects: List[Object] = db.query(Object).filter_by(project_id=project_id)
+
+    return JSONResponse(list(map(map_object, objects)))
 
 
 @router.get("/image/{id}")
-async def get_image(id: str, db=Depends(get_db)):
+async def get_image(id: str, db: Session = Depends(get_db)):
     object: Object = db.query(Object).filter_by(id=id).first()
     if not object:
         raise HTTPException(status_code=404, detail="Image not found")

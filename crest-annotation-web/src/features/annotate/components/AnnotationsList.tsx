@@ -26,7 +26,13 @@ import VisibleIcon from "@mui/icons-material/Visibility";
 import HiddenIcon from "@mui/icons-material/VisibilityOff";
 import Loader from "../../../components/Loader";
 
-const AnnotationsList = () => {
+interface IProps {
+  projectId?: string;
+}
+
+const defaultProps = {};
+
+const AnnotationsList = ({ projectId }: IProps) => {
   const dispatch = useAppDispatch();
   const annotations = useAppSelector(selectAnnotations);
 
@@ -58,7 +64,7 @@ const AnnotationsList = () => {
       )}
 
       <IconButton onClick={() => dispatch(deleteAnnotation(annotation))}>
-        <DeleteIcon />
+        <DeleteIcon color="error" />
       </IconButton>
     </Stack>
   );
@@ -66,11 +72,13 @@ const AnnotationsList = () => {
   return (
     <Loader
       emptyPlaceholder={"Start drawing to create annotations."}
-      query={{ data: annotations }}
+      disabledPlaceholder={"No project selected"}
+      query={{ isDisabled: !projectId, data: annotations }}
       render={({ data: annotations }) => (
-        <List>
+        <List disablePadding>
           {annotations.map((annotation) => (
             <ListItem
+              divider
               disablePadding
               key={annotation.id}
               secondaryAction={renderActions(annotation)}
@@ -89,5 +97,7 @@ const AnnotationsList = () => {
     />
   );
 };
+
+AnnotationsList.defaultProps = defaultProps;
 
 export default AnnotationsList;

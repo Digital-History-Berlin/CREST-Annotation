@@ -1,6 +1,5 @@
-import { useTheme } from "@mui/material";
-import { Dialog } from "@mui/material";
-import React, { ComponentProps, ReactNode } from "react";
+import React, { ComponentProps } from "react";
+import { Dialog, useTheme } from "@mui/material";
 
 interface IProps {
   title: string;
@@ -8,7 +7,7 @@ interface IProps {
 
 type Props = IProps & ComponentProps<typeof Dialog>;
 
-const DefaultDialog = (props: Props) => {
+const DefaultDialog = ({ title, children, ...props }: Props) => {
   const theme = useTheme();
 
   return (
@@ -20,9 +19,9 @@ const DefaultDialog = (props: Props) => {
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
-        <h4>{props.title}</h4>
+        <h4>{title}</h4>
       </div>
-      {props.children}
+      {children}
     </Dialog>
   );
 };

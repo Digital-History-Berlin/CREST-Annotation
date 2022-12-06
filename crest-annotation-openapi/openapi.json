@@ -55,7 +55,7 @@
    }
   },
   "/objects/collect-of/{project_id}": {
-   "get": {
+   "post": {
     "tags": [
      "object"
     ],
@@ -122,6 +122,55 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/Object"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/of/{project_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Objects",
+    "operationId": "get_objects",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Response Get Objects Objects Of  Project Id  Get",
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/Object"
+         }
         }
        }
       }
@@ -253,6 +302,93 @@
       }
      }
     }
+   },
+   "patch": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Update Project",
+    "operationId": "update_project",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowProject"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/projects/by-id/{project_id}": {
+   "get": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Get Project",
+    "operationId": "get_project",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
    }
   }
  },
@@ -321,6 +457,10 @@
      },
      "id": {
       "title": "Id",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
       "type": "string"
      }
     }

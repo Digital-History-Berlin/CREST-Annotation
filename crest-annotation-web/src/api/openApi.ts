@@ -7,12 +7,13 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({ url: `/labels/of/${queryArg.projectId}` }),
     }),
-    collectObjects: build.query<
+    collectObjects: build.mutation<
       CollectObjectsApiResponse,
       CollectObjectsApiArg
     >({
       query: (queryArg) => ({
         url: `/objects/collect-of/${queryArg.projectId}`,
+        method: "POST",
       }),
     }),
     getRandomObject: build.query<
@@ -22,6 +23,9 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/objects/random-of/${queryArg.projectId}`,
       }),
+    }),
+    getObjects: build.query<GetObjectsApiResponse, GetObjectsApiArg>({
+      query: (queryArg) => ({ url: `/objects/of/${queryArg.projectId}` }),
     }),
     getImage: build.query<GetImageApiResponse, GetImageApiArg>({
       query: (queryArg) => ({ url: `/objects/image/${queryArg.id}` }),
@@ -38,6 +42,19 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
         body: queryArg.shallowProject,
       }),
+    }),
+    updateProject: build.mutation<
+      UpdateProjectApiResponse,
+      UpdateProjectApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/projects/`,
+        method: "PATCH",
+        body: queryArg.shallowProject,
+      }),
+    }),
+    getProject: build.query<GetProjectApiResponse, GetProjectApiArg>({
+      query: (queryArg) => ({ url: `/projects/by-id/${queryArg.projectId}` }),
     }),
   }),
   overrideExisting: false,
@@ -58,6 +75,11 @@ export type GetRandomObjectApiResponse =
 export type GetRandomObjectApiArg = {
   projectId: string;
 };
+export type GetObjectsApiResponse =
+  /** status 200 Successful Response */ Object[];
+export type GetObjectsApiArg = {
+  projectId: string;
+};
 export type GetImageApiResponse = /** status 200 Successful Response */ any;
 export type GetImageApiArg = {
   id: string;
@@ -69,6 +91,16 @@ export type CreateProjectApiResponse =
   /** status 200 Successful Response */ Project;
 export type CreateProjectApiArg = {
   shallowProject: ShallowProject;
+};
+export type UpdateProjectApiResponse =
+  /** status 200 Successful Response */ Project;
+export type UpdateProjectApiArg = {
+  shallowProject: ShallowProject;
+};
+export type GetProjectApiResponse =
+  /** status 200 Successful Response */ Project;
+export type GetProjectApiArg = {
+  projectId: string;
 };
 export type Label = {
   name: string;
@@ -89,6 +121,7 @@ export type Object = {
 export type Project = {
   name: string;
   id: string;
+  source?: string;
 };
 export type ShallowProject = {
   name: string;
@@ -97,9 +130,12 @@ export type ShallowProject = {
 };
 export const {
   useGetProjectLabelsQuery,
-  useCollectObjectsQuery,
+  useCollectObjectsMutation,
   useGetRandomObjectQuery,
+  useGetObjectsQuery,
   useGetImageQuery,
   useGetProjectsQuery,
   useCreateProjectMutation,
+  useUpdateProjectMutation,
+  useGetProjectQuery,
 } = injectedRtkApi;

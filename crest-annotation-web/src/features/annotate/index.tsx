@@ -1,67 +1,51 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { useAppDispatch, useAppSelector, useEnv } from "../../app/hooks";
 import { selectActiveTool, setActiveTool, Tool } from "./slice";
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  Stack,
-  TextField,
-  ToggleButton,
-  useTheme,
-} from "@mui/material";
+import { Link, Stack, ToggleButton, useTheme } from "@mui/material";
 // TODO: better icons
 import PenIcon from "@mui/icons-material/Gesture";
 import RectangleIcon from "@mui/icons-material/Crop";
 import CircleIcon from "@mui/icons-material/RadioButtonUnchecked";
-import Layout from "../../components/Layout";
+import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
 import ToolbarButtonGroup from "../../components/ToolbarButtonGroup";
 import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
 import SidebarContainer from "../../components/SidebarContainer";
-import ProjectsList from "./components/ProjectsList";
-import { enhancedApi, useCreateProjectMutation } from "../../api/enhancedApi";
-import { Project } from "../../api/openApi";
 import LabelsList from "./components/LabelsList";
-import DefaultDialog from "../../components/DefaultDialog";
+import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
+import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
+import { enhancedApi } from "../../api/enhancedApi";
+import Loader from "../../components/Loader";
+import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
+  const env = useEnv();
+
+  const { projectId, objectId } = useParams();
 
   const activeTool = useAppSelector(selectActiveTool);
-  const [getRandom] = enhancedApi.useLazyGetRandomObjectQuery();
-  const { projectId, objectId } = useParams();
+
+  const [getRandom, { isError: randomError }] =
+    enhancedApi.useLazyGetRandomObjectQuery();
 
   const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [projectName, setProjectName] = useState("");
 
-  const [requestCreateProject, { isLoading: createLoading }] =
-    useCreateProjectMutation();
-
-  const selectProject = async (project: Project) => {
-    if (project.id === projectId) return;
-
-    // TODO: this should maybe move somewhere else
-    document.title = `CREST - ${project.name}`;
-
-    // another project was selected, start with random object
-    const random = await getRandom({ projectId: project.id }).unwrap();
-    navigate(`/annotate/${project.id}/${random.id}`);
+  const navigateRandom = async (id: string) => {
+    const random = await getRandom({ projectId: id }).unwrap();
+    navigate(`/annotate/${id}/${random.id}`);
   };
 
-  const createProject = async () => {
-    const project = await requestCreateProject({
-      shallowProject: { name: projectName },
-    }).unwrap();
-
-    // TODO: redirect to project
-    navigate(`/annotate/${project.id}`);
-  };
+  useEffect(() => {
+    // start with random object
+    if (projectId && !objectId) navigateRandom(projectId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, objectId]);
 
   const showCreateDialog = async () => {
     setShowProjects(false);
@@ -99,7 +83,7 @@ const AnnotatePage = () => {
           }}
         >
           <SidebarContainer title="Annotations">
-            <AnnotationsList />
+            <AnnotationsList projectId={projectId} />
           </SidebarContainer>
           <SidebarContainer title="Labels">
             <LabelsList projectId={projectId} />
@@ -107,54 +91,39 @@ const AnnotatePage = () => {
         </Stack>
       }
     >
-      <DefaultDialog
-        onClose={() => setShowCreate(false)}
-        open={showCreate}
-        maxWidth="sm"
-        fullWidth={true}
-        title="Create Project"
-      >
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            variant="standard"
-            label="Project Title"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowCreate(false)} disabled={createLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={createProject}
-            disabled={createLoading || !projectName}
-          >
-            Add
-          </Button>
-        </DialogActions>
-      </DefaultDialog>
-      <DefaultDialog
-        onClose={() => setShowProjects(false)}
+      <SelectProjectDialog
+        activeProjectId={projectId}
         open={!showCreate && (!projectId || showProjects)}
-        maxWidth="sm"
-        fullWidth={true}
-        title="Select Project"
-      >
-        <ProjectsList
-          selectProject={selectProject}
-          addProject={showCreateDialog}
-        />
-      </DefaultDialog>
-      <Canvas
-        imageUri={
-          objectId &&
-          `${
-            global.config?.REACT_APP_BACKEND || process.env.REACT_APP_BACKEND
-          }/objects/image/${objectId}`
+        onClose={() => setShowProjects(false)}
+        onCreate={showCreateDialog}
+      />
+      <AddProjectDialog
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+      />
+      <Loader
+        query={{
+          isLoading: !projectId || (!objectId && !randomError),
+          isError: randomError,
+          data: objectId,
+        }}
+        errorPlaceholder={
+          <PlaceholderLayout
+            title="This project contains no objects."
+            description={
+              <>
+                Go to the{" "}
+                <Link href={`/project/${projectId}`}>project settings</Link> to
+                scan the project source for new objects and start annotating!
+              </>
+            }
+          />
         }
+        render={({ data: objectId }) => (
+          <Canvas
+            imageUri={`${env.REACT_APP_BACKEND}/objects/image/${objectId}`}
+          />
+        )}
       />
     </Layout>
   );

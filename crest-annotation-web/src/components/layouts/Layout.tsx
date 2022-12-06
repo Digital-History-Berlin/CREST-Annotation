@@ -2,7 +2,7 @@ import React, { CSSProperties, ReactNode } from "react";
 import styles from "./Layout.module.scss";
 import classnames from "classnames";
 
-interface IProps {
+export interface LayoutProps {
   header?: ReactNode;
   left?: ReactNode;
   right?: ReactNode;
@@ -19,7 +19,14 @@ const defaultProps = {};
  * Should be the top component in every view,
  * unless the view deliberately deviates from this layout.
  */
-const Layout = ({ header, left, right, children, scrollable, sx }: IProps) => {
+const Layout = ({
+  header,
+  left,
+  right,
+  children,
+  scrollable,
+  sx,
+}: LayoutProps) => {
   return (
     <div className={styles.container}>
       {header || <div />}
