@@ -15,7 +15,7 @@ import {
 import CardLayout from "../../components/layouts/CardLayout";
 import Toolbar from "../../components/Toolbar";
 import DeleteIcon from "@mui/icons-material/Delete";
-import AnnotateIcon from "@mui/icons-material/Edit";
+import ObjectsIcon from "@mui/icons-material/Apps";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AddIcon from "@mui/icons-material/Add";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
@@ -30,7 +30,7 @@ const ProjectsPage = () => {
 
   const renderCard = (project: Project) => (
     <Card>
-      <CardActionArea onClick={() => navigate(`/objects/${project.id}`)}>
+      <CardActionArea onClick={() => navigate(`/annotate/${project.id}`)}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
             {project.name}
@@ -41,8 +41,8 @@ const ProjectsPage = () => {
         </CardContent>
       </CardActionArea>
       <CardActions disableSpacing sx={{ justifyContent: "flex-end" }}>
-        <IconButton onClick={() => navigate(`/annotate/${project.id}`)}>
-          <AnnotateIcon />
+        <IconButton onClick={() => navigate(`/objects/${project.id}`)}>
+          <ObjectsIcon />
         </IconButton>
         <IconButton onClick={() => navigate(`/project/${project.id}`)}>
           <SettingsIcon />
