@@ -44,7 +44,7 @@ const ProjectsPage = () => {
         <IconButton onClick={() => navigate(`/annotate/${project.id}`)}>
           <AnnotateIcon />
         </IconButton>
-        <IconButton onClick={() => navigate(`/projects/${project.id}`)}>
+        <IconButton onClick={() => navigate(`/project/${project.id}`)}>
           <SettingsIcon />
         </IconButton>
         <IconButton color="error" onClick={() => deleteProject(project)}>
