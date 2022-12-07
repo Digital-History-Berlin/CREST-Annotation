@@ -30,14 +30,8 @@ export default function CardLayout<T>({
   renderCard,
   ...props
 }: Props<T>) {
-  const theme = useTheme();
-
   return (
-    <Layout
-      {...props}
-      scrollable={true}
-      sx={{ backgroundColor: theme.palette.grey.A100 }}
-    >
+    <Layout {...props} scrollable={true}>
       <Loader
         query={query}
         emptyPlaceholder={placeholder}

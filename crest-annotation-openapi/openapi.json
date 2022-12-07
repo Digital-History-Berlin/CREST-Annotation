@@ -54,6 +54,135 @@
     }
    }
   },
+  "/labels/": {
+   "post": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Create Label",
+    "operationId": "create_label",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowLabel"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Label"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Update Label",
+    "operationId": "update_label",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowLabel"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Label"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/labels/{label_id}": {
+   "delete": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Delete Label",
+    "operationId": "delete_label",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Label Id",
+       "type": "string"
+      },
+      "name": "label_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/objects/collect-of/{project_id}": {
    "post": {
     "tags": [
@@ -390,6 +519,49 @@
      }
     }
    }
+  },
+  "/projects/{project_id}": {
+   "delete": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Delete Project",
+    "operationId": "delete_project",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {
@@ -428,13 +600,13 @@
    "Object": {
     "title": "Object",
     "required": [
-     "annotationData",
+     "annotation_data",
      "id"
     ],
     "type": "object",
     "properties": {
-     "annotationData": {
-      "title": "Annotationdata",
+     "annotation_data": {
+      "title": "Annotation Data",
       "type": "string"
      },
      "id": {
@@ -461,6 +633,27 @@
      },
      "source": {
       "title": "Source",
+      "type": "string"
+     }
+    }
+   },
+   "ShallowLabel": {
+    "title": "ShallowLabel",
+    "required": [
+     "name"
+    ],
+    "type": "object",
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
       "type": "string"
      }
     }

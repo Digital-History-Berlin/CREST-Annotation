@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from ..dependencies.db import get_db
@@ -45,7 +45,7 @@ async def update_project(
     db: Session = Depends(get_db),
 ):
     projects = db.query(Project).filter_by(id=shallow.id)
-    projects.update(shallow.dict())
+    projects.update(shallow.dict(exclude_none=True))
 
     project = projects.first()
     if not project:
@@ -69,3 +69,17 @@ async def create_project(
     db.refresh(project)
 
     return JSONResponse(map_project(project))
+
+
+@router.delete("/{project_id}")
+async def delete_project(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    modified = db.query(Project).filter_by(id=project_id).delete()
+    if modified != 1:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.commit()
+
+    return Response()

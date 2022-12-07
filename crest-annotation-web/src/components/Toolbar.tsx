@@ -2,11 +2,11 @@ import React, { CSSProperties, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Button,
   Toolbar as MuiToolbar,
   Typography,
   useTheme,
 } from "@mui/material";
+import { ToolbarButton } from "./ToolbarButton";
 
 interface IProps {
   title?: string;
@@ -36,14 +36,11 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
     >
       <MuiToolbar sx={sx}>
         <Box sx={{ flex: "1 0 0", justifyContent: "flex-start" }}>
-          <Button
-            onClick={() => navigate("/")}
-            sx={{ color: theme.palette.primary.contrastText }}
-          >
+          <ToolbarButton onClick={() => navigate("/")}>
             <Typography variant="h5" noWrap>
               CREST
             </Typography>
-          </Button>
+          </ToolbarButton>
         </Box>
         <Box>
           {title && (

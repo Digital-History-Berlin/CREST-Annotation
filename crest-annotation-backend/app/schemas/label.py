@@ -8,6 +8,7 @@ class BaseLabel(BaseModel):
 
 class ShallowLabel(BaseLabel):
     id: Optional[str]
+    project_id: Optional[str]
 
 
 class Label(BaseLabel):

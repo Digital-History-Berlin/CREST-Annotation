@@ -7,6 +7,26 @@ const injectedRtkApi = api.injectEndpoints({
     >({
       query: (queryArg) => ({ url: `/labels/of/${queryArg.projectId}` }),
     }),
+    createLabel: build.mutation<CreateLabelApiResponse, CreateLabelApiArg>({
+      query: (queryArg) => ({
+        url: `/labels/`,
+        method: "POST",
+        body: queryArg.shallowLabel,
+      }),
+    }),
+    updateLabel: build.mutation<UpdateLabelApiResponse, UpdateLabelApiArg>({
+      query: (queryArg) => ({
+        url: `/labels/`,
+        method: "PATCH",
+        body: queryArg.shallowLabel,
+      }),
+    }),
+    deleteLabel: build.mutation<DeleteLabelApiResponse, DeleteLabelApiArg>({
+      query: (queryArg) => ({
+        url: `/labels/${queryArg.labelId}`,
+        method: "DELETE",
+      }),
+    }),
     collectObjects: build.mutation<
       CollectObjectsApiResponse,
       CollectObjectsApiArg
@@ -56,6 +76,15 @@ const injectedRtkApi = api.injectEndpoints({
     getProject: build.query<GetProjectApiResponse, GetProjectApiArg>({
       query: (queryArg) => ({ url: `/projects/by-id/${queryArg.projectId}` }),
     }),
+    deleteProject: build.mutation<
+      DeleteProjectApiResponse,
+      DeleteProjectApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/projects/${queryArg.projectId}`,
+        method: "DELETE",
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -64,6 +93,20 @@ export type GetProjectLabelsApiResponse =
   /** status 200 Successful Response */ Label[];
 export type GetProjectLabelsApiArg = {
   projectId: string;
+};
+export type CreateLabelApiResponse =
+  /** status 200 Successful Response */ Label;
+export type CreateLabelApiArg = {
+  shallowLabel: ShallowLabel;
+};
+export type UpdateLabelApiResponse =
+  /** status 200 Successful Response */ Label;
+export type UpdateLabelApiArg = {
+  shallowLabel: ShallowLabel;
+};
+export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
+export type DeleteLabelApiArg = {
+  labelId: string;
 };
 export type CollectObjectsApiResponse =
   /** status 200 Successful Response */ any;
@@ -102,6 +145,11 @@ export type GetProjectApiResponse =
 export type GetProjectApiArg = {
   projectId: string;
 };
+export type DeleteProjectApiResponse =
+  /** status 200 Successful Response */ any;
+export type DeleteProjectApiArg = {
+  projectId: string;
+};
 export type Label = {
   name: string;
   id: string;
@@ -114,8 +162,13 @@ export type ValidationError = {
 export type HttpValidationError = {
   detail?: ValidationError[];
 };
+export type ShallowLabel = {
+  name: string;
+  id?: string;
+  project_id?: string;
+};
 export type Object = {
-  annotationData: string;
+  annotation_data: string;
   id: string;
 };
 export type Project = {
@@ -130,6 +183,9 @@ export type ShallowProject = {
 };
 export const {
   useGetProjectLabelsQuery,
+  useCreateLabelMutation,
+  useUpdateLabelMutation,
+  useDeleteLabelMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
@@ -138,4 +194,5 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,
+  useDeleteProjectMutation,
 } = injectedRtkApi;

@@ -9,9 +9,16 @@ export const enhancedApi = api.enhanceEndpoints({
     getProjects: {
       providesTags: ["Project"],
     },
+    createProject: {
+      invalidatesTags: ["Project"],
+    },
     updateProject: {
       invalidatesTags: ["Project"],
     },
+    deleteProject: {
+      invalidatesTags: ["Project"],
+    },
+
     getObjects: {
       providesTags: ["Object"],
     },
@@ -21,11 +28,27 @@ export const enhancedApi = api.enhanceEndpoints({
     collectObjects: {
       invalidatesTags: ["Object"],
     },
+
+    getProjectLabels: {
+      providesTags: ["Label"],
+    },
+    createLabel: {
+      invalidatesTags: ["Label"],
+    },
+    updateLabel: {
+      invalidatesTags: ["Label"],
+    },
+    deleteLabel: {
+      invalidatesTags: ["Label"],
+    },
   },
 });
 
 export const {
   useGetProjectLabelsQuery,
+  useCreateLabelMutation,
+  useUpdateLabelMutation,
+  useDeleteLabelMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
@@ -34,4 +57,5 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,
+  useDeleteProjectMutation,
 } = enhancedApi;

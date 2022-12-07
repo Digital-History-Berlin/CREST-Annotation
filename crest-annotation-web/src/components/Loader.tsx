@@ -15,6 +15,14 @@ interface IProps<T> {
   disabledPlaceholder?: ReactNode;
 }
 
+const CenterContainer = styled(Container)(({ theme }) => ({
+  "&": {
+    display: "flex",
+    justifyContent: "center",
+    padding: theme.spacing(3),
+  },
+}));
+
 export default function Loader<T>({
   query,
   render,
@@ -23,14 +31,6 @@ export default function Loader<T>({
   disabledPlaceholder,
 }: IProps<T>) {
   const { isLoading, isFetching, isError, isDisabled, data } = query;
-
-  const CenterContainer = styled(Container)(({ theme }) => ({
-    "&": {
-      display: "flex",
-      justifyContent: "center",
-      padding: theme.spacing(3),
-    },
-  }));
 
   if (isLoading)
     return (
@@ -53,12 +53,8 @@ export default function Loader<T>({
       </CenterContainer>
     );
 
-  if (Array.isArray(data) && data.length === 0)
-    return (
-      <CenterContainer>
-        {emptyPlaceholder ?? <div>No data</div>}
-      </CenterContainer>
-    );
+  if (Array.isArray(data) && data.length === 0 && emptyPlaceholder)
+    return <CenterContainer>{emptyPlaceholder}</CenterContainer>;
 
   return render({ isFetching, data });
 }

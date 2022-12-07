@@ -8,6 +8,15 @@ interface IProps {
 
 const defaultProps = {};
 
+const TitleBox = styled(Box)(({ theme }) => ({
+  "&": {
+    padding: theme.spacing(1),
+    color: theme.palette.secondary.contrastText,
+    backgroundColor: theme.palette.secondary.main,
+    font: theme.typography.h6,
+  },
+}));
+
 /**
  * Provides the container for components in one of the sidebars
  *
@@ -15,15 +24,6 @@ const defaultProps = {};
  * All containers will equally share the available height.
  */
 const SidebarContainer = ({ title, children }: IProps) => {
-  const TitleBox = styled(Box)(({ theme }) => ({
-    "&": {
-      padding: theme.spacing(1),
-      color: theme.palette.secondary.contrastText,
-      backgroundColor: theme.palette.secondary.main,
-      font: theme.typography.h6,
-    },
-  }));
-
   return (
     // stretch stack to available size
     // share equally between multiple stacks

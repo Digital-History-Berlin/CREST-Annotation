@@ -9,7 +9,7 @@ import RectangleIcon from "@mui/icons-material/Crop";
 import CircleIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
-import ToolbarButtonGroup from "../../components/ToolbarButtonGroup";
+import { ToolbarToggleButton } from "../../components/ToolbarButton";
 import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
 import SidebarContainer from "../../components/SidebarContainer";
@@ -53,23 +53,24 @@ const AnnotatePage = () => {
   };
 
   const renderTools = () => (
-    <ToolbarButtonGroup
-      exclusive
-      value={activeTool}
-      onChange={(_, value) => dispatch(setActiveTool(value))}
-    >
+    <Stack direction="row">
       {[
         { tool: Tool.Pen, icon: PenIcon },
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
       ].map((button) => {
         return (
-          <ToggleButton value={button.tool} key={button.tool}>
+          <ToolbarToggleButton
+            key={button.tool}
+            value={button.tool}
+            onClick={() => dispatch(setActiveTool(button.tool))}
+            selected={activeTool === button.tool}
+          >
             {<button.icon />}
-          </ToggleButton>
+          </ToolbarToggleButton>
         );
       })}
-    </ToolbarButtonGroup>
+    </Stack>
   );
 
   return (

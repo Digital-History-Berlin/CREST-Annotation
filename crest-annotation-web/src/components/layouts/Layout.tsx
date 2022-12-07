@@ -1,6 +1,7 @@
 import React, { CSSProperties, ReactNode } from "react";
 import styles from "./Layout.module.scss";
 import classnames from "classnames";
+import { useTheme } from "@mui/material";
 
 export interface LayoutProps {
   header?: ReactNode;
@@ -27,6 +28,8 @@ const Layout = ({
   scrollable,
   sx,
 }: LayoutProps) => {
+  const theme = useTheme();
+
   return (
     <div className={styles.container}>
       {header || <div />}
@@ -36,7 +39,7 @@ const Layout = ({
           className={classnames(styles.content, {
             [styles.scrollable]: scrollable,
           })}
-          style={sx}
+          style={{ backgroundColor: theme.palette.grey.A100, ...sx }}
         >
           {children}
         </div>
