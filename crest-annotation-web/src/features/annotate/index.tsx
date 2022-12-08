@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector, useEnv } from "../../app/hooks";
 import { selectActiveTool, setActiveTool, Tool } from "./slice";
-import { Link, Stack, ToggleButton, useTheme } from "@mui/material";
+import { Link, Stack, useTheme } from "@mui/material";
 // TODO: better icons
 import PenIcon from "@mui/icons-material/Gesture";
 import RectangleIcon from "@mui/icons-material/Crop";
@@ -58,6 +58,7 @@ const AnnotatePage = () => {
         { tool: Tool.Pen, icon: PenIcon },
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
+        { tool: Tool.Polygon, icon: PenIcon },
       ].map((button) => {
         return (
           <ToolbarToggleButton
