@@ -1,0 +1,10 @@
+{
+    "editor.formatOnSave": true,
+    "[python]": {
+        "editor.defaultFormatter": null
+    },
+    "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
+    "python.formatting.provider": "black",
+    "typescript.format.enable": false,
+    "prettier.enable": true
+}

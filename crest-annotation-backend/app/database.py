@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from uuid import uuid4
 
 from .environment import env
-
+ 
 
 def make_uuid():
     return str(uuid4())
