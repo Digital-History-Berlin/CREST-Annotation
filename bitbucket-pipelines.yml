@@ -10,9 +10,30 @@ definitions:
           - cd crest-annotation-web
           - npm ci
         artifacts:
-          - node_modules/**
+          - crest-annotation-web/node_modules/**
         caches:
           - node
+
+    - step: &style-web-step
+        name: style-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths: ["**"] # ["crest-annotation-web/**"]
+        script:
+          - cd crest-annotation-web
+          - npm run style
+
+    - step: &lint-web-step
+        name: lint-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths: ["**"] # ["crest-annotation-web/**"]
+        script:
+          - cd crest-annotation-web
+          - npm run lint
+
     - step: &build-web-step
         name: build-web
         image: node:18-slim
@@ -20,9 +41,10 @@ definitions:
           changesets:
             includePaths: ["**"] # ["crest-annotation-web/**"]
         script:
-          - CI=false npm run build
+          - cd crest-annotation-web
+          - npm run build
         artifacts:
-          - build/**
+          - crest-annotation-web/build/**
 
     - step: &lint-backend-step
         name: lint-backend
@@ -63,11 +85,15 @@ definitions:
 pipelines:
   default:
     - step: *install-web-step
+    - step: *style-web-step
+    - step: *lint-web-step
     - step: *build-web-step
     - step: *lint-backend-step
   branches:
     develop:
       - step: *install-web-step
+      - step: *style-web-step
+      - step: *lint-web-step
       - step: *build-web-step
       - step: *lint-backend-step
       - step: *build-docker-step
@@ -76,6 +102,8 @@ pipelines:
     # this is useful for CI development
     feature/ci:
       - step: *install-web-step
+      - step: *style-web-step
+      - step: *lint-web-step
       - step: *build-web-step
       - step: *lint-backend-step
       - step: *build-docker-step

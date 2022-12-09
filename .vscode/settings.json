@@ -6,6 +6,8 @@
     "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
     "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
     "python.formatting.provider": "black",
+    // disable default formatters in favor of prettier
     "typescript.format.enable": false,
+    "css.format.enable": false,
     "prettier.enable": true
 }

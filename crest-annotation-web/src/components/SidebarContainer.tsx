@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Stack, Box, useTheme, Typography, styled } from "@mui/material";
+import { Stack, Box, styled } from "@mui/material";
 
 interface IProps {
   title?: string;
