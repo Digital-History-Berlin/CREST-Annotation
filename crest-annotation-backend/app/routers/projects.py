@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from ..dependencies.db import get_db
-from ..dependencies.logger import get_logger
 from ..models.projects import Project
 from .. import schemas
 

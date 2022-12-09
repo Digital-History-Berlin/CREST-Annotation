@@ -3,6 +3,7 @@
     "[python]": {
         "editor.defaultFormatter": null
     },
+    "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
     "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
     "python.formatting.provider": "black",
     "typescript.format.enable": false,

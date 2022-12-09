@@ -1,8 +1,8 @@
 import logging
 
 from fastapi import FastAPI
-from fastapi_utils import openapi
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_utils import openapi
 
 from .routers import labels, objects, projects
 from .database import Base, engine
@@ -16,7 +16,7 @@ app = FastAPI()
 
 origins = env.cors_origins.split(",")
 
-logging.info(f"CORS origins: {origins}")
+logging.info("CORS origins: %s", origins)
 
 app.add_middleware(
     CORSMiddleware,

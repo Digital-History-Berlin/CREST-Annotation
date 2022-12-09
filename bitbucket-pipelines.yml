@@ -1,0 +1,66 @@
+image:
+  name: atlassian/default-image:3
+
+definitions:
+  steps:
+    - step: &install-web-step
+        name: install-web
+        condition:
+          changesets:
+            includePaths: ["crest-annotation-web/package.*.json"]
+        script:
+          - cd crest-annotation-web
+          - npm ci
+        artifacts:
+          - node_modules/**
+        caches:
+          - node
+    - step: &build-web-step
+        name: build-web
+        condition:
+          changesets:
+            includePaths: ["crest-annotation-web/**"]
+        script:
+          - CI=false npm run build
+        artifacts:
+          - build/**
+
+    - step: &lint-backend-step
+        name: lint-backend
+        condition:
+          changesets:
+            includePaths: ["crest-annotation-backend/**"]
+        script:
+          - cd crest-annotation-backend
+          - pip install -r requirements.txt
+          - pylint --fail-under=9 app
+
+      - step: &docker-build-step
+          name: Build and publish docker image.
+          services:
+            - docker
+          script:
+            - docker compose build backend
+            - docker compose build web
+            - docker tag crest-annotation-docker-backend <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+            - docker tag crest-annotation-docker-web <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+            - docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+            - docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+
+      - step: &deploy-step
+          name: Deploy to ECS
+          script:
+            # Replace the docker image name in the task definition with the newly pushed image.
+            - export IMAGE_NAME="${DOCKERHUB_USERNAME}/${BITBUCKET_REPO_SLUG}:${BITBUCKET_BUILD_NUMBER}"
+            - envsubst < task-definition-template.json >  task-definition.json
+
+pipelines:
+  default:
+    - step: *install-web-step
+    - step: *build-web-step
+    - step: *lint-backend-step
+  branches:
+    develop:
+      - step: *install-app-step
+      - step: *build-app-step
+      - step: *lint-backend-step
