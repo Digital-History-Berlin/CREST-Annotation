@@ -16,23 +16,20 @@ The application is deployed to AWS using [ECS](https://eu-central-1.console.aws.
 
 ### Prequisites
 
-- You need to have the AWS CLI installed and configured.
-
-- You need to create an ECS docker context with `docker context create ecs crest-ecs`.
-
-_NOTE:_ If you have trouble with the Docker CLI under Ubuntu, it might be neccessary to install the Docker Compose CLI preview (see https://stackoverflow.com/questions/67236401/docker-context-create-ecs-myecs-requires-exactly-one-argument/67236402#67236402) alongside with your existing CLI under `/usr/local/bin/docker`.
-
-```
-curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
-```
-
-Now you should use `/usr/local/bin/docker` instead of `docker` for all subsequent commands.
-
-- You need to authenticate the docker CLI (valid for 24 hours).
-
-```
-aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com
-```
+  - You need to have the AWS CLI installed and configured.
+    
+  - You need to create an ECS docker context with `docker context create ecs crest-ecs`.  
+    
+    _NOTE:_ If you have trouble with the Docker CLI under Ubuntu, it might be neccessary to install the Docker Compose CLI preview (see https://stackoverflow.com/questions/67236401/docker-context-create-ecs-myecs-requires-exactly-one-argument/67236402#67236402) alongside with your existing CLI under `/usr/local/bin/docker`.
+    
+        curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+    
+    
+    Now you should use `/usr/local/bin/docker` instead of `docker` for all subsequent commands.
+    
+  - You need to authenticate the docker CLI (valid for 24 hours).
+    
+        aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com
 
 ### Docker images
 
@@ -40,26 +37,20 @@ The custom docker images for `backend` and `web` service are stored in a private
 
 _The images must be build and pushed from the `default` context._
 
-- Build the docker images
+  - Build the docker images
 
-```
-docker compose build backend
-docker compose build web
-```
+        docker compose build backend
+        docker compose build web
 
-- Tag the images with the corresponding repository (only neccessary once)
+  - Tag the images with the corresponding repository (only neccessary once)
 
-```
-docker tag crest-annotation-docker-backend <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-docker tag crest-annotation-docker-web <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-```
+        docker tag crest-annotation-docker-backend <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+        docker tag crest-annotation-docker-web <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
-- Push the images to the corresponding repository
+  - Push the images to the corresponding repository
 
-```
-docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-```
+        docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+        docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
 ### Deployment
 
