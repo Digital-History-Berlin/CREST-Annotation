@@ -3,15 +3,17 @@ import { RootState } from "../../app/store";
 import { Circle } from "./tools/circle";
 import { Line } from "./tools/line";
 import { Rectangle } from "./tools/rectangle";
+import { Polygon } from "./tools/polygon";
 
 export enum Tool {
   Pen,
   Circle,
   Rectangle,
+  Polygon,
 }
 
 /// Combines all available shape types with meta fields
-export type Shape = (Rectangle | Circle | Line) & { tool: Tool };
+export type Shape = (Rectangle | Circle | Line | Polygon) & { tool: Tool };
 
 export interface Annotation {
   id: string;
@@ -103,7 +105,6 @@ export const slice = createSlice({
       });
     },
   },
-  extraReducers: (builder) => {},
 });
 
 export const {
