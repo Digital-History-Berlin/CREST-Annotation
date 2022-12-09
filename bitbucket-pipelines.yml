@@ -35,28 +35,28 @@ definitions:
           - pip install -r requirements.txt
           - pylint --fail-under=9 app
 
-      - step: &build-docker-step
-          name: Build and publish docker image.
-          services:
-            - docker
-          script:
-            - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-            
-            - docker compose build backend
-            - docker compose build web
-            - docker tag crest-annotation-docker-backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-            - docker tag crest-annotation-docker-web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-            - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-            - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+    - step: &build-docker-step
+        name: Build and publish docker image.
+        services:
+          - docker
+        script:
+          - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          
+          - docker compose build backend
+          - docker compose build web
+          - docker tag crest-annotation-docker-backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+          - docker tag crest-annotation-docker-web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
-      - step: &deploy-ecs-step
-          name: Deploy to ECS
-          script:
-            - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-            
-            - docker context create ecs --from-env deploy
-            - docker context use deploy
-            - docker compose up
+    - step: &deploy-ecs-step
+        name: Deploy to ECS
+        script:
+          - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          
+          - docker context create ecs --from-env deploy
+          - docker context use deploy
+          - docker compose up
 
 pipelines:
   default:
