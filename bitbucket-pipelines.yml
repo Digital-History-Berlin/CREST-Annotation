@@ -35,24 +35,28 @@ definitions:
           - pip install -r requirements.txt
           - pylint --fail-under=9 app
 
-      - step: &docker-build-step
+      - step: &build-docker-step
           name: Build and publish docker image.
           services:
             - docker
           script:
+            - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+            
             - docker compose build backend
             - docker compose build web
-            - docker tag crest-annotation-docker-backend <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-            - docker tag crest-annotation-docker-web <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-            - docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-            - docker push <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+            - docker tag crest-annotation-docker-backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+            - docker tag crest-annotation-docker-web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+            - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+            - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
-      - step: &deploy-step
+      - step: &deploy-ecs-step
           name: Deploy to ECS
           script:
-            # Replace the docker image name in the task definition with the newly pushed image.
-            - export IMAGE_NAME="${DOCKERHUB_USERNAME}/${BITBUCKET_REPO_SLUG}:${BITBUCKET_BUILD_NUMBER}"
-            - envsubst < task-definition-template.json >  task-definition.json
+            - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+            
+            - docker context create ecs --from-env deploy
+            - docker context use deploy
+            - docker compose up
 
 pipelines:
   default:
@@ -64,3 +68,13 @@ pipelines:
       - step: *install-app-step
       - step: *build-app-step
       - step: *lint-backend-step
+      - step: *build-docker-step
+      - step: *deploy-ecs-step
+    
+    # this is useful for CI development
+    feature/ci:
+      - step: *install-app-step
+      - step: *build-app-step
+      - step: *lint-backend-step
+      - step: *build-docker-step
+      - step: *deploy-ecs-step
