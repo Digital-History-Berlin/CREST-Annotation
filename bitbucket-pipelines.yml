@@ -1,13 +1,11 @@
-image:
-  name: atlassian/default-image:3
-
 definitions:
   steps:
     - step: &install-web-step
         name: install-web
+        image: node:18-slim
         condition:
           changesets:
-            includePaths: ["crest-annotation-web/package.*.json"]
+            includePaths: ["**"] # ["crest-annotation-web/package.*.json"]
         script:
           - cd crest-annotation-web
           - npm ci
@@ -17,9 +15,10 @@ definitions:
           - node
     - step: &build-web-step
         name: build-web
+        image: node:18-slim
         condition:
           changesets:
-            includePaths: ["crest-annotation-web/**"]
+            includePaths: ["**"] # ["crest-annotation-web/**"]
         script:
           - CI=false npm run build
         artifacts:
@@ -27,16 +26,18 @@ definitions:
 
     - step: &lint-backend-step
         name: lint-backend
+        image: python:3.11-slim
         condition:
           changesets:
-            includePaths: ["crest-annotation-backend/**"]
+            includePaths: ["**"] # ["crest-annotation-backend/**"]
         script:
           - cd crest-annotation-backend
           - pip install -r requirements.txt
           - pylint --fail-under=9 app
 
     - step: &build-docker-step
-        name: Build and publish docker image.
+        name: Build and publish docker image
+        image: public.ecr.aws/sam/build-nodejs14.x
         services:
           - docker
         script:
@@ -51,6 +52,7 @@ definitions:
 
     - step: &deploy-ecs-step
         name: Deploy to ECS
+        image: public.ecr.aws/sam/build-nodejs14.x
         script:
           - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
