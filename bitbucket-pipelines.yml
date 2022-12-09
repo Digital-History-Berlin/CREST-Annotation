@@ -80,7 +80,6 @@ definitions:
           - cd web
           - docker build . -t web:$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-          
 
     - step: &deploy-ecs-step
         name: Deploy to ECS
@@ -108,7 +107,8 @@ pipelines:
       - step: *lint-web-step
       - step: *build-web-step
       - step: *lint-backend-step
-      - step: *build-docker-step
+      - step: *build-backend-docker-step
+      - step: *build-web-docker-step
       - step: *deploy-ecs-step
 
     # this is useful for CI development
@@ -118,5 +118,6 @@ pipelines:
       - step: *lint-web-step
       - step: *build-web-step
       - step: *lint-backend-step
-      - step: *build-docker-step
+      - step: *build-backend-docker-step
+      - step: *build-web-docker-step
       - step: *deploy-ecs-step
