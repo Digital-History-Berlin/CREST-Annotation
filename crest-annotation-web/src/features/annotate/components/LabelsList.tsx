@@ -1,63 +1,54 @@
 import React from "react";
 import {
-  Container,
-  CircularProgress,
+  Link,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
-  useTheme,
 } from "@mui/material";
-import { useGetProjectLabelsQuery } from "../../../api/openApi";
+import { Label } from "../../../api/openApi";
+import Loader from "../../../components/Loader";
+import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 
 interface IProps {
   projectId?: string;
+  selectLabel?: (label: Label) => void;
 }
 
 const defaultProps = {};
 
-const LabelsList = ({ projectId }: IProps) => {
-  const theme = useTheme();
-
-  const {
-    data: labels,
-    isLoading,
-    isError,
-  } = useGetProjectLabelsQuery({ projectId: projectId! }, { skip: !projectId });
-
-  if (isLoading)
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          padding: theme.spacing(3),
-        }}
-      >
-        <CircularProgress />
-      </Container>
-    );
-
-  if (labels === undefined || isError)
-    return (
-      <Container
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          padding: theme.spacing(3),
-        }}
-      >
-        Failed to load labels
-      </Container>
-    );
-
+const LabelsList = ({ projectId, selectLabel }: IProps) => {
   return (
-    <List>
-      {labels.map((label) => (
-        <ListItemButton key={label.id}>
-          <ListItemText primary={label.name ?? "Unnamed"} />
-        </ListItemButton>
-      ))}
-    </List>
+    <Loader
+      emptyPlaceholder={
+        <div>
+          This project contains no labels. Go to the{" "}
+          <Link href={`/project/${projectId}`}>project settings</Link> to create
+          some and start annotating!
+        </div>
+      }
+      disabledPlaceholder={"No project selected"}
+      query={{
+        ...useGetProjectLabelsQuery(
+          { projectId: projectId! },
+          { skip: !projectId }
+        ),
+        isDisabled: !projectId,
+      }}
+      render={({ data: labels }) => (
+        <List disablePadding>
+          {labels.map((label) => (
+            <ListItem divider disablePadding key={label.id}>
+              <ListItemButton
+                onClick={selectLabel && (() => selectLabel(label))}
+              >
+                <ListItemText primary={label.name ?? "Unnamed"} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      )}
+    />
   );
 };
 

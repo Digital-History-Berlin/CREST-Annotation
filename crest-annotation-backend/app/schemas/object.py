@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 class BaseObject(BaseModel):
-    annotationData: str
+    annotation_data: str
 
 
 class ShallowObject(BaseObject):

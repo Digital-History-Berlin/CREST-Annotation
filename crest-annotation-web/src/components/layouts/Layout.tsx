@@ -1,8 +1,9 @@
 import React, { CSSProperties, ReactNode } from "react";
 import styles from "./Layout.module.scss";
 import classnames from "classnames";
+import { useTheme } from "@mui/material";
 
-interface IProps {
+export interface LayoutProps {
   header?: ReactNode;
   left?: ReactNode;
   right?: ReactNode;
@@ -19,7 +20,16 @@ const defaultProps = {};
  * Should be the top component in every view,
  * unless the view deliberately deviates from this layout.
  */
-const Layout = ({ header, left, right, children, scrollable, sx }: IProps) => {
+const Layout = ({
+  header,
+  left,
+  right,
+  children,
+  scrollable,
+  sx,
+}: LayoutProps) => {
+  const theme = useTheme();
+
   return (
     <div className={styles.container}>
       {header || <div />}
@@ -29,7 +39,7 @@ const Layout = ({ header, left, right, children, scrollable, sx }: IProps) => {
           className={classnames(styles.content, {
             [styles.scrollable]: scrollable,
           })}
-          style={sx}
+          style={{ backgroundColor: theme.palette.grey.A100, ...sx }}
         >
           {children}
         </div>

@@ -13,3 +13,4 @@ class ShallowProject(BaseProject):
 
 class Project(BaseProject):
     id: str
+    source: Optional[str]

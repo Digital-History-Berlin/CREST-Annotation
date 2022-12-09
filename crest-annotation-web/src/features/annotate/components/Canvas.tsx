@@ -11,9 +11,10 @@ import {
   Shape,
   Tool,
 } from "../slice";
-import { Line as LineShape } from "../../tools/line";
-import { Rectangle as RectangleShape } from "../../tools/rectangle";
-import { Circle as CircleShape } from "../../tools/circle";
+import { Line as LineShape } from "../tools/line";
+import { Rectangle as RectangleShape } from "../tools/rectangle";
+import { Circle as CircleShape } from "../tools/circle";
+import { Polygon as PolygonShape } from "../tools/polygon";
 
 interface IProps {
   imageUri?: string;
@@ -61,6 +62,37 @@ const Canvas = ({ imageUri }: IProps) => {
           radius: 0,
           tool: Tool.Circle,
         });
+        break;
+      }
+      case Tool.Polygon: {
+        // check if we just started drawing the first point of the polygon
+        if (activeShape === undefined) {
+          setActiveShape({
+            points: [pos.x, pos.y],
+            finished: false,
+            tool: Tool.Polygon,
+          });
+        } else {
+          let polygon = activeShape as PolygonShape;
+          // finish drawing polygon, if area around starting point is clicked
+          if (
+            Math.abs(pos.x - polygon.points[0]) <= 5 &&
+            Math.abs(pos.y - polygon.points[1]) <= 5
+          ) {
+            // add last point, which is the same as the first point
+            setActiveShape({
+              ...activeShape,
+              points: [...polygon.points, polygon.points[0], polygon.points[1]],
+              finished: true,
+            });
+            // otherwise add new point
+          } else {
+            setActiveShape({
+              ...activeShape,
+              points: [...polygon.points, pos.x, pos.y],
+            });
+          }
+        }
         break;
       }
     }
@@ -112,13 +144,26 @@ const Canvas = ({ imageUri }: IProps) => {
     // no drawing - skipping
     if (!activeShape) return;
 
-    dispatch(
-      addAnnotation({
-        shape: activeShape,
-        id: uuidv4(),
-      })
-    );
-    setActiveShape(undefined);
+    if (activeShape.tool === Tool.Polygon) {
+      let polygon = activeShape as PolygonShape;
+      if (polygon.finished) {
+        dispatch(
+          addAnnotation({
+            shape: activeShape,
+            id: uuidv4(),
+          })
+        );
+        setActiveShape(undefined);
+      }
+    } else {
+      dispatch(
+        addAnnotation({
+          shape: activeShape,
+          id: uuidv4(),
+        })
+      );
+      setActiveShape(undefined);
+    }
   };
 
   const renderShape = (shape: Shape, key?: string) => {
@@ -159,6 +204,20 @@ const Canvas = ({ imageUri }: IProps) => {
             radius={circle.radius}
             fill={"transparent"}
             stroke={"red"}
+          />
+        );
+      case Tool.Polygon:
+        const polygon = shape as PolygonShape;
+        return (
+          <Line
+            key={key}
+            points={polygon.points}
+            //closed = {true}
+            stroke="#df4b26"
+            strokeWidth={5}
+            tension={0}
+            lineCap="round"
+            bezier={false}
           />
         );
       default:

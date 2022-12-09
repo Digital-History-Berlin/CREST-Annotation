@@ -54,8 +54,137 @@
     }
    }
   },
+  "/labels/": {
+   "post": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Create Label",
+    "operationId": "create_label",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowLabel"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Label"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Update Label",
+    "operationId": "update_label",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowLabel"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Label"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/labels/{label_id}": {
+   "delete": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Delete Label",
+    "operationId": "delete_label",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Label Id",
+       "type": "string"
+      },
+      "name": "label_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/objects/collect-of/{project_id}": {
-   "get": {
+   "post": {
     "tags": [
      "object"
     ],
@@ -122,6 +251,55 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/Object"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/of/{project_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Objects",
+    "operationId": "get_objects",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Response Get Objects Objects Of  Project Id  Get",
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/Object"
+         }
         }
        }
       }
@@ -211,6 +389,178 @@
       "description": "Not found"
      }
     }
+   },
+   "post": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Create Project",
+    "operationId": "create_project",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowProject"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Update Project",
+    "operationId": "update_project",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ShallowProject"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/projects/by-id/{project_id}": {
+   "get": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Get Project",
+    "operationId": "get_project",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Project"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/projects/{project_id}": {
+   "delete": {
+    "tags": [
+     "project"
+    ],
+    "summary": "Delete Project",
+    "operationId": "delete_project",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
    }
   }
  },
@@ -232,17 +582,17 @@
    "Label": {
     "title": "Label",
     "required": [
-     "id",
-     "name"
+     "name",
+     "id"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "name": {
       "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
       "type": "string"
      }
     }
@@ -250,17 +600,17 @@
    "Object": {
     "title": "Object",
     "required": [
-     "id",
-     "annotationData"
+     "annotation_data",
+     "id"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
+     "annotation_data": {
+      "title": "Annotation Data",
       "type": "string"
      },
-     "annotationData": {
-      "title": "Annotationdata",
+     "id": {
+      "title": "Id",
       "type": "string"
      }
     }
@@ -268,17 +618,63 @@
    "Project": {
     "title": "Project",
     "required": [
-     "id",
-     "name"
+     "name",
+     "id"
     ],
     "type": "object",
     "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
      "id": {
       "title": "Id",
       "type": "string"
      },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     }
+    }
+   },
+   "ShallowLabel": {
+    "title": "ShallowLabel",
+    "required": [
+     "name"
+    ],
+    "type": "object",
+    "properties": {
      "name": {
       "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
+      "type": "string"
+     }
+    }
+   },
+   "ShallowProject": {
+    "title": "ShallowProject",
+    "required": [
+     "name"
+    ],
+    "type": "object",
+    "properties": {
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
       "type": "string"
      }
     }
