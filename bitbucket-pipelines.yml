@@ -41,7 +41,7 @@ definitions:
           - docker
         script:
           - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-          
+
           - docker compose build backend
           - docker compose build web
           - docker tag crest-annotation-docker-backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
@@ -53,7 +53,7 @@ definitions:
         name: Deploy to ECS
         script:
           - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-          
+
           - docker context create ecs --from-env deploy
           - docker context use deploy
           - docker compose up
@@ -65,16 +65,16 @@ pipelines:
     - step: *lint-backend-step
   branches:
     develop:
-      - step: *install-app-step
-      - step: *build-app-step
+      - step: *install-web-step
+      - step: *build-web-step
       - step: *lint-backend-step
       - step: *build-docker-step
       - step: *deploy-ecs-step
-    
+
     # this is useful for CI development
     feature/ci:
-      - step: *install-app-step
-      - step: *build-app-step
+      - step: *install-web-step
+      - step: *build-web-step
       - step: *lint-backend-step
       - step: *build-docker-step
       - step: *deploy-ecs-step
