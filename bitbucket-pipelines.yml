@@ -63,7 +63,7 @@ definitions:
         services:
           - docker
         script:
-          - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - docker compose build backend
           - docker compose build web
@@ -76,7 +76,7 @@ definitions:
         name: Deploy to ECS
         image: public.ecr.aws/sam/build-nodejs14.x
         script:
-          - aws ecr get-login-password --region eu-central-1 | /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - docker context create ecs --from-env deploy
           - docker context use deploy
