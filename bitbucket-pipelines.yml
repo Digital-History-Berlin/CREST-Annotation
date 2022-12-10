@@ -59,7 +59,7 @@ definitions:
 
     - step: &build-backend-docker-step
         name: Build and publish backend docker image
-        image: public.ecr.aws/sam/build-provided
+        image: public.ecr.aws/aws-cli/aws-cli
         condition:
           changesets:
             includePaths:
@@ -76,7 +76,7 @@ definitions:
 
     - step: &build-web-docker-step
         name: Build and publish web docker image
-        image: public.ecr.aws/sam/build-provided
+        image: public.ecr.aws/aws-cli/aws-cli
         condition:
           changesets:
             includePaths:
@@ -93,7 +93,7 @@ definitions:
 
     - step: &deploy-ecs-step
         name: Deploy to ECS
-        image: public.ecr.aws/sam/build-provided
+        image: public.ecr.aws/aws-cli/aws-cli
         services:
           - docker
         script:
