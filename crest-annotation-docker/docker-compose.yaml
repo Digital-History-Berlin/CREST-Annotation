@@ -4,7 +4,7 @@ services:
     image: postgres
     environment:
       POSTGRES_USER: ${PG_USER:-crest}
-      POSTGRES_PASSWORD: ${PG_USER:-crest}
+      POSTGRES_PASSWORD: ${PG_PASS:-crest}
     ports:
       - 5432:5432
     restart: unless-stopped
