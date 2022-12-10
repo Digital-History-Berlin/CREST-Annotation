@@ -94,6 +94,8 @@ definitions:
     - step: &deploy-ecs-step
         name: Deploy to ECS
         image: public.ecr.aws/sam/build-provided.al2
+        services:
+          - docker
         script:
           # install docker compose CLI with ECS support
           - curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
