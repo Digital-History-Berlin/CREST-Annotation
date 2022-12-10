@@ -65,7 +65,6 @@ definitions:
             includePaths:
               - "crest-annotation-backend/**"
               - "crest-annotation-docker/**"
-              - "**"
         services:
           - docker
         script:
@@ -83,7 +82,6 @@ definitions:
             includePaths:
               - "crest-annotation-web/**"
               - "crest-annotation-docker/**"
-              - "**"
         services:
           - docker
         script:
@@ -100,12 +98,12 @@ definitions:
           - docker
         script:
           # install docker compose CLI with ECS support
-          - curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
-          - aws ecr get-login-password --region eu-central-1 |  /usr/local/bin/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          # - curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+          - aws ecr get-login-password --region eu-central-1 |  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
-          - /usr/local/bin/docker context create ecs --from-env deploy
-          - /usr/local/bin/docker context use deploy
-          - /usr/local/bin/docker compose up
+          - docker context create ecs --from-env deploy
+          - docker context use deploy
+          - docker compose up
 
   services:
     docker:
