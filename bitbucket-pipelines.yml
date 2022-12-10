@@ -78,7 +78,6 @@ definitions:
     - step: &build-web-docker-step
         name: Build and publish web docker image
         image: public.ecr.aws/sam/build-provided
-        size: 2x # TODO: check if memory requirements can be decreased
         condition:
           changesets:
             includePaths:
@@ -110,7 +109,7 @@ definitions:
 
   services:
     docker:
-      memory: 4096
+      memory: 3072
 
 pipelines:
   default:
