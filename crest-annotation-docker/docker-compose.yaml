@@ -21,7 +21,7 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
     ports:
       - 8000:8000
-    restart: always
+    restart: unless-stopped
   web:
     build:
       # allow access to crest-annotatio-web
@@ -34,4 +34,4 @@ services:
         - REACT_APP_BACKEND=${REACT_APP_BACKEND:-http://localhost:8000}
     ports:
       - 80:80
-    restart: always
+    restart: unless-stopped
