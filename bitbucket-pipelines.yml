@@ -109,7 +109,7 @@ definitions:
 
           - aws --version
           # authorize docker against AWS
-          - aws ecr get-login-password --region eu-central-1 |  ./docker/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          - aws ecr get-login-password --region eu-central-1 |  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - cd crest-annotation-docker
           - ../docker/docker context create ecs deploy --from-env
