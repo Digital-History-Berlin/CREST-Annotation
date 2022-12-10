@@ -1,4 +1,4 @@
-FROM node:16 as build-stage
+FROM node:18-slim as build-stage
 
 ARG NODE_ENV
 ENV NODE_ENV $NODE_ENV
