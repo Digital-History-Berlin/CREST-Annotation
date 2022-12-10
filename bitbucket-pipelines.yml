@@ -102,7 +102,6 @@ definitions:
               - "crest-annotation-docker/**"
               - "crest-annotation-backend/**"
               - "crest-annotation-web/**"
-              - "*"
         script:
           # TODO: actual deployment using docker compose or aws ecs cli
           # this only reloads the ECR images into the ECS services
