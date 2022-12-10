@@ -93,28 +93,19 @@ definitions:
           - docker tag web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
-    # TODO: use the default Bitbucket to ECS deployment step
     - step: &deploy-ecs-step
         name: Deploy to ECS
-        image: docker
+        image: public.ecr.aws/aws-cli/aws-cli
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-backend/**"
+              - "crest-annotation-web/**"
         script:
-          - apk update
-          - apk add curl python3 py3-pip
-
-          # install docker compose CLI with ECS support
-          - curl -L --output docker https://github.com/docker/compose-cli/releases/download/v1.0.29/docker-linux-amd64
-          - chmod +x ./docker
-          # install AWS CLI (because we cannot use the default image with docker compose)
-          - pip3 install --no-cache-dir awscli
-
-          - aws --version
-          # authorize docker against AWS
-          - aws ecr get-login-password --region eu-central-1 |  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-
-          - cd crest-annotation-docker
-          - ../docker context create ecs deploy --from-env
-          - ../docker context use deploy
-          - docker compose -f docker-compose.yaml -f docker-compose.aws.yaml up
+          # TODO: actual deployment using docker compose or aws ecs cli
+          # this only reloads the ECR images into the ECS services
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-BackendService-inTR25q2bkqK --cluster crest-annotation-docker
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-WebService-n9j7O4rO68Ck --cluster crest-annotation-docker
 
   services:
     docker:
