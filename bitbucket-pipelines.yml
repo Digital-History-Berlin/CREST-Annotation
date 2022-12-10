@@ -79,8 +79,9 @@ definitions:
         image: public.ecr.aws/sam/build-provided.al2
         condition:
           changesets:
-            - "crest-annotation-web/**"
-            - "crest-annotation-docker/**"
+            includePaths:
+              - "crest-annotation-web/**"
+              - "crest-annotation-docker/**"
         services:
           - docker
         script:
