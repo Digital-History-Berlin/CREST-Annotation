@@ -108,6 +108,10 @@ definitions:
           - /usr/local/bin/docker context use deploy
           - /usr/local/bin/docker compose up
 
+  services:
+    docker:
+      memory: 4096
+
 pipelines:
   default:
     - step: *install-web-step
