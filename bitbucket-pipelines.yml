@@ -72,7 +72,8 @@ definitions:
           - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - cd crest-annotation-docker/backend
-          - docker build . -t backend:$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+          - docker build . -t backend
+          - docker tag backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
 
     - step: &build-web-docker-step
@@ -90,7 +91,8 @@ definitions:
           - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - cd crest-annotation-docker/web
-          - docker build . -t web:$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+          - docker build . -t web
+          - docker tag web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
     - step: &deploy-ecs-step
