@@ -5,7 +5,7 @@ definitions:
         image: node:18-slim
         condition:
           changesets:
-            includePaths: ["**"] # ["crest-annotation-web/package.*.json"]
+            includePaths: ["crest-annotation-web/package.*.json"]
         script:
           - cd crest-annotation-web
           - npm ci
@@ -19,7 +19,7 @@ definitions:
         image: node:18-slim
         condition:
           changesets:
-            includePaths: ["**"] # ["crest-annotation-web/**"]
+            includePaths: ["crest-annotation-web/**"]
         script:
           - cd crest-annotation-web
           - npm run style
@@ -29,7 +29,7 @@ definitions:
         image: node:18-slim
         condition:
           changesets:
-            includePaths: ["**"] # ["crest-annotation-web/**"]
+            includePaths: ["crest-annotation-web/**"]
         script:
           - cd crest-annotation-web
           - npm run lint
@@ -39,7 +39,7 @@ definitions:
         image: node:18-slim
         condition:
           changesets:
-            includePaths: ["**"] # ["crest-annotation-web/**"]
+            includePaths: ["crest-annotation-web/**"]
         script:
           - cd crest-annotation-web
           - npm run build
@@ -51,7 +51,7 @@ definitions:
         image: python:3.11-slim
         condition:
           changesets:
-            includePaths: ["**"] # ["crest-annotation-backend/**"]
+            includePaths: ["crest-annotation-backend/**"]
         script:
           - cd crest-annotation-backend
           - pip install -r requirements.txt
@@ -59,31 +59,40 @@ definitions:
 
     - step: &build-backend-docker-step
         name: Build and publish backend docker image
-        image: public.ecr.aws/sam/build-nodejs14.x
+        image: public.ecr.aws/sam/build-provided.al2
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-backend/**"
+              - "crest-annotation-docker/**"
         services:
           - docker
         script:
           - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
-          - cd backend
+          - cd crest-annotation-docker/backend
           - docker build . -t backend:$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
 
     - step: &build-web-docker-step
         name: Build and publish web docker image
-        image: public.ecr.aws/sam/build-nodejs14.x
+        image: public.ecr.aws/sam/build-provided.al2
+        condition:
+          changesets:
+            - "crest-annotation-web/**"
+            - "crest-annotation-docker/**"
         services:
           - docker
         script:
           - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
-          - cd web
+          - cd crest-annotation-docker/web
           - docker build . -t web:$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
     - step: &deploy-ecs-step
         name: Deploy to ECS
-        image: public.ecr.aws/sam/build-nodejs14.x
+        image: public.ecr.aws/sam/build-provided.al2
         script:
           # install docker compose CLI with ECS support
           - curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
