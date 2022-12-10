@@ -102,19 +102,19 @@ definitions:
           - apk add curl python3 py3-pip
 
           # install docker compose CLI with ECS support
-          - curl -L --output docker-linux-amd64.tar.gz  https://github.com/docker/compose-cli/releases/download/v1.0.16/docker-linux-amd64.tar.gz
+          - curl -L --output docker-linux-amd64.tar.gz https://github.com/docker/compose-cli/releases/download/v1.0.16/docker-linux-amd64.tar.gz
           - tar xzf docker-linux-amd64.tar.gz
           # install AWS CLI (because we cannot use the default image with docker compose)
           - pip3 install --no-cache-dir awscli
 
           - aws --version
           # authorize docker against AWS
-          - aws ecr get-login-password --region eu-central-1 |  /docker/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+          - aws ecr get-login-password --region eu-central-1 |  ./docker/docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
           - cd crest-annotation-docker
-          - /docker/docker context create ecs deploy --from-env
-          - /docker/docker context use deploy
-          - /docker/docker compose -f docker-compose.yaml -f docker-compose.aws.yaml up
+          - ../docker/docker context create ecs deploy --from-env
+          - ../docker/docker context use deploy
+          - ../docker/docker-compose -f docker-compose.yaml -f docker-compose.aws.yaml up
 
   services:
     docker:
