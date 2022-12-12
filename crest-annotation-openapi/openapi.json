@@ -320,7 +320,7 @@
     }
    }
   },
-  "/objects/image/{id}": {
+  "/objects/image/{object_id}": {
    "get": {
     "tags": [
      "object"
@@ -331,13 +331,108 @@
      {
       "required": true,
       "schema": {
-       "title": "Id",
+       "title": "Object Id",
        "type": "string"
       },
-      "name": "id",
+      "name": "object_id",
       "in": "path"
      }
     ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/annotations/{object_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Annotations",
+    "operationId": "get_annotations",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Store Annotations",
+    "operationId": "store_annotations",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Annotation Data",
+        "type": "string"
+       }
+      }
+     },
+     "required": true
+    },
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -583,12 +678,17 @@
     "title": "Label",
     "required": [
      "name",
+     "color",
      "id"
     ],
     "type": "object",
     "properties": {
      "name": {
       "title": "Name",
+      "type": "string"
+     },
+     "color": {
+      "title": "Color",
       "type": "string"
      },
      "id": {
@@ -640,12 +740,17 @@
    "ShallowLabel": {
     "title": "ShallowLabel",
     "required": [
-     "name"
+     "name",
+     "color"
     ],
     "type": "object",
     "properties": {
      "name": {
       "title": "Name",
+      "type": "string"
+     },
+     "color": {
+      "title": "Color",
       "type": "string"
      },
      "id": {

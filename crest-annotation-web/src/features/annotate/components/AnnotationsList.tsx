@@ -18,6 +18,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  ListItemIcon,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockedIcon from "@mui/icons-material/Lock";
@@ -25,6 +26,7 @@ import UnlockedIcon from "@mui/icons-material/LockOpen";
 import VisibleIcon from "@mui/icons-material/Visibility";
 import HiddenIcon from "@mui/icons-material/VisibilityOff";
 import Loader from "../../../components/Loader";
+import Dot from "../../../components/Dot";
 
 interface IProps {
   projectId?: string;
@@ -88,7 +90,10 @@ const AnnotationsList = ({ projectId }: IProps) => {
                 selected={annotation.selected}
                 disableRipple
               >
-                <ListItemText primary={annotation.label ?? "Unnamed"} />
+                <ListItemIcon>
+                  <Dot color={annotation.label?.color ?? "white"} />
+                </ListItemIcon>
+                <ListItemText primary={annotation.label?.name ?? "Unnamed"} />
               </ListItemButton>
             </ListItem>
           ))}

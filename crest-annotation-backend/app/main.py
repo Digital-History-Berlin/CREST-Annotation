@@ -8,10 +8,6 @@ from .routers import labels, objects, projects
 from .database import Base, engine
 from .environment import env
 
-# initialize SQLalchemy
-# TODO: use Alembic
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
 origins = env.cors_origins.split(",")

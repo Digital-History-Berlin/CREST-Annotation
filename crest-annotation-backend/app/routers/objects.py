@@ -2,8 +2,8 @@ import os
 
 from glob import iglob
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi.responses import JSONResponse, FileResponse, Response
 from sqlalchemy.orm import Session
 
 from ..dependencies.logger import get_logger
@@ -80,14 +80,37 @@ async def get_objects(project_id: str, db: Session = Depends(get_db)):
     return JSONResponse(list(map(map_object, objects)))
 
 
-@router.get("/image/{image_id}")
-async def get_image(image_id: str, db: Session = Depends(get_db)):
-    data_object: Object = db.query(Object).filter_by(id=image_id).first()
+@router.get("/image/{object_id}")
+async def get_image(object_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
-        raise HTTPException(status_code=404, detail="Image not found")
+        raise HTTPException(status_code=404, detail="Object not found")
 
     # ensure that the image file is still available
     if not os.path.isfile(data_object.uri):
         raise HTTPException(status_code=404, detail="Image missing")
 
     return FileResponse(data_object.uri)
+
+
+@router.get("/annotations/{object_id}")
+async def get_annotations(object_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    return JSONResponse(data_object.annotation_data)
+
+
+@router.post("/annotations/{object_id}")
+async def store_annotations(
+    object_id: str, annotation_data: str = Body(), db: Session = Depends(get_db)
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    data_object.annotation_data = annotation_data
+    db.commit()
+
+    return Response()

@@ -1,12 +1,12 @@
 definitions:
   steps:
     - step: &install-web-step
-        name: install-web
+        name: Install web
         image: node:18-slim
         condition:
           changesets:
             includePaths:
-              - "crest-annotation-web/package*.json"
+              - "crest-annotation-web/**"
               - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
@@ -17,7 +17,7 @@ definitions:
           - node
 
     - step: &style-web-step
-        name: style-web
+        name: Style check web
         image: node:18-slim
         condition:
           changesets:
@@ -29,7 +29,7 @@ definitions:
           - npm run style
 
     - step: &lint-web-step
-        name: lint-web
+        name: Lint web
         image: node:18-slim
         condition:
           changesets:
@@ -41,7 +41,7 @@ definitions:
           - npm run lint
 
     - step: &build-web-step
-        name: build-web
+        name: Build web
         image: node:18-slim
         condition:
           changesets:
@@ -55,7 +55,7 @@ definitions:
           - crest-annotation-web/build/**
 
     - step: &lint-backend-step
-        name: lint-backend
+        name: Lint backend
         image: python:3.11-slim
         condition:
           changesets:
@@ -105,6 +105,19 @@ definitions:
           - docker tag web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
           - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
 
+    - step: &upgrade-db-step
+        name: Upgrade database
+        image: python:3.11-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-backend/alembic/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-backend
+          - pip install -r requirements.txt
+          - alembic upgrade head
+
     - step: &deploy-ecs-step
         name: Deploy to ECS
         image: public.ecr.aws/aws-cli/aws-cli
@@ -141,6 +154,7 @@ pipelines:
       - step: *lint-backend-step
       - step: *build-backend-docker-step
       - step: *build-web-docker-step
+      - step: *upgrade-db-step
       - step: *deploy-ecs-step
 
     # this is useful for CI development
@@ -152,4 +166,5 @@ pipelines:
       - step: *lint-backend-step
       - step: *build-backend-docker-step
       - step: *build-web-docker-step
+      - step: *upgrade-db-step
       - step: *deploy-ecs-step

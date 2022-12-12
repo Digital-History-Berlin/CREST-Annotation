@@ -8,6 +8,7 @@ import {
   styled,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Dot from "../../../components/Dot";
 
 interface IProps {
   label: Label;
@@ -23,7 +24,7 @@ const Row = styled(Box)(({ theme }) => ({
     borderBottom: `1px solid ${theme.palette.divider}`,
 
     display: "grid",
-    gridTemplateColumns: "1fr auto auto",
+    gridTemplateColumns: "auto 1fr auto auto",
     alignItems: "center",
 
     height: "3rem",
@@ -72,6 +73,7 @@ const LabelRow = ({
 
   return (
     <Row>
+      <Dot color={label.color} />
       <InputBase
         fullWidth
         placeholder="Enter label name"

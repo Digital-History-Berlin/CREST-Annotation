@@ -10,4 +10,4 @@ class Object(Base):
     project_id = Column(String, ForeignKey("projects.id"))
     uri = Column(String)
     annotated = Column(Boolean, default=False)
-    annotation_data = Column(String, default="{}")
+    annotation_data = Column(String, default="[]")
