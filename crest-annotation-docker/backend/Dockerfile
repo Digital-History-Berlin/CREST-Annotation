@@ -1,9 +1,9 @@
-FROM python:3.9
+FROM python:3.10-slim
 
 WORKDIR /code
 
 COPY ./crest-annotation-backend/requirements.txt /code/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install -r /code/requirements.txt
 
 COPY ./crest-annotation-backend/app /code/app
 COPY ./crest-annotation-docker/examples /code/examples
