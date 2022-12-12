@@ -1,9 +1,18 @@
+import os
+
 from logging.config import fileConfig
+
+from dotenv import dotenv_values
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+env = {
+    **dotenv_values(".env.local"),
+    **os.environ,
+}
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -11,9 +20,8 @@ config = context.config
 section = config.config_ini_section
 
 # TODO: inject environment data into the settings
-config.set_section_option(section, "DB_USER", "crest")
-config.set_section_option(section, "DB_PASS", "crest")
-config.set_section_option(section, "DB_HOST", "localhost")
+config.set_section_option(section, "DATABASE_URL", env["DATABASE_URL"])
+config.set_section_option(section, "DATABASE_PASSWORD", env["DATABASE_PASSWORD"])
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -72,6 +80,7 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args={"password": env["DATABASE_PASSWORD"]},
     )
 
     with connectable.connect() as connection:
