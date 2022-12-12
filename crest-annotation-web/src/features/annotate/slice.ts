@@ -1,5 +1,5 @@
 import { AnyAction, createSlice, Middleware } from "@reduxjs/toolkit";
-import { RootState, store } from "../../app/store";
+import { RootState } from "../../app/store";
 import { Circle } from "./tools/circle";
 import { Line } from "./tools/line";
 import { Rectangle } from "./tools/rectangle";

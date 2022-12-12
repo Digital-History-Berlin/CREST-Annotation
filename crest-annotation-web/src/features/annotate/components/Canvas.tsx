@@ -18,7 +18,7 @@ import { Rectangle as RectangleShape } from "../tools/rectangle";
 import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
-import { alpha, useTheme } from "@mui/material";
+import { alpha } from "@mui/material";
 
 interface PopupPosition {
   left?: number | string;
@@ -37,7 +37,6 @@ const defaultProps = { annotationColor: "#D00000" };
 
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
-  const theme = useTheme();
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);

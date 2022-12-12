@@ -43,7 +43,7 @@ const SettingsTab = ({ project }: IProps) => {
 
     if (project.id) {
       try {
-        const result = await collectRequest({ projectId: project.id }).unwrap();
+        await collectRequest({ projectId: project.id }).unwrap();
         // TODO: show progress and handle result
       } catch (e) {
         // TODO: improve error messages
