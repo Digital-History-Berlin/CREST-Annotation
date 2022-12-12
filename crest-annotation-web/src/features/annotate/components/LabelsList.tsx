@@ -5,6 +5,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  useTheme,
 } from "@mui/material";
 import { Label } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
@@ -12,12 +13,16 @@ import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 
 interface IProps {
   projectId?: string;
-  selectLabel?: (label: Label) => void;
+  selected?: Label;
+  onSelect?: (label: Label) => void;
+  onCancel?: () => void;
 }
 
 const defaultProps = {};
 
-const LabelsList = ({ projectId, selectLabel }: IProps) => {
+const LabelsList = ({ projectId, selected, onSelect, onCancel }: IProps) => {
+  const theme = useTheme();
+
   return (
     <Loader
       emptyPlaceholder={
@@ -40,12 +45,28 @@ const LabelsList = ({ projectId, selectLabel }: IProps) => {
           {labels.map((label) => (
             <ListItem divider disablePadding key={label.id}>
               <ListItemButton
-                onClick={selectLabel && (() => selectLabel(label))}
+                selected={selected?.id === label.id}
+                onClick={onSelect && (() => onSelect(label))}
               >
-                <ListItemText primary={label.name ?? "Unnamed"} />
+                <ListItemText
+                  primary={label.name ?? "Unnamed"}
+                  primaryTypographyProps={{
+                    fontWeight:
+                      // make sure user knows about active label
+                      selected?.id === label.id ? "bold" : "normal",
+                  }}
+                />
               </ListItemButton>
             </ListItem>
           ))}
+          {onCancel && (
+            <ListItemButton onClick={onCancel}>
+              <ListItemText
+                primary="Abbrechen"
+                primaryTypographyProps={{ color: theme.palette.warning.main }}
+              />
+            </ListItemButton>
+          )}
         </List>
       )}
     />

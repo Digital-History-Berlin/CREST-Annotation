@@ -88,7 +88,7 @@ const AnnotationsList = ({ projectId }: IProps) => {
                 selected={annotation.selected}
                 disableRipple
               >
-                <ListItemText primary={annotation.label ?? "Unnamed"} />
+                <ListItemText primary={annotation.label?.name ?? "Unnamed"} />
               </ListItemButton>
             </ListItem>
           ))}

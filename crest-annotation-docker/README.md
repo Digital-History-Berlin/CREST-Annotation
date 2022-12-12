@@ -52,7 +52,15 @@ _The images must be build and pushed from the `default` context._
 
 ### Deployment
 
-Deployment to AWS is done using ECS (following https://docs.docker.com/cloud/ecs-integration/).
+## CI
+
+Changes to the `develop` branch will automatically be deployed.
+
+_NOTE_: Currently the CI deployment will update the backend and web images on ECR and force a reload on ECS. However, changes to the docker composition itself will not be reflected and need to be deployed manually.
+
+## Manual deployment
+
+Deployment to AWS ECS can be done manually following https://docs.docker.com/cloud/ecs-integration/.
 
 - Switch to the `crest-ecs` context with `docker context use crest-ecs`.
 - Deploy the changes using the AWS specific overrides with `docker compose -f docker-compose.yaml -f docker-compose.aws.yaml up`. Since this is a rolling release, it will take some time for the changes to take effect, during which the previous versions of the services are still served. You can check the deployment status for each _service_ in ECS under the _Deployment_ tab.

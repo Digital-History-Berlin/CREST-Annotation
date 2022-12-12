@@ -3,9 +3,11 @@ import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 import { Stage, Layer, Line, Rect, Circle } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
+import LabelsList from "./LabelsList";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
+  selectActiveLabel,
   selectActiveTool,
   selectAnnotations,
   Shape,
@@ -15,27 +17,61 @@ import { Line as LineShape } from "../tools/line";
 import { Rectangle as RectangleShape } from "../tools/rectangle";
 import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
+import { Label } from "../../../api/openApi";
+import { useTheme } from "@mui/material";
+
+interface PopupPosition {
+  left?: number | string;
+  right?: number | string;
+  top?: number | string;
+  bottom?: number | string;
+}
 
 interface IProps {
+  projectId?: string;
   imageUri?: string;
 }
 
 const defaultProps = {};
 
-const Canvas = ({ imageUri }: IProps) => {
+const Canvas = ({ projectId, imageUri }: IProps) => {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   const tool = useAppSelector(selectActiveTool);
+  const activeLabel = useAppSelector(selectActiveLabel);
   const annotations = useAppSelector(selectAnnotations);
 
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = React.useState<Shape>();
+  const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
+
+  const createAnnotation = (label: Label) => {
+    dispatch(
+      addAnnotation({
+        shape: activeShape,
+        label: label,
+        id: uuidv4(),
+      })
+    );
+
+    setActiveShape(undefined);
+    setLabelPopup(undefined);
+  };
+
+  const cancelAnnotation = () => {
+    setActiveShape(undefined);
+    setLabelPopup(undefined);
+  };
 
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
     const pos = event.target.getStage()?.getPointerPosition();
     if (pos === undefined || pos === null) return;
+
+    // TODO: what should happen if the popup is open
+    if (labelPopup) return;
 
     switch (tool) {
       case Tool.Pen: {
@@ -102,7 +138,7 @@ const Canvas = ({ imageUri }: IProps) => {
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
     // no drawing - skipping
-    if (!activeShape) return;
+    if (!activeShape || activeShape.locked) return;
 
     const pos = event.target.getStage()?.getPointerPosition();
     if (pos === undefined || pos === null) return;
@@ -140,29 +176,37 @@ const Canvas = ({ imageUri }: IProps) => {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (
+    event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
+  ) => {
     // no drawing - skipping
-    if (!activeShape) return;
+    if (!activeShape || activeShape.locked) return;
 
     if (activeShape.tool === Tool.Polygon) {
       let polygon = activeShape as PolygonShape;
-      if (polygon.finished) {
-        dispatch(
-          addAnnotation({
-            shape: activeShape,
-            id: uuidv4(),
-          })
-        );
-        setActiveShape(undefined);
-      }
+      // polygon still open
+      if (!polygon.finished) return;
+    }
+
+    if (activeLabel) {
+      // label is pre-selected, create annotation right away
+      createAnnotation(activeLabel);
     } else {
-      dispatch(
-        addAnnotation({
-          shape: activeShape,
-          id: uuidv4(),
-        })
-      );
-      setActiveShape(undefined);
+      // no label selected, show popup
+      const stage = event.target.getStage();
+      const pos = stage?.getPointerPosition();
+      if (stage === null || pos === null || pos === undefined) return;
+
+      // calculate a nice position
+      const popupPos = {
+        left: pos.x + 10,
+        top: pos.y <= stage.height() / 2 ? pos.y : undefined,
+        bottom: pos.y > stage.height() / 2 ? stage.height() - pos.y : undefined,
+      };
+
+      // ensure shape does not change anymore
+      setActiveShape({ ...activeShape, locked: true });
+      setLabelPopup(popupPos);
     }
   };
 
@@ -226,7 +270,22 @@ const Canvas = ({ imageUri }: IProps) => {
   };
 
   return (
-    <div>
+    <div style={{ position: "relative" }}>
+      <div
+        style={{
+          ...labelPopup,
+          display: labelPopup ? "block" : "none",
+          position: "absolute",
+          backgroundColor: "white",
+          zIndex: 1500,
+        }}
+      >
+        <LabelsList
+          projectId={projectId}
+          onSelect={createAnnotation}
+          onCancel={cancelAnnotation}
+        />
+      </div>
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}

@@ -48,7 +48,25 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({ url: `/objects/of/${queryArg.projectId}` }),
     }),
     getImage: build.query<GetImageApiResponse, GetImageApiArg>({
-      query: (queryArg) => ({ url: `/objects/image/${queryArg.id}` }),
+      query: (queryArg) => ({ url: `/objects/image/${queryArg.objectId}` }),
+    }),
+    getAnnotations: build.query<
+      GetAnnotationsApiResponse,
+      GetAnnotationsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/annotations/${queryArg.objectId}`,
+      }),
+    }),
+    storeAnnotations: build.mutation<
+      StoreAnnotationsApiResponse,
+      StoreAnnotationsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/annotations/${queryArg.objectId}`,
+        method: "POST",
+        body: queryArg.body,
+      }),
     }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
       query: () => ({ url: `/projects/` }),
@@ -125,7 +143,18 @@ export type GetObjectsApiArg = {
 };
 export type GetImageApiResponse = /** status 200 Successful Response */ any;
 export type GetImageApiArg = {
-  id: string;
+  objectId: string;
+};
+export type GetAnnotationsApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetAnnotationsApiArg = {
+  objectId: string;
+};
+export type StoreAnnotationsApiResponse =
+  /** status 200 Successful Response */ any;
+export type StoreAnnotationsApiArg = {
+  objectId: string;
+  body: string;
 };
 export type GetProjectsApiResponse =
   /** status 200 Successful Response */ Project[];
@@ -190,6 +219,8 @@ export const {
   useGetRandomObjectQuery,
   useGetObjectsQuery,
   useGetImageQuery,
+  useGetAnnotationsQuery,
+  useStoreAnnotationsMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

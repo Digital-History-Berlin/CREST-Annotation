@@ -53,6 +53,8 @@ export const {
   useGetRandomObjectQuery,
   useGetObjectsQuery,
   useGetImageQuery,
+  useGetAnnotationsQuery,
+  useStoreAnnotationsMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

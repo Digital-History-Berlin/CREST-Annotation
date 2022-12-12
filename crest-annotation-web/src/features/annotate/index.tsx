@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector, useEnv } from "../../app/hooks";
-import { selectActiveTool, setActiveTool, Tool } from "./slice";
+import {
+  selectActiveLabel,
+  selectActiveTool,
+  setActiveLabel,
+  setActiveTool,
+  setObjectId,
+  Tool,
+} from "./slice";
 import { Link, Stack, useTheme } from "@mui/material";
 // TODO: better icons
 import PenIcon from "@mui/icons-material/Gesture";
@@ -19,6 +26,7 @@ import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
 import { enhancedApi } from "../../api/enhancedApi";
 import Loader from "../../components/Loader";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
+import { Label } from "../../api/openApi";
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
@@ -29,6 +37,7 @@ const AnnotatePage = () => {
   const { projectId, objectId } = useParams();
 
   const activeTool = useAppSelector(selectActiveTool);
+  const activeLabel = useAppSelector(selectActiveLabel);
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
@@ -41,9 +50,16 @@ const AnnotatePage = () => {
     navigate(`/annotate/${id}/${random.id}`);
   };
 
+  const toggleLabelSelection = (label: Label) =>
+    activeLabel?.id === label.id
+      ? dispatch(setActiveLabel(null))
+      : dispatch(setActiveLabel(label));
+
   useEffect(() => {
     // start with random object
     if (projectId && !objectId) navigateRandom(projectId);
+    // update object id in state
+    if (objectId) dispatch(setObjectId(objectId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, objectId]);
 
@@ -88,7 +104,11 @@ const AnnotatePage = () => {
             <AnnotationsList projectId={projectId} />
           </SidebarContainer>
           <SidebarContainer title="Labels">
-            <LabelsList projectId={projectId} />
+            <LabelsList
+              projectId={projectId}
+              selected={activeLabel}
+              onSelect={toggleLabelSelection}
+            />
           </SidebarContainer>
         </Stack>
       }
@@ -123,6 +143,7 @@ const AnnotatePage = () => {
         }
         render={({ data: objectId }) => (
           <Canvas
+            projectId={projectId}
             imageUri={`${env.REACT_APP_BACKEND}/objects/image/${objectId}`}
           />
         )}
