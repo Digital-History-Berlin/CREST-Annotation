@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useGetProjectQuery } from "../../api/enhancedApi";
-import {
-  Box,
-  Container,
-  Paper,
-  Tabs,
-  Tab,
-  Typography,
-} from "@mui/material";
+import { Box, Container, Paper, Tabs, Tab, Typography } from "@mui/material";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
 import Loader from "../../components/Loader";

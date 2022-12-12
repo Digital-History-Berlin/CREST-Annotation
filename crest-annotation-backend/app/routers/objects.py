@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
 
-from ..dependencies.settings import Settings
 from ..dependencies.logger import get_logger
 from ..dependencies.db import get_db
 from ..models.projects import Project
@@ -20,11 +19,11 @@ router = APIRouter(
 )
 
 
-def map_object(object: Object) -> schemas.Object:
+def map_object(data_object: Object) -> schemas.Object:
     return {
-        "id": object.id,
-        "annotated": object.annotated,
-        "annotation_data": object.annotation_data,
+        "id": data_object.id,
+        "annotated": data_object.annotated,
+        "annotation_data": data_object.annotation_data,
     }
 
 
@@ -65,13 +64,13 @@ async def collect_objects(
 
 @router.get("/random-of/{project_id}", response_model=schemas.Object)
 async def get_random_object(project_id: str, db: Session = Depends(get_db)):
-    object: Object = (
+    data_object: Object = (
         db.query(Object).filter_by(project_id=project_id, annotated=False).first()
     )
-    if not object:
+    if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return JSONResponse(map_object(object))
+    return JSONResponse(map_object(data_object))
 
 
 @router.get("/of/{project_id}", response_model=List[schemas.Object])
@@ -81,14 +80,14 @@ async def get_objects(project_id: str, db: Session = Depends(get_db)):
     return JSONResponse(list(map(map_object, objects)))
 
 
-@router.get("/image/{id}")
-async def get_image(id: str, db: Session = Depends(get_db)):
-    object: Object = db.query(Object).filter_by(id=id).first()
-    if not object:
+@router.get("/image/{image_id}")
+async def get_image(image_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=image_id).first()
+    if not data_object:
         raise HTTPException(status_code=404, detail="Image not found")
 
     # ensure that the image file is still available
-    if not os.path.isfile(object.uri):
+    if not os.path.isfile(data_object.uri):
         raise HTTPException(status_code=404, detail="Image missing")
 
-    return FileResponse(object.uri)
+    return FileResponse(data_object.uri)

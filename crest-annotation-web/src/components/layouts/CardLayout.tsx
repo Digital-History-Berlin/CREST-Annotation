@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { Box, Container, Grid, useTheme } from "@mui/material";
+import { Box, Container, Grid } from "@mui/material";
 import Layout, { LayoutProps } from "./Layout";
 import Loader from "../Loader";
 

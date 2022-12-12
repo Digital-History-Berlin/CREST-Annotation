@@ -1,0 +1,155 @@
+definitions:
+  steps:
+    - step: &install-web-step
+        name: install-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-web/package*.json"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-web
+          - npm ci
+        artifacts:
+          - crest-annotation-web/node_modules/**
+        caches:
+          - node
+
+    - step: &style-web-step
+        name: style-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-web/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-web
+          - npm run style
+
+    - step: &lint-web-step
+        name: lint-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-web/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-web
+          - npm run lint
+
+    - step: &build-web-step
+        name: build-web
+        image: node:18-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-web/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-web
+          - npm run build
+        artifacts:
+          - crest-annotation-web/build/**
+
+    - step: &lint-backend-step
+        name: lint-backend
+        image: python:3.11-slim
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-backend/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          - cd crest-annotation-backend
+          - pip install -r requirements.txt
+          - pylint --fail-under=9 app
+
+    - step: &build-backend-docker-step
+        name: Build and publish backend docker image
+        image: public.ecr.aws/aws-cli/aws-cli
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-backend/**"
+              - "crest-annotation-docker/**"
+              - "bitbucket-pipelines.yml"
+        services:
+          - docker
+        script:
+          # authorize docker against AWS
+          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+
+          - docker build -f crest-annotation-docker/backend/Dockerfile -t backend .
+          - docker tag backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+
+    - step: &build-web-docker-step
+        name: Build and publish web docker image
+        image: public.ecr.aws/aws-cli/aws-cli
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-web/**"
+              - "crest-annotation-docker/**"
+              - "bitbucket-pipelines.yml"
+        services:
+          - docker
+        script:
+          # authorize docker against AWS
+          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
+
+          - docker build -f crest-annotation-docker/web/Dockerfile -t web .
+          - docker tag web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+
+    - step: &deploy-ecs-step
+        name: Deploy to ECS
+        image: public.ecr.aws/aws-cli/aws-cli
+        condition:
+          changesets:
+            includePaths:
+              - "crest-annotation-docker/**"
+              - "crest-annotation-backend/**"
+              - "crest-annotation-web/**"
+              - "bitbucket-pipelines.yml"
+        script:
+          # TODO: actual deployment using docker compose or aws ecs cli
+          # this only reloads the ECR images into the ECS services
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-BackendService-inTR25q2bkqK --cluster crest-annotation-docker
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-WebService-n9j7O4rO68Ck --cluster crest-annotation-docker
+
+  services:
+    docker:
+      memory: 3072
+
+pipelines:
+  default:
+    - step: *install-web-step
+    - step: *style-web-step
+    - step: *lint-web-step
+    - step: *build-web-step
+    - step: *lint-backend-step
+  branches:
+    develop:
+      - step: *install-web-step
+      - step: *style-web-step
+      - step: *lint-web-step
+      - step: *build-web-step
+      - step: *lint-backend-step
+      - step: *build-backend-docker-step
+      - step: *build-web-docker-step
+      - step: *deploy-ecs-step
+
+    # this is useful for CI development
+    feature/ci:
+      - step: *install-web-step
+      - step: *style-web-step
+      - step: *lint-web-step
+      - step: *build-web-step
+      - step: *lint-backend-step
+      - step: *build-backend-docker-step
+      - step: *build-web-docker-step
+      - step: *deploy-ecs-step

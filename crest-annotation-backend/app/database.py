@@ -1,7 +1,8 @@
+from uuid import uuid4
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from uuid import uuid4
 
 from .environment import env
 
