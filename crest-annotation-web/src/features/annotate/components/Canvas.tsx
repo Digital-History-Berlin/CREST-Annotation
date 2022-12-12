@@ -212,12 +212,12 @@ const Canvas = ({ imageUri }: IProps) => {
           <Line
             key={key}
             points={polygon.points}
-            //closed = {true}
+            closed={polygon.finished}
             stroke="#df4b26"
             strokeWidth={5}
             tension={0}
             lineCap="round"
-            bezier={false}
+            fill="rgba(255,0,0,0.4)"
           />
         );
       default:
