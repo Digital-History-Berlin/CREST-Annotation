@@ -56,7 +56,7 @@ definitions:
 
     - step: &lint-backend-step
         name: Lint backend
-        image: python:3.11-slim
+        image: python:3.10-slim
         condition:
           changesets:
             includePaths:
@@ -107,7 +107,7 @@ definitions:
 
     - step: &upgrade-db-step
         name: Upgrade database
-        image: python:3.11-slim
+        image: python:3.10-slim
         condition:
           changesets:
             includePaths:
