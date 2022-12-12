@@ -6,7 +6,7 @@ definitions:
         condition:
           changesets:
             includePaths:
-              - "crest-annotation-web/package*.json"
+              - "crest-annotation-web/**"
               - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
