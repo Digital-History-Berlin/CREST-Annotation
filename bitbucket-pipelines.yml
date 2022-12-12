@@ -7,7 +7,7 @@ definitions:
           changesets:
             includePaths:
               - "crest-annotation-web/package*.json"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
           - npm ci
@@ -23,7 +23,7 @@ definitions:
           changesets:
             includePaths:
               - "crest-annotation-web/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
           - npm run style
@@ -35,7 +35,7 @@ definitions:
           changesets:
             includePaths:
               - "crest-annotation-web/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
           - npm run lint
@@ -47,7 +47,7 @@ definitions:
           changesets:
             includePaths:
               - "crest-annotation-web/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-web
           - npm run build
@@ -61,7 +61,7 @@ definitions:
           changesets:
             includePaths:
               - "crest-annotation-backend/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           - cd crest-annotation-backend
           - pip install -r requirements.txt
@@ -75,7 +75,7 @@ definitions:
             includePaths:
               - "crest-annotation-backend/**"
               - "crest-annotation-docker/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         services:
           - docker
         script:
@@ -94,7 +94,7 @@ definitions:
             includePaths:
               - "crest-annotation-web/**"
               - "crest-annotation-docker/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         services:
           - docker
         script:
@@ -114,7 +114,7 @@ definitions:
               - "crest-annotation-docker/**"
               - "crest-annotation-backend/**"
               - "crest-annotation-web/**"
-              - "./bitbucket-pipelines.yml"
+              - "bitbucket-pipelines.yml"
         script:
           # TODO: actual deployment using docker compose or aws ecs cli
           # this only reloads the ECR images into the ECS services
