@@ -18,6 +18,7 @@ def map_label(label: Label) -> schemas.Label:
     return {
         "id": label.id,
         "name": label.name,
+        "color": label.color,
     }
 
 

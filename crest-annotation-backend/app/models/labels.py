@@ -9,3 +9,4 @@ class Label(Base):
     id = Column(String, primary_key=True, index=True, default=make_uuid)
     project_id = Column(String, ForeignKey("projects.id"))
     name = Column(String)
+    color = Column(String)

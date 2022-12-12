@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class BaseLabel(BaseModel):
     name: str
+    color: str
 
 
 class ShallowLabel(BaseLabel):

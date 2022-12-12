@@ -67,8 +67,9 @@ export const slice = createSlice({
   initialState,
   reducers: {
     setObjectId: (state, action) => {
-      console.log(action.payload);
       state.objectId = action.payload;
+      // clear local annotations
+      state.annotations = [];
     },
     setActiveTool: (state, action) => {
       state.activeTool = action.payload;

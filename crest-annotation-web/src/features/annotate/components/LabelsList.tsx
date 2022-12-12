@@ -4,12 +4,14 @@ import {
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   useTheme,
 } from "@mui/material";
 import { Label } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
+import Dot from "../../../components/Dot";
 
 interface IProps {
   projectId?: string;
@@ -48,6 +50,9 @@ const LabelsList = ({ projectId, selected, onSelect, onCancel }: IProps) => {
                 selected={selected?.id === label.id}
                 onClick={onSelect && (() => onSelect(label))}
               >
+                <ListItemIcon>
+                  <Dot color={label.color} />
+                </ListItemIcon>
                 <ListItemText
                   primary={label.name ?? "Unnamed"}
                   primaryTypographyProps={{

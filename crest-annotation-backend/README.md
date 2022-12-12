@@ -9,8 +9,11 @@ Following steps are currently required to setup the project:
 1. Setup python virtual environment
 1. **From your virtual environment** install requirements using `pip3 install -r requirements.txt`
 1. Bring up the database (from `../crest-annotation-docker` run `docker compose up -d db`)
+1. _From your virtual environment_ migrate the database to the most recent version `alembic upgrade head`
 
-Subsequently `uvicorn app.main:app` will bring up the backend at port 8000. Note that on the first run, SQLalchemy will implicitly create all tables.
+Subsequently `uvicorn app.main:app` will bring up the backend at port 8000.
+
+Whenever the database revision changes it needs to be migrated again.
 
 ## OpenAPI
 

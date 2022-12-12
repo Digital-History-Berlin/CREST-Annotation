@@ -15,6 +15,19 @@ interface IProps {
   project: Project;
 }
 
+// TODO: make editable
+const Colors = [
+  "#ff8700",
+  "#0aff99",
+  "#580aff",
+  "#ffd300",
+  "#147df5",
+  "#a1ff0a",
+  "#0aefff",
+  "#deff0a",
+  "#be0aff",
+];
+
 /// Add rendering properties
 // TODO: move type to LabelRow and export it
 type ExtendedLabel = Label & { loading?: boolean };
@@ -23,6 +36,7 @@ const LabelsTab = ({ project }: IProps) => {
   const emptyLabel = {
     id: "__new__",
     name: "",
+    color: "",
   };
 
   const labelsQuery = useGetProjectLabelsQuery({ projectId: project.id });
@@ -40,6 +54,20 @@ const LabelsTab = ({ project }: IProps) => {
     if (labelsQuery.data) setLabels(labelsQuery.data);
   }, [labelsQuery.data]);
 
+  const getLabelColor = () => {
+    const occurences = Colors.map((color) => ({
+      color: color,
+      count: labels.filter((label) => label.color === color).length,
+    }));
+
+    // get least used color
+    const min = occurences.reduce((min, cur) =>
+      cur.count < min.count ? cur : min
+    );
+
+    return min.color;
+  };
+
   const updateLabel = (label: Label) => {
     updateRequest({ shallowLabel: label });
   };
@@ -47,7 +75,12 @@ const LabelsTab = ({ project }: IProps) => {
   const insertLabel = (label: Label) => {
     createRequest({
       // set the project and remove the default id
-      shallowLabel: { ...label, id: undefined, project_id: project.id },
+      shallowLabel: {
+        ...label,
+        id: undefined,
+        project_id: project.id,
+        color: getLabelColor(),
+      },
     });
     setLabels([...labels, { ...label, loading: true }]);
     // reset the add label row by changing it's key

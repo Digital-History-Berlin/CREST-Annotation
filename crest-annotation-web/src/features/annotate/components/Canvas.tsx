@@ -18,7 +18,7 @@ import { Rectangle as RectangleShape } from "../tools/rectangle";
 import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
-import { useTheme } from "@mui/material";
+import { alpha, useTheme } from "@mui/material";
 
 interface PopupPosition {
   left?: number | string;
@@ -30,11 +30,12 @@ interface PopupPosition {
 interface IProps {
   projectId?: string;
   imageUri?: string;
+  annotationColor: string;
 }
 
-const defaultProps = {};
+const defaultProps = { annotationColor: "#D00000" };
 
-const Canvas = ({ projectId, imageUri }: IProps) => {
+const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
   const theme = useTheme();
 
@@ -78,6 +79,7 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
         setActiveShape({
           points: [pos.x, pos.y],
           tool: Tool.Pen,
+          finished: false,
         });
         break;
       }
@@ -188,6 +190,10 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
       if (!polygon.finished) return;
     }
 
+    if (activeShape.tool === Tool.Pen) {
+      (activeShape as LineShape).finished = true;
+    }
+
     if (activeLabel) {
       // label is pre-selected, create annotation right away
       createAnnotation(activeLabel);
@@ -210,7 +216,7 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
     }
   };
 
-  const renderShape = (shape: Shape, key?: string) => {
+  const renderShape = (shape: Shape, color: string, key?: string) => {
     switch (shape.tool) {
       case Tool.Pen:
         const line = shape as LineShape;
@@ -218,8 +224,9 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
           <Line
             key={key}
             points={line.points}
-            stroke="#df4b26"
-            strokeWidth={5}
+            closed={line.finished}
+            stroke={alpha(color, 0.8)}
+            fill={alpha(color, 0.3)}
             tension={0.5}
             lineCap="round"
             globalCompositeOperation="source-over"
@@ -234,8 +241,8 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
             y={rectangle.y}
             width={rectangle.width}
             height={rectangle.height}
-            fill={"transparent"}
-            stroke={"red"}
+            fill={alpha(color, 0.3)}
+            stroke={alpha(color, 0.8)}
           />
         );
       case Tool.Circle:
@@ -246,8 +253,8 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
             x={circle.x}
             y={circle.y}
             radius={circle.radius}
-            fill={"transparent"}
-            stroke={"red"}
+            fill={alpha(color, 0.3)}
+            stroke={alpha(color, 0.8)}
           />
         );
       case Tool.Polygon:
@@ -257,11 +264,10 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
             key={key}
             points={polygon.points}
             closed={polygon.finished}
-            stroke="#df4b26"
-            strokeWidth={5}
+            stroke={alpha(color, 0.8)}
             tension={0}
             lineCap="round"
-            fill="rgba(255,0,0,0.4)"
+            fill={alpha(color, 0.3)}
           />
         );
       default:
@@ -298,10 +304,16 @@ const Canvas = ({ projectId, imageUri }: IProps) => {
       >
         <Layer>
           {imageUri && <BackgroundImage imageUri={imageUri} />}
-          {activeShape && renderShape(activeShape)}
+          {activeShape &&
+            renderShape(activeShape, activeLabel?.color ?? annotationColor)}
           {annotations.map(
             (annotation) =>
-              annotation.shape && renderShape(annotation.shape, annotation.id)
+              annotation.shape &&
+              renderShape(
+                annotation.shape,
+                annotation.label?.color ?? annotationColor,
+                annotation.id
+              )
           )}
         </Layer>
       </Stage>

@@ -181,6 +181,7 @@ export type DeleteProjectApiArg = {
 };
 export type Label = {
   name: string;
+  color: string;
   id: string;
 };
 export type ValidationError = {
@@ -193,6 +194,7 @@ export type HttpValidationError = {
 };
 export type ShallowLabel = {
   name: string;
+  color: string;
   id?: string;
   project_id?: string;
 };
