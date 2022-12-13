@@ -308,6 +308,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           {annotations.map(
             (annotation) =>
               annotation.shape &&
+              !annotation.hidden &&
               renderShape(
                 annotation.shape,
                 annotation.label?.color ?? annotationColor,
