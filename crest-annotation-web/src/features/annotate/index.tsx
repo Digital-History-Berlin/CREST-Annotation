@@ -11,9 +11,10 @@ import {
 } from "./slice";
 import { Link, Stack, useTheme } from "@mui/material";
 // TODO: better icons
-import PenIcon from "@mui/icons-material/Gesture";
-import RectangleIcon from "@mui/icons-material/Crop";
-import CircleIcon from "@mui/icons-material/RadioButtonUnchecked";
+import PenIcon from "@mui/icons-material/Edit";
+import PolygonIcon from "@mui/icons-material/PolylineOutlined";
+import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
+import CircleIcon from "@mui/icons-material/CircleTwoTone";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
 import { ToolbarToggleButton } from "../../components/ToolbarButton";
@@ -74,7 +75,7 @@ const AnnotatePage = () => {
         { tool: Tool.Pen, icon: PenIcon },
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
-        { tool: Tool.Polygon, icon: PenIcon },
+        { tool: Tool.Polygon, icon: PolygonIcon },
       ].map((button) => {
         return (
           <ToolbarToggleButton

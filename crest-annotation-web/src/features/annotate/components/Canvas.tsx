@@ -106,15 +106,26 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         if (activeShape === undefined) {
           setActiveShape({
             points: [pos.x, pos.y],
+            preview: [pos.x, pos.y],
             finished: false,
             tool: Tool.Polygon,
           });
         } else {
           let polygon = activeShape as PolygonShape;
-          // finish drawing polygon, if area around starting point is clicked
+          let count = polygon.points.length;
+
+          let first = { x: polygon.points[0], y: polygon.points[1] };
+          let last = {
+            x: polygon.points[count - 2],
+            y: polygon.points[count - 1],
+          };
+
+          // finish drawing polygon
+          // - if area around starting point is clicked
+          // - if area around current point is clicked (double click)
           if (
-            Math.abs(pos.x - polygon.points[0]) <= 5 &&
-            Math.abs(pos.y - polygon.points[1]) <= 5
+            (Math.abs(pos.x - last.x) <= 5 && Math.abs(pos.y - last.y) <= 5) ||
+            (Math.abs(pos.x - first.x) <= 5 && Math.abs(pos.y - first.y) <= 5)
           ) {
             // add last point, which is the same as the first point
             setActiveShape({
@@ -173,6 +184,16 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
             Math.pow(pos.x - circle.x, 2) + Math.pow(pos.y - circle.y, 2)
           ),
         });
+        break;
+      }
+      case Tool.Polygon: {
+        let polygon = activeShape as PolygonShape;
+
+        setActiveShape({
+          ...activeShape,
+          preview: [pos.x, pos.y],
+        });
+        break;
       }
     }
   };
@@ -187,6 +208,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       let polygon = activeShape as PolygonShape;
       // polygon still open
       if (!polygon.finished) return;
+      // clear polygon preview line
+      polygon.preview = [];
     }
 
     if (activeShape.tool === Tool.Pen) {
@@ -261,7 +284,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         return (
           <Line
             key={key}
-            points={polygon.points}
+            points={polygon.points.concat(polygon.preview)}
             closed={polygon.finished}
             stroke={alpha(color, 0.8)}
             tension={0}
@@ -295,8 +318,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         width={window.innerWidth}
         height={window.innerHeight}
         onMouseDown={handleMouseDown}
-        onMousemove={handleMouseMove}
-        onMouseup={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onTouchStart={handleMouseDown}
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
