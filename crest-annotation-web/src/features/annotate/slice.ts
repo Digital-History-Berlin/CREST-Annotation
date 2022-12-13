@@ -8,6 +8,7 @@ import { Label } from "../../api/openApi";
 import { enhancedApi } from "../../api/enhancedApi";
 
 export enum Tool {
+  Select,
   Pen,
   Circle,
   Rectangle,

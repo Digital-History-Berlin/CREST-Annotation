@@ -7,11 +7,14 @@ import LabelsList from "./LabelsList";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
+  Annotation,
   selectActiveLabel,
   selectActiveTool,
+  selectAnnotation,
   selectAnnotations,
   Shape,
   Tool,
+  unselectAnnotation,
 } from "../slice";
 import { Line as LineShape } from "../tools/line";
 import { Rectangle as RectangleShape } from "../tools/rectangle";
@@ -46,6 +49,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const [activeShape, setActiveShape] = React.useState<Shape>();
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
 
+  const toggleAnnotationSelection = (annotation: Annotation) => {
+    if (tool === Tool.Select)
+      annotation.selected
+        ? dispatch(unselectAnnotation(annotation))
+        : dispatch(selectAnnotation(annotation));
+  };
+
   const createAnnotation = (label: Label) => {
     dispatch(
       addAnnotation({
@@ -69,6 +79,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   ) => {
     const pos = event.target.getStage()?.getPointerPosition();
     if (pos === undefined || pos === null) return;
+
+    // right click - cancel
+    if (event.evt instanceof MouseEvent)
+      if (event.evt.button === 2) {
+        cancelAnnotation();
+        return;
+      }
 
     // TODO: what should happen if the popup is open
     if (labelPopup) return;
@@ -219,36 +236,49 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     if (activeLabel) {
       // label is pre-selected, create annotation right away
       createAnnotation(activeLabel);
-    } else {
-      // no label selected, show popup
-      const stage = event.target.getStage();
-      const pos = stage?.getPointerPosition();
-      if (stage === null || pos === null || pos === undefined) return;
-
-      // calculate a nice position
-      const popupPos = {
-        left: pos.x + 10,
-        top: pos.y <= stage.height() / 2 ? pos.y : undefined,
-        bottom: pos.y > stage.height() / 2 ? stage.height() - pos.y : undefined,
-      };
-
-      // ensure shape does not change anymore
-      setActiveShape({ ...activeShape, locked: true });
-      setLabelPopup(popupPos);
+      return;
     }
+
+    // no label selected, show popup
+    const stage = event.target.getStage();
+    const pos = stage?.getPointerPosition();
+    if (stage === null || pos === null || pos === undefined) return;
+
+    // calculate a nice position
+    const popupPos = {
+      left: pos.x + 10,
+      top: pos.y <= stage.height() / 2 ? pos.y : undefined,
+      bottom: pos.y > stage.height() / 2 ? stage.height() - pos.y : undefined,
+    };
+
+    // ensure shape does not change anymore
+    setActiveShape({ ...activeShape, locked: true });
+    setLabelPopup(popupPos);
   };
 
-  const renderShape = (shape: Shape, color: string, key?: string) => {
+  const renderShape = (
+    shape: Shape,
+    color: string,
+    key?: string,
+    selected?: boolean,
+    onClick?: () => void
+  ) => {
+    const common = {
+      key: key,
+      stroke: alpha(color, 0.8),
+      strokeWidth: selected ? 4 : 2,
+      fill: alpha(color, 0.3),
+      onClick: onClick,
+    };
+
     switch (shape.tool) {
       case Tool.Pen:
         const line = shape as LineShape;
         return (
           <Line
-            key={key}
+            {...common}
             points={line.points}
             closed={line.finished}
-            stroke={alpha(color, 0.8)}
-            fill={alpha(color, 0.3)}
             tension={0.5}
             lineCap="round"
             globalCompositeOperation="source-over"
@@ -258,38 +288,33 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         const rectangle = shape as RectangleShape;
         return (
           <Rect
-            key={key}
+            {...common}
             x={rectangle.x}
             y={rectangle.y}
             width={rectangle.width}
             height={rectangle.height}
-            fill={alpha(color, 0.3)}
-            stroke={alpha(color, 0.8)}
           />
         );
       case Tool.Circle:
         const circle = shape as CircleShape;
         return (
           <Circle
-            key={key}
+            {...common}
             x={circle.x}
             y={circle.y}
             radius={circle.radius}
-            fill={alpha(color, 0.3)}
-            stroke={alpha(color, 0.8)}
           />
         );
       case Tool.Polygon:
         const polygon = shape as PolygonShape;
         return (
           <Line
-            key={key}
+            {...common}
             points={polygon.points.concat(polygon.preview)}
             closed={polygon.finished}
             stroke={alpha(color, 0.8)}
             tension={0}
             lineCap="round"
-            fill={alpha(color, 0.3)}
           />
         );
       default:
@@ -323,6 +348,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         onTouchStart={handleMouseDown}
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
+        onContextMenu={(e) => e.evt.preventDefault()}
       >
         <Layer>
           {imageUri && <BackgroundImage imageUri={imageUri} />}
@@ -335,7 +361,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               renderShape(
                 annotation.shape,
                 annotation.label?.color ?? annotationColor,
-                annotation.id
+                annotation.id,
+                annotation.selected,
+                () => toggleAnnotationSelection(annotation)
               )
           )}
         </Layer>

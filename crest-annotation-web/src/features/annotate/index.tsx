@@ -11,6 +11,7 @@ import {
 } from "./slice";
 import { Link, Stack, useTheme } from "@mui/material";
 // TODO: better icons
+import SelectIcon from "@mui/icons-material/TouchApp";
 import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
@@ -72,6 +73,7 @@ const AnnotatePage = () => {
   const renderTools = () => (
     <Stack direction="row">
       {[
+        { tool: Tool.Select, icon: SelectIcon },
         { tool: Tool.Pen, icon: PenIcon },
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
