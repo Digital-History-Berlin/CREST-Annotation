@@ -68,8 +68,6 @@ export const slice = createSlice({
   reducers: {
     setObjectId: (state, action) => {
       state.objectId = action.payload;
-      // clear local annotations
-      state.annotations = [];
     },
     setActiveTool: (state, action) => {
       state.activeTool = action.payload;
@@ -192,9 +190,11 @@ export const annotateMiddleware: Middleware<{}, RootState> =
     if (isObjectChange(action) && state.objectId) {
       store.dispatch(
         // @ts-expect-error maybe incorrect types in redux
-        enhancedApi.endpoints.getAnnotations.initiate({
-          objectId: state.objectId,
-        })
+        enhancedApi.endpoints.getAnnotations.initiate(
+          { objectId: state.objectId },
+          // always re-fetch data if object is changed
+          { subscribe: false, forceRefetch: true }
+        )
       );
     }
   };
