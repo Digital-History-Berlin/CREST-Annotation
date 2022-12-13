@@ -204,8 +204,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         break;
       }
       case Tool.Polygon: {
-        let polygon = activeShape as PolygonShape;
-
         setActiveShape({
           ...activeShape,
           preview: [pos.x, pos.y],
