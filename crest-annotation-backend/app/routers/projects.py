@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
+from ..dependencies.colors import Colors
 from ..dependencies.db import get_db
 from ..models.projects import Project
 from .. import schemas
@@ -14,29 +15,38 @@ router = APIRouter(
 )
 
 
-def map_project(project: Project) -> schemas.Project:
-    return {
-        "id": project.id,
-        "name": project.name,
-        "source": project.source,
-        "color_table": project.color_table,
-    }
+class Mapper:
+    def __init__(self, colors=Depends(Colors)):
+        self._colors = colors
+
+    def map_project(self, project: Project) -> schemas.Project:
+        return {
+            "id": project.id,
+            "name": project.name,
+            "source": project.source,
+            # parse color table from JSON or use default
+            "color_table": self._colors.parse(project.color_table).colors,
+        }
 
 
 @router.get("/", response_model=List[schemas.Project])
-async def get_projects(db: Session = Depends(get_db)):
+async def get_projects(mapper: Mapper = Depends(Mapper), db: Session = Depends(get_db)):
     projects: List[Project] = db.query(Project)
 
-    return JSONResponse(list(map(map_project, projects)))
+    return JSONResponse(list(map(mapper.map_project, projects)))
 
 
 @router.get("/by-id/{project_id}", response_model=schemas.Project)
-async def get_project(project_id: str, db: Session = Depends(get_db)):
+async def get_project(
+    project_id: str,
+    mapper: Mapper = Depends(Mapper),
+    db: Session = Depends(get_db),
+):
     project: Project = db.query(Project).filter_by(id=project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    return JSONResponse(map_project(project))
+    return JSONResponse(mapper.map_project(project))
 
 
 @router.patch("/", response_model=schemas.Project)

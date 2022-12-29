@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 
 class BaseProject(BaseModel):
     name: str
-    color_table: Optional[str]
+    color_table: List[str]
 
 
 class ShallowProject(BaseProject):
