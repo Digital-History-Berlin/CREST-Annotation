@@ -26,3 +26,12 @@ python3 generate_openapi.py
 ```
 
 With the backend running, the OpenAPI documentation can be viewed at `localhost:8000/docs#`.
+
+## Alembic
+
+Database versioning and migration is done using Alembic. Whenever a database model is changed, a new migration needs to be created:
+
+1. Database must be running and up to date
+1. From the virtual environment run `alembic revision --autogenerate -m "<commit message>"`
+
+This will auto-generate a migration file. Now `alembic upgrade head` will apply these changes to any database.

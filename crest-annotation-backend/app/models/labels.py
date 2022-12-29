@@ -8,5 +8,7 @@ class Label(Base):
 
     id = Column(String, primary_key=True, index=True, default=make_uuid)
     project_id = Column(String, ForeignKey("projects.id"))
+    parent_id = Column(String, ForeignKey("labels.id"))
+    reference = Column(String)
     name = Column(String)
     color = Column(String)

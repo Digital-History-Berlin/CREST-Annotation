@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 class BaseProject(BaseModel):
     name: str
+    color_table: Optional[str]
 
 
 class ShallowProject(BaseProject):

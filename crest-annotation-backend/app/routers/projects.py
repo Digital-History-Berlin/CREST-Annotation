@@ -19,6 +19,7 @@ def map_project(project: Project) -> schemas.Project:
         "id": project.id,
         "name": project.name,
         "source": project.source,
+        "color_table": project.color_table,
     }
 
 
