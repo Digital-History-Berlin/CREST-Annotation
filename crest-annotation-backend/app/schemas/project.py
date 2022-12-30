@@ -2,6 +2,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 
+# TODO: schemas are outdated, see label.py
 class BaseProject(BaseModel):
     name: str
 
