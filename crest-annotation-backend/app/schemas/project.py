@@ -4,14 +4,15 @@ from pydantic import BaseModel
 
 class BaseProject(BaseModel):
     name: str
-    color_table: List[str]
 
 
 class ShallowProject(BaseProject):
     id: Optional[str]
     source: Optional[str]
+    color_table: Optional[List[str]]
 
 
 class Project(BaseProject):
     id: str
     source: Optional[str]
+    color_table: List[str]

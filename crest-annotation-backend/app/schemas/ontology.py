@@ -19,3 +19,4 @@ class Ontology(BaseModel):
     licenses: Optional[List[str]]
     descriptions: Optional[List[OntologyDescription]]
     labels: List[OntologyLabel]
+    problems: List[str]

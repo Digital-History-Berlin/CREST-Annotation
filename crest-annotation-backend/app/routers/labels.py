@@ -1,6 +1,6 @@
 import json
 
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -111,6 +111,14 @@ async def get_ontology_import(
     # filter relevant items
     items = ontology.by_type(document, ontology.class_id)
     items = ontology.with_tags(items, ["@id"])
+
+    # validate items
+    # TODO: improve codebase
+    problems = []
+    for item in items:
+        if not ontology.get_label(item):
+            problems.append(f"Missing name for {item['@id']}")
+
     labels = ontology.as_tree(
         items,
         inflate=lambda item: {
@@ -125,6 +133,7 @@ async def get_ontology_import(
         {
             **meta.json(),
             "labels": labels,
+            "problems": problems,
         }
     )
 
@@ -133,6 +142,7 @@ async def get_ontology_import(
 async def import_ontology(
     url: str,
     project_id: str,
+    method: Optional[str],
     classes: List[str],
     ontology: Ontology = Depends(Ontology),
     colors: Colors = Depends(Colors),
@@ -143,6 +153,8 @@ async def import_ontology(
     def _add_branch(labels, parent_id=None):
         for label in labels:
             if label["id"] not in classes:
+                continue
+            if not label["name"]:
                 continue
 
             id = uuid4()
@@ -163,6 +175,10 @@ async def import_ontology(
     project: Project = db.query(Project).filter_by(id=project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+
+    # delete existing labels
+    if method == "override":
+        db.query(Label).filter_by(project_id=project_id).delete()
 
     # ensure project does not yet contain any labels
     labels: List[Label] = db.query(Label).filter_by(project_id=project_id)
