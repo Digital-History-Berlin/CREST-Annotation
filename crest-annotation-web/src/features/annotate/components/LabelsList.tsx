@@ -68,7 +68,7 @@ const LabelsList = ({ projectId, selected, onSelect, onCancel }: IProps) => {
             <ListItemButton onClick={onCancel}>
               <ListItemText
                 primary="Abbrechen"
-                primaryTypographyProps={{ color: theme.palette.warning.main }}
+                primaryTypographyProps={{ color: theme.palette.warning.dark }}
               />
             </ListItemButton>
           )}

@@ -9,12 +9,12 @@ import { Label, Project } from "../../../api/openApi";
 import { TreeItem } from "@mui/lab";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import LabelRow, { ExtendedLabel } from "./LabelRow";
+import LabelRow, { PartialLabel } from "./LabelRow";
 import { Box, styled } from "@mui/material";
 
 interface IProps {
   project: Project;
-  parent?: Label;
+  parent?: PartialLabel;
   remoteLabels?: Label[];
 }
 
@@ -43,14 +43,15 @@ const AddRow = styled(Box)(({ theme }) => ({
 
 const LabelsBranch = ({ project, parent, remoteLabels }: IProps) => {
   const emptyLabel = {
+    // HACK: simplifies working label.id
+    // overridden in insertLabel()
     id: "__new__",
     name: "",
-    color: "",
   };
 
   const [appendLabelKey, setAppendLabelKey] = useState(uuidv4());
   // local optimistic update cache
-  const [labels, setLabels] = useState<ExtendedLabel[]>([]);
+  const [labels, setLabels] = useState<PartialLabel[]>([]);
 
   const [createRequest] = useCreateLabelMutation();
   const [updateRequest] = useUpdateLabelMutation();
@@ -61,8 +62,8 @@ const LabelsBranch = ({ project, parent, remoteLabels }: IProps) => {
     if (remoteLabels) setLabels(remoteLabels);
   }, [remoteLabels]);
 
-  const updateLabel = (label: Label) => {
-    updateRequest({ shallowLabel: label });
+  const updateLabel = (label: PartialLabel) => {
+    updateRequest({ patchLabel: label });
   };
 
   const getLabelColor = () => {
@@ -79,14 +80,17 @@ const LabelsBranch = ({ project, parent, remoteLabels }: IProps) => {
     return min.color;
   };
 
-  const insertLabel = (label: Label) => {
+  const insertLabel = (label: PartialLabel) => {
+    if (!label.name) return;
+
     createRequest({
-      // set the project and remove the default id
-      shallowLabel: {
+      createLabel: {
         ...label,
+        // remove the default id (__new__)
         id: undefined,
         project_id: project.id,
         parent_id: parent?.id,
+        name: label.name!,
         color: getLabelColor(),
       },
     });
@@ -95,7 +99,7 @@ const LabelsBranch = ({ project, parent, remoteLabels }: IProps) => {
     setAppendLabelKey(uuidv4());
   };
 
-  const deleteLabel = (label: Label) => {
+  const deleteLabel = (label: PartialLabel) => {
     setLabels(labels.filter((l) => l.id !== label.id));
     deleteRequest({ labelId: label.id });
   };

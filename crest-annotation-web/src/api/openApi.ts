@@ -5,20 +5,27 @@ const injectedRtkApi = api.injectEndpoints({
       GetProjectLabelsApiResponse,
       GetProjectLabelsApiArg
     >({
-      query: (queryArg) => ({ url: `/labels/of/${queryArg.projectId}` }),
+      query: (queryArg) => ({
+        url: `/labels/of/${queryArg.projectId}`,
+        params: {
+          sorting: queryArg.sorting,
+          direction: queryArg.direction,
+          starred: queryArg.starred,
+        },
+      }),
     }),
     createLabel: build.mutation<CreateLabelApiResponse, CreateLabelApiArg>({
       query: (queryArg) => ({
         url: `/labels/`,
         method: "POST",
-        body: queryArg.shallowLabel,
+        body: queryArg.createLabel,
       }),
     }),
     updateLabel: build.mutation<UpdateLabelApiResponse, UpdateLabelApiArg>({
       query: (queryArg) => ({
         url: `/labels/`,
         method: "PATCH",
-        body: queryArg.shallowLabel,
+        body: queryArg.patchLabel,
       }),
     }),
     deleteLabel: build.mutation<DeleteLabelApiResponse, DeleteLabelApiArg>({
@@ -135,16 +142,19 @@ export type GetProjectLabelsApiResponse =
   /** status 200 Successful Response */ Label[];
 export type GetProjectLabelsApiArg = {
   projectId: string;
+  sorting?: Sorting;
+  direction?: SortDirection;
+  starred?: boolean;
 };
 export type CreateLabelApiResponse =
   /** status 200 Successful Response */ Label;
 export type CreateLabelApiArg = {
-  shallowLabel: ShallowLabel;
+  createLabel: CreateLabel;
 };
 export type UpdateLabelApiResponse =
   /** status 200 Successful Response */ Label;
 export type UpdateLabelApiArg = {
-  shallowLabel: ShallowLabel;
+  patchLabel: PatchLabel;
 };
 export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
 export type DeleteLabelApiArg = {
@@ -160,7 +170,7 @@ export type ImportOntologyApiResponse =
 export type ImportOntologyApiArg = {
   url: string;
   projectId: string;
-  method: string;
+  method?: string;
   body: string[];
 };
 export type CollectObjectsApiResponse =
@@ -217,11 +227,13 @@ export type DeleteProjectApiArg = {
   projectId: string;
 };
 export type Label = {
-  reference?: string;
-  parent_id?: string;
-  name: string;
-  color: string;
   id: string;
+  parent_id?: string;
+  reference?: string;
+  name: string;
+  starred: boolean;
+  count: number;
+  color: string;
   children?: Label[];
 };
 export type ValidationError = {
@@ -232,13 +244,27 @@ export type ValidationError = {
 export type HttpValidationError = {
   detail?: ValidationError[];
 };
-export type ShallowLabel = {
-  reference?: string;
-  parent_id?: string;
-  name: string;
-  color: string;
+export type Sorting = "name" | "count";
+export type SortDirection = "asc" | "desc";
+export type CreateLabel = {
   id?: string;
   project_id?: string;
+  parent_id?: string;
+  reference?: string;
+  name: string;
+  starred?: boolean;
+  count?: number;
+  color: string;
+};
+export type PatchLabel = {
+  id: string;
+  project_id?: string;
+  parent_id?: string;
+  reference?: string;
+  name?: string;
+  starred?: boolean;
+  count?: number;
+  color?: string;
 };
 export type OntologyDescription = {
   language: string;

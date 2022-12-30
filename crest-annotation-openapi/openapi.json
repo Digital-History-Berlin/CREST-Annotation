@@ -21,6 +21,41 @@
       },
       "name": "project_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Sorting"
+        }
+       ],
+       "default": "name"
+      },
+      "name": "sorting",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/SortDirection"
+        }
+       ],
+       "default": "asc"
+      },
+      "name": "direction",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Starred",
+       "type": "boolean"
+      },
+      "name": "starred",
+      "in": "query"
      }
     ],
     "responses": {
@@ -65,7 +100,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/ShallowLabel"
+        "$ref": "#/components/schemas/CreateLabel"
        }
       }
      },
@@ -107,7 +142,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/ShallowLabel"
+        "$ref": "#/components/schemas/PatchLabel"
        }
       }
      },
@@ -253,10 +288,11 @@
       "in": "query"
      },
      {
-      "required": true,
+      "required": false,
       "schema": {
        "title": "Method",
-       "type": "string"
+       "type": "string",
+       "default": "None"
       },
       "name": "method",
       "in": "query"
@@ -779,6 +815,48 @@
  },
  "components": {
   "schemas": {
+   "CreateLabel": {
+    "title": "CreateLabel",
+    "required": [
+     "name",
+     "color"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
+      "type": "string"
+     },
+     "parent_id": {
+      "title": "Parent Id",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     }
+    }
+   },
    "HTTPValidationError": {
     "title": "HTTPValidationError",
     "type": "object",
@@ -795,30 +873,40 @@
    "Label": {
     "title": "Label",
     "required": [
+     "id",
      "name",
-     "color",
-     "id"
+     "starred",
+     "count",
+     "color"
     ],
     "type": "object",
     "properties": {
-     "reference": {
-      "title": "Reference",
+     "id": {
+      "title": "Id",
       "type": "string"
      },
      "parent_id": {
       "title": "Parent Id",
       "type": "string"
      },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
      "name": {
       "title": "Name",
       "type": "string"
      },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
      "color": {
       "title": "Color",
-      "type": "string"
-     },
-     "id": {
-      "title": "Id",
       "type": "string"
      },
      "children": {
@@ -943,6 +1031,47 @@
      }
     }
    },
+   "PatchLabel": {
+    "title": "PatchLabel",
+    "required": [
+     "id"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
+      "type": "string"
+     },
+     "parent_id": {
+      "title": "Parent Id",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     }
+    }
+   },
    "Project": {
     "title": "Project",
     "required": [
@@ -973,40 +1102,6 @@
      }
     }
    },
-   "ShallowLabel": {
-    "title": "ShallowLabel",
-    "required": [
-     "name",
-     "color"
-    ],
-    "type": "object",
-    "properties": {
-     "reference": {
-      "title": "Reference",
-      "type": "string"
-     },
-     "parent_id": {
-      "title": "Parent Id",
-      "type": "string"
-     },
-     "name": {
-      "title": "Name",
-      "type": "string"
-     },
-     "color": {
-      "title": "Color",
-      "type": "string"
-     },
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
-     "project_id": {
-      "title": "Project Id",
-      "type": "string"
-     }
-    }
-   },
    "ShallowProject": {
     "title": "ShallowProject",
     "required": [
@@ -1034,6 +1129,24 @@
       }
      }
     }
+   },
+   "SortDirection": {
+    "title": "SortDirection",
+    "enum": [
+     "asc",
+     "desc"
+    ],
+    "type": "string",
+    "description": "An enumeration."
+   },
+   "Sorting": {
+    "title": "Sorting",
+    "enum": [
+     "name",
+     "count"
+    ],
+    "type": "string",
+    "description": "An enumeration."
    },
    "ValidationError": {
     "title": "ValidationError",

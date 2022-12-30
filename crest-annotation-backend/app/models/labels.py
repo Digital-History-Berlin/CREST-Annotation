@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, Integer, text
+from sqlalchemy import Column, ForeignKey, String, Integer, Boolean
 
 from ..database import Base, make_uuid
 
@@ -11,6 +11,6 @@ class Label(Base):
     parent_id = Column(String, ForeignKey("labels.id"))
     reference = Column(String)
     name = Column(String)
-    flags = Column(Integer)
-    count = Column(Integer)
+    starred = Column(Boolean, default=False)
+    count = Column(Integer, default=0)
     color = Column(String)

@@ -32,7 +32,7 @@ def map_label(label: Label) -> schemas.Label:
         "parent_id": label.parent_id,
         "reference": label.reference,
         "name": label.name,
-        "flags": label.flags,
+        "starred": label.starred,
         "count": label.count,
         "color": label.color,
     }
@@ -60,15 +60,18 @@ async def get_project_labels(
     project_id: str,
     sorting: Sorting = Sorting.name,
     direction: schemas.SortDirection = schemas.SortDirection.asc,
-    flags: Union[int, None] = None,
+    starred: Union[bool, None] = None,
     db: Session = Depends(get_db),
 ):
 
     labels: List[Label] = (
         db.query(Label)
-        .filter_by(project_id=project_id, flags=flags)
+        .filter_by(project_id=project_id)
         .order_by(*map(direction.apply, order_by(sorting)))
     )
+
+    if starred is not None:
+        labels = labels.filter_by(starred=starred)
 
     # generate tree structure
     roots: List[schemas.Label] = []
@@ -87,11 +90,11 @@ async def get_project_labels(
 
 @router.patch("/", response_model=schemas.Label)
 async def update_label(
-    shallow: schemas.ShallowLabel,
+    patch: schemas.PatchLabel,
     db: Session = Depends(get_db),
 ):
-    labels = db.query(Label).filter_by(id=shallow.id)
-    labels.update(shallow.dict(exclude_none=True))
+    labels = db.query(Label).filter_by(id=patch.id)
+    labels.update(patch.dict(exclude_none=True))
 
     label = labels.first()
     if not label:
@@ -105,10 +108,10 @@ async def update_label(
 
 @router.post("/", response_model=schemas.Label)
 async def create_label(
-    shallow: schemas.ShallowLabel,
+    create: schemas.CreateLabel,
     db: Session = Depends(get_db),
 ):
-    label = Label(**shallow.dict())
+    label = Label(**create.dict())
 
     db.add(label)
     db.commit()

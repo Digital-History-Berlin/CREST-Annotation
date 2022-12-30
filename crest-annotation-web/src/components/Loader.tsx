@@ -51,7 +51,7 @@ export default function Loader<T>({
   if (data === undefined || isError)
     return (
       <CenterContainer>
-        {errorPlaceholder ?? <div>Failed to data</div>}
+        {errorPlaceholder ?? <div>Failed to load data</div>}
       </CenterContainer>
     );
 
