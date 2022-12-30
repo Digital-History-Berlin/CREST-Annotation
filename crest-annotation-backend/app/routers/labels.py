@@ -1,10 +1,12 @@
 import json
 
-from typing import List, Optional
+from typing import List, Union
 from uuid import uuid4
+from enum import auto
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
+from fastapi_utils.enums import StrEnum
 from sqlalchemy.orm import Session
 
 from pyld import jsonld
@@ -30,13 +32,43 @@ def map_label(label: Label) -> schemas.Label:
         "parent_id": label.parent_id,
         "reference": label.reference,
         "name": label.name,
+        "flags": label.flags,
+        "count": label.count,
         "color": label.color,
     }
 
 
+class Sorting(StrEnum):
+    name = auto()
+    count = auto()
+
+
+def order_by(sorting):
+    if not sorting:
+        return []
+
+    mapping = {
+        Sorting.name: Label.name,
+        Sorting.count: Label.count,
+    }
+
+    return [mapping[sorting]]
+
+
 @router.get("/of/{project_id}", response_model=List[schemas.Label])
-async def get_project_labels(project_id: str, db: Session = Depends(get_db)):
-    labels: List[Label] = db.query(Label).filter_by(project_id=project_id)
+async def get_project_labels(
+    project_id: str,
+    sorting: Sorting = Sorting.name,
+    direction: schemas.SortDirection = schemas.SortDirection.asc,
+    flags: Union[int, None] = None,
+    db: Session = Depends(get_db),
+):
+
+    labels: List[Label] = (
+        db.query(Label)
+        .filter_by(project_id=project_id, flags=flags)
+        .order_by(*map(direction.apply, order_by(sorting)))
+    )
 
     # generate tree structure
     roots: List[schemas.Label] = []
@@ -142,8 +174,8 @@ async def get_ontology_import(
 async def import_ontology(
     url: str,
     project_id: str,
-    method: Optional[str],
     classes: List[str],
+    method: str = "None",
     ontology: Ontology = Depends(Ontology),
     colors: Colors = Depends(Colors),
     db: Session = Depends(get_db),
