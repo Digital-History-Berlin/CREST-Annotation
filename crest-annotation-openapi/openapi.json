@@ -251,6 +251,15 @@
       },
       "name": "project_id",
       "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Method",
+       "type": "string"
+      },
+      "name": "method",
+      "in": "query"
      }
     ],
     "requestBody": {
@@ -842,7 +851,8 @@
    "Ontology": {
     "title": "Ontology",
     "required": [
-     "labels"
+     "labels",
+     "problems"
     ],
     "type": "object",
     "properties": {
@@ -879,6 +889,13 @@
       "type": "array",
       "items": {
        "$ref": "#/components/schemas/OntologyLabel"
+      }
+     },
+     "problems": {
+      "title": "Problems",
+      "type": "array",
+      "items": {
+       "type": "string"
       }
      }
     }
@@ -930,16 +947,13 @@
     "title": "Project",
     "required": [
      "name",
-     "id"
+     "id",
+     "color_table"
     ],
     "type": "object",
     "properties": {
      "name": {
       "title": "Name",
-      "type": "string"
-     },
-     "color_table": {
-      "title": "Color Table",
       "type": "string"
      },
      "id": {
@@ -949,6 +963,13 @@
      "source": {
       "title": "Source",
       "type": "string"
+     },
+     "color_table": {
+      "title": "Color Table",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
      }
     }
    },
@@ -997,10 +1018,6 @@
       "title": "Name",
       "type": "string"
      },
-     "color_table": {
-      "title": "Color Table",
-      "type": "string"
-     },
      "id": {
       "title": "Id",
       "type": "string"
@@ -1008,6 +1025,13 @@
      "source": {
       "title": "Source",
       "type": "string"
+     },
+     "color_table": {
+      "title": "Color Table",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
      }
     }
    },

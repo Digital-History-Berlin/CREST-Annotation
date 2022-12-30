@@ -27,6 +27,30 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
+    getOntologyImport: build.query<
+      GetOntologyImportApiResponse,
+      GetOntologyImportApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/labels/import/ontology`,
+        params: { url: queryArg.url },
+      }),
+    }),
+    importOntology: build.mutation<
+      ImportOntologyApiResponse,
+      ImportOntologyApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/labels/import/ontology`,
+        method: "POST",
+        body: queryArg.body,
+        params: {
+          url: queryArg.url,
+          project_id: queryArg.projectId,
+          method: queryArg.method,
+        },
+      }),
+    }),
     collectObjects: build.mutation<
       CollectObjectsApiResponse,
       CollectObjectsApiArg
@@ -126,6 +150,19 @@ export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
 export type DeleteLabelApiArg = {
   labelId: string;
 };
+export type GetOntologyImportApiResponse =
+  /** status 200 Successful Response */ Ontology;
+export type GetOntologyImportApiArg = {
+  url: string;
+};
+export type ImportOntologyApiResponse =
+  /** status 200 Successful Response */ any;
+export type ImportOntologyApiArg = {
+  url: string;
+  projectId: string;
+  method: string;
+  body: string[];
+};
 export type CollectObjectsApiResponse =
   /** status 200 Successful Response */ any;
 export type CollectObjectsApiArg = {
@@ -180,9 +217,12 @@ export type DeleteProjectApiArg = {
   projectId: string;
 };
 export type Label = {
+  reference?: string;
+  parent_id?: string;
   name: string;
   color: string;
   id: string;
+  children?: Label[];
 };
 export type ValidationError = {
   loc: (string | number)[];
@@ -193,10 +233,29 @@ export type HttpValidationError = {
   detail?: ValidationError[];
 };
 export type ShallowLabel = {
+  reference?: string;
+  parent_id?: string;
   name: string;
   color: string;
   id?: string;
   project_id?: string;
+};
+export type OntologyDescription = {
+  language: string;
+  value: string;
+};
+export type OntologyLabel = {
+  id: string;
+  name: string;
+  children?: OntologyLabel[];
+};
+export type Ontology = {
+  creators?: string[];
+  titles?: string[];
+  licenses?: string[];
+  descriptions?: OntologyDescription[];
+  labels: OntologyLabel[];
+  problems: string[];
 };
 export type Object = {
   annotation_data: string;
@@ -206,17 +265,21 @@ export type Project = {
   name: string;
   id: string;
   source?: string;
+  color_table: string[];
 };
 export type ShallowProject = {
   name: string;
   id?: string;
   source?: string;
+  color_table?: string[];
 };
 export const {
   useGetProjectLabelsQuery,
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
+  useGetOntologyImportQuery,
+  useImportOntologyMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,

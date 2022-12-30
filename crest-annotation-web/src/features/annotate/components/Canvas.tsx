@@ -338,6 +338,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         />
       </div>
       <Stage
+        style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
         width={window.innerWidth}
         height={window.innerHeight}
         onMouseDown={handleMouseDown}

@@ -10,8 +10,11 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import Dot from "../../../components/Dot";
 
+/// Adds rendering properties
+export type ExtendedLabel = Label & { loading?: boolean };
+
 interface IProps {
-  label: Label;
+  label: ExtendedLabel;
   defaultLoading?: boolean;
   autoFocus?: boolean;
   onChange: (label: Label) => void;
