@@ -10,7 +10,10 @@ interface IProps {
 }
 
 const LabelsTab = ({ project }: IProps) => {
-  const labelsQuery = useGetProjectLabelsQuery({ projectId: project.id });
+  const labelsQuery = useGetProjectLabelsQuery({
+    projectId: project.id,
+    grouped: true,
+  });
 
   return (
     <Loader
