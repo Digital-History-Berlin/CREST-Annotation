@@ -327,7 +327,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               }}
               onMouseLeave={(e) => {
                 const container = e.target.getStage()?.container();
-                if (container !== undefined) container.style.cursor = "default";
+                if (container !== undefined)
+                  container.style.cursor =
+                    tool === Tool.Select ? "pointer" : "crosshair";
               }}
             />
           </>
