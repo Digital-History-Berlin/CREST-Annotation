@@ -18,7 +18,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  ListItemIcon,
+  useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LockedIcon from "@mui/icons-material/Lock";
@@ -27,6 +27,7 @@ import VisibleIcon from "@mui/icons-material/Visibility";
 import HiddenIcon from "@mui/icons-material/VisibilityOff";
 import Loader from "../../../components/Loader";
 import Dot from "../../../components/Dot";
+import SidebarContainer from "../../../components/SidebarContainer";
 
 interface IProps {
   projectId?: string;
@@ -35,6 +36,7 @@ interface IProps {
 const defaultProps = {};
 
 const AnnotationsList = ({ projectId }: IProps) => {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const annotations = useAppSelector(selectAnnotations);
 
@@ -46,60 +48,78 @@ const AnnotationsList = ({ projectId }: IProps) => {
   const renderActions = (annotation: Annotation) => (
     <Stack direction="row">
       {annotation.locked ? (
-        <IconButton onClick={() => dispatch(unlockAnnotation(annotation))}>
+        <IconButton
+          onClick={() => dispatch(unlockAnnotation(annotation))}
+          size="small"
+        >
           <LockedIcon />
         </IconButton>
       ) : (
-        <IconButton onClick={() => dispatch(lockAnnotation(annotation))}>
+        <IconButton
+          onClick={() => dispatch(lockAnnotation(annotation))}
+          size="small"
+        >
           <UnlockedIcon />
         </IconButton>
       )}
 
       {annotation.hidden ? (
-        <IconButton onClick={() => dispatch(showAnnotation(annotation))}>
+        <IconButton
+          onClick={() => dispatch(showAnnotation(annotation))}
+          size="small"
+        >
           <HiddenIcon />
         </IconButton>
       ) : (
-        <IconButton onClick={() => dispatch(hideAnnotation(annotation))}>
+        <IconButton
+          onClick={() => dispatch(hideAnnotation(annotation))}
+          size="small"
+        >
           <VisibleIcon />
         </IconButton>
       )}
 
-      <IconButton onClick={() => dispatch(deleteAnnotation(annotation))}>
+      <IconButton
+        onClick={() => dispatch(deleteAnnotation(annotation))}
+        size="small"
+        // HACK: custom button alignment
+        sx={{ marginRight: theme.spacing(1) }}
+      >
         <DeleteIcon color="error" />
       </IconButton>
     </Stack>
   );
 
   return (
-    <Loader
-      emptyPlaceholder={"Start drawing to create annotations."}
-      disabledPlaceholder={"No project selected"}
-      query={{ isDisabled: !projectId, data: annotations }}
-      render={({ data: annotations }) => (
-        <List disablePadding>
-          {annotations.map((annotation) => (
-            <ListItem
-              divider
-              disablePadding
-              key={annotation.id}
-              secondaryAction={renderActions(annotation)}
-            >
-              <ListItemButton
-                onClick={() => toggleAnnotationSelection(annotation)}
-                selected={annotation.selected}
-                disableRipple
+    <SidebarContainer title="Annotations">
+      <Loader
+        emptyPlaceholder={"Start drawing to create annotations."}
+        disabledPlaceholder={"No project selected"}
+        query={{ isDisabled: !projectId, data: annotations }}
+        render={({ data: annotations }) => (
+          <List disablePadding>
+            {annotations.map((annotation) => (
+              <ListItem
+                divider
+                disablePadding
+                disableGutters
+                key={annotation.id}
+                secondaryAction={renderActions(annotation)}
               >
-                <ListItemIcon>
+                <ListItemButton
+                  onClick={() => toggleAnnotationSelection(annotation)}
+                  selected={annotation.selected}
+                  disableGutters
+                >
                   <Dot color={annotation.label?.color ?? "white"} />
-                </ListItemIcon>
-                <ListItemText primary={annotation.label?.name ?? "Unnamed"} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      )}
-    />
+                  <ListItemText primary={annotation.label?.name ?? "Unnamed"} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      />
+    </SidebarContainer>
   );
 };
 

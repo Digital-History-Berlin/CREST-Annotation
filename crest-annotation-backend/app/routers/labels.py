@@ -61,6 +61,7 @@ async def get_project_labels(
     sorting: Sorting = Sorting.name,
     direction: schemas.SortDirection = schemas.SortDirection.asc,
     starred: Union[bool, None] = None,
+    grouped: bool = False,
     db: Session = Depends(get_db),
 ):
 
@@ -72,6 +73,9 @@ async def get_project_labels(
 
     if starred is not None:
         labels = labels.filter_by(starred=starred)
+
+    if not grouped:
+        return JSONResponse(list(map(map_label, labels)))
 
     # generate tree structure
     roots: List[schemas.Label] = []

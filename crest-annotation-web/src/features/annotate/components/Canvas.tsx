@@ -3,7 +3,7 @@ import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 import { Stage, Layer, Line, Rect, Circle } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
-import LabelsList from "./LabelsList";
+import LabelsPopup from "./LabelsPopup";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
@@ -331,7 +331,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           zIndex: 1500,
         }}
       >
-        <LabelsList
+        <LabelsPopup
           projectId={projectId}
           onSelect={createAnnotation}
           onCancel={cancelAnnotation}

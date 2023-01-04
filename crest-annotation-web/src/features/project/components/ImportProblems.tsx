@@ -1,6 +1,6 @@
 import React from "react";
 import { Ontology } from "../../../api/openApi";
-import { Divider, Stack, Typography, useTheme } from "@mui/material";
+import { Stack, Typography, useTheme } from "@mui/material";
 
 interface IProps {
   ontology: Ontology;

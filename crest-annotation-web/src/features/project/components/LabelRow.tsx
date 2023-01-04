@@ -39,9 +39,13 @@ const Row = styled(Box)(({ theme }) => ({
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
 
+    "& .Dot": {
+      margin: 0,
+    },
+
     "& .MuiInputBase-root": {
-      marginLeft: theme.spacing(1),
-      marginRight: theme.spacing(1),
+      marginLeft: theme.spacing(2),
+      marginRight: theme.spacing(2),
     },
   },
 }));

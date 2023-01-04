@@ -11,6 +11,7 @@ const injectedRtkApi = api.injectEndpoints({
           sorting: queryArg.sorting,
           direction: queryArg.direction,
           starred: queryArg.starred,
+          grouped: queryArg.grouped,
         },
       }),
     }),
@@ -145,6 +146,7 @@ export type GetProjectLabelsApiArg = {
   sorting?: Sorting;
   direction?: SortDirection;
   starred?: boolean;
+  grouped?: boolean;
 };
 export type CreateLabelApiResponse =
   /** status 200 Successful Response */ Label;

@@ -1,10 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Label, Project } from "../../../api/openApi";
+import React from "react";
+import { Project } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
-import {
-  useCreateLabelMutation,
-  useGetProjectLabelsQuery,
-} from "../../../api/enhancedApi";
+import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { TreeView } from "@mui/lab";
 import LabelsBranch from "./LabelsBranch";
 

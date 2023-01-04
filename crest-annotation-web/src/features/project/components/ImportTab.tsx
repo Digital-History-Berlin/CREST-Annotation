@@ -85,9 +85,19 @@ const ImportTab = ({ project, onSuccess }: IProps) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(undefined)}>Cancel</Button>
+          <Button
+            onClick={() => setPending(undefined)}
+            disabled={importLoading}
+          >
+            Cancel
+          </Button>
           <Box flexGrow={1} />
-          <Button onClick={() => continueImport("override")} variant="outlined">
+          <Button
+            onClick={() => continueImport("override")}
+            disabled={importLoading}
+            variant="outlined"
+            color="error"
+          >
             Override
           </Button>
           <Button disabled={true} variant="outlined">

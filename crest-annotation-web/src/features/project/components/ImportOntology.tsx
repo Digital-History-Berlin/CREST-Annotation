@@ -17,20 +17,20 @@ const ImportOntology = ({ project, ontology, onImport, onSuccess }: IProps) => {
   const [selected, setSelected] = useState<string[]>([]);
   const [itemIds, setItemIds] = useState<string[]>([]);
 
-  // get overlapping selected children
-  const gatherSelected = (item: OntologyLabel): OntologyLabel[] => {
-    if (item.children && item.children.length) {
-      const children = item.children.flatMap(gatherSelected);
-
-      // explicitly include this item if any children are included
-      return children.length > 0 ? [item, ...children] : [];
-    }
-
-    return selected.includes(item.id) ? [item] : [];
-  };
-
   // refresh flattened selection data
   useEffect(() => {
+    // get overlapping selected children
+    const gatherSelected = (item: OntologyLabel): OntologyLabel[] => {
+      if (item.children && item.children.length) {
+        const children = item.children.flatMap(gatherSelected);
+
+        // explicitly include this item if any children are included
+        return children.length > 0 ? [item, ...children] : [];
+      }
+
+      return selected.includes(item.id) ? [item] : [];
+    };
+
     const itemIds = new Set(
       ontology.labels.flatMap((item) =>
         gatherSelected(item).map((item) => item.id)
