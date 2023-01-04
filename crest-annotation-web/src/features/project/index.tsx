@@ -7,6 +7,7 @@ import Toolbar from "../../components/Toolbar";
 import Loader from "../../components/Loader";
 import SettingsTab from "./components/SettingsTab";
 import LabelsTab from "./components/LabelsTab";
+import ImportTab from "./components/ImportTab";
 
 const ProjectPage = () => {
   const { projectId } = useParams();
@@ -39,6 +40,7 @@ const ProjectPage = () => {
                 >
                   <Tab label="Settings" />
                   <Tab label="Labels" />
+                  <Tab label="Import" />
                 </Tabs>
               </Box>
               <Box hidden={currentTab !== 0}>
@@ -46,6 +48,13 @@ const ProjectPage = () => {
               </Box>
               <Box hidden={currentTab !== 1}>
                 <LabelsTab project={project} />
+              </Box>
+              <Box hidden={currentTab !== 2}>
+                <ImportTab
+                  project={project}
+                  // show labels tab after successful import
+                  onSuccess={() => setCurrentTab(1)}
+                />
               </Box>
             </Paper>
           )}

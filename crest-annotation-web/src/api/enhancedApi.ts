@@ -41,6 +41,9 @@ export const enhancedApi = api.enhanceEndpoints({
     deleteLabel: {
       invalidatesTags: ["Label"],
     },
+    importOntology: {
+      invalidatesTags: ["Label"],
+    },
   },
 });
 
@@ -49,6 +52,8 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
+  useGetOntologyImportQuery,
+  useImportOntologyMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,

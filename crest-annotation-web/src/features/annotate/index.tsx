@@ -21,8 +21,7 @@ import Toolbar from "../../components/Toolbar";
 import { ToolbarToggleButton } from "../../components/ToolbarButton";
 import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
-import SidebarContainer from "../../components/SidebarContainer";
-import LabelsList from "./components/LabelsList";
+import LabelsExplorer from "./components/LabelsExplorer";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
 import { enhancedApi } from "../../api/enhancedApi";
@@ -103,16 +102,12 @@ const AnnotatePage = () => {
             borderRight: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <SidebarContainer title="Annotations">
-            <AnnotationsList projectId={projectId} />
-          </SidebarContainer>
-          <SidebarContainer title="Labels">
-            <LabelsList
-              projectId={projectId}
-              selected={activeLabel}
-              onSelect={toggleLabelSelection}
-            />
-          </SidebarContainer>
+          <AnnotationsList projectId={projectId} />
+          <LabelsExplorer
+            projectId={projectId}
+            selected={activeLabel}
+            onSelect={toggleLabelSelection}
+          />
         </Stack>
       }
     >

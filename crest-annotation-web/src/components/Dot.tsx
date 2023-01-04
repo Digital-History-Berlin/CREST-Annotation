@@ -13,12 +13,19 @@ const DotBox = styled(Box)(({ theme }) => ({
     height: "14px",
     borderRadius: "7px",
     border: `1px solid ${theme.palette.divider}`,
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
   },
 }));
 
-const Dot = ({ color }: IProps) => <DotBox sx={{ backgroundColor: color }} />;
+const Dot = ({ color }: IProps) => (
+  <DotBox
+    className="Dot"
+    sx={{
+      backgroundColor: color,
+    }}
+  />
+);
 
 Dot.defaultProps = defaultProps;
 

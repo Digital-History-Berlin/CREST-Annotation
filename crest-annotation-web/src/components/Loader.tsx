@@ -9,6 +9,7 @@ interface IProps<T> {
     isDisabled?: boolean;
     data?: T;
   };
+  loadOnFetch?: boolean;
   render: (data: { isFetching?: boolean; data: T }) => ReactElement;
   emptyPlaceholder?: ReactNode;
   errorPlaceholder?: ReactNode;
@@ -25,6 +26,7 @@ const CenterContainer = styled(Container)(({ theme }) => ({
 
 export default function Loader<T>({
   query,
+  loadOnFetch,
   render,
   emptyPlaceholder,
   errorPlaceholder,
@@ -32,7 +34,7 @@ export default function Loader<T>({
 }: IProps<T>) {
   const { isLoading, isFetching, isError, isDisabled, data } = query;
 
-  if (isLoading)
+  if (isLoading || (isFetching && loadOnFetch))
     return (
       <CenterContainer>
         <CircularProgress />
@@ -49,7 +51,7 @@ export default function Loader<T>({
   if (data === undefined || isError)
     return (
       <CenterContainer>
-        {errorPlaceholder ?? <div>Failed to data</div>}
+        {errorPlaceholder ?? <div>Failed to load data</div>}
       </CenterContainer>
     );
 

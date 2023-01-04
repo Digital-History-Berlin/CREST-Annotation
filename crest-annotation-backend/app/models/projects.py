@@ -9,3 +9,4 @@ class Project(Base):
     id = Column(String, primary_key=True, index=True, default=make_uuid)
     name = Column(String)
     source = Column(String)
+    color_table = Column(String)

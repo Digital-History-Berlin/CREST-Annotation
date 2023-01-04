@@ -21,6 +21,51 @@
       },
       "name": "project_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/Sorting"
+        }
+       ],
+       "default": "name"
+      },
+      "name": "sorting",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "allOf": [
+        {
+         "$ref": "#/components/schemas/SortDirection"
+        }
+       ],
+       "default": "asc"
+      },
+      "name": "direction",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Starred",
+       "type": "boolean"
+      },
+      "name": "starred",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Grouped",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "grouped",
+      "in": "query"
      }
     ],
     "responses": {
@@ -65,7 +110,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/ShallowLabel"
+        "$ref": "#/components/schemas/CreateLabel"
        }
       }
      },
@@ -107,7 +152,7 @@
      "content": {
       "application/json": {
        "schema": {
-        "$ref": "#/components/schemas/ShallowLabel"
+        "$ref": "#/components/schemas/PatchLabel"
        }
       }
      },
@@ -158,6 +203,125 @@
       "in": "path"
      }
     ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/labels/import/ontology": {
+   "get": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Get Ontology Import",
+    "operationId": "get_ontology_import",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ontology"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "label"
+    ],
+    "summary": "Import Ontology",
+    "operationId": "import_ontology",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Method",
+       "type": "string",
+       "default": "None"
+      },
+      "name": "method",
+      "in": "query"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Classes",
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "required": true
+    },
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -661,6 +825,48 @@
  },
  "components": {
   "schemas": {
+   "CreateLabel": {
+    "title": "CreateLabel",
+    "required": [
+     "name",
+     "color"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
+      "type": "string"
+     },
+     "parent_id": {
+      "title": "Parent Id",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     }
+    }
+   },
    "HTTPValidationError": {
     "title": "HTTPValidationError",
     "type": "object",
@@ -677,23 +883,48 @@
    "Label": {
     "title": "Label",
     "required": [
+     "id",
      "name",
-     "color",
-     "id"
+     "starred",
+     "count",
+     "color"
     ],
     "type": "object",
     "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "parent_id": {
+      "title": "Parent Id",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
      "name": {
       "title": "Name",
       "type": "string"
+     },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
      },
      "color": {
       "title": "Color",
       "type": "string"
      },
-     "id": {
-      "title": "Id",
-      "type": "string"
+     "children": {
+      "title": "Children",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Label"
+      }
      }
     }
    },
@@ -715,11 +946,148 @@
      }
     }
    },
+   "Ontology": {
+    "title": "Ontology",
+    "required": [
+     "labels",
+     "problems"
+    ],
+    "type": "object",
+    "properties": {
+     "creators": {
+      "title": "Creators",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "titles": {
+      "title": "Titles",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "licenses": {
+      "title": "Licenses",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "descriptions": {
+      "title": "Descriptions",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/OntologyDescription"
+      }
+     },
+     "labels": {
+      "title": "Labels",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/OntologyLabel"
+      }
+     },
+     "problems": {
+      "title": "Problems",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "OntologyDescription": {
+    "title": "OntologyDescription",
+    "required": [
+     "language",
+     "value"
+    ],
+    "type": "object",
+    "properties": {
+     "language": {
+      "title": "Language",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     }
+    }
+   },
+   "OntologyLabel": {
+    "title": "OntologyLabel",
+    "required": [
+     "id",
+     "name"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "children": {
+      "title": "Children",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/OntologyLabel"
+      }
+     }
+    }
+   },
+   "PatchLabel": {
+    "title": "PatchLabel",
+    "required": [
+     "id"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "project_id": {
+      "title": "Project Id",
+      "type": "string"
+     },
+     "parent_id": {
+      "title": "Parent Id",
+      "type": "string"
+     },
+     "reference": {
+      "title": "Reference",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "starred": {
+      "title": "Starred",
+      "type": "boolean"
+     },
+     "count": {
+      "title": "Count",
+      "type": "integer"
+     },
+     "color": {
+      "title": "Color",
+      "type": "string"
+     }
+    }
+   },
    "Project": {
     "title": "Project",
     "required": [
      "name",
-     "id"
+     "id",
+     "color_table"
     ],
     "type": "object",
     "properties": {
@@ -734,32 +1102,13 @@
      "source": {
       "title": "Source",
       "type": "string"
-     }
-    }
-   },
-   "ShallowLabel": {
-    "title": "ShallowLabel",
-    "required": [
-     "name",
-     "color"
-    ],
-    "type": "object",
-    "properties": {
-     "name": {
-      "title": "Name",
-      "type": "string"
      },
-     "color": {
-      "title": "Color",
-      "type": "string"
-     },
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
-     "project_id": {
-      "title": "Project Id",
-      "type": "string"
+     "color_table": {
+      "title": "Color Table",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
      }
     }
    },
@@ -781,8 +1130,33 @@
      "source": {
       "title": "Source",
       "type": "string"
+     },
+     "color_table": {
+      "title": "Color Table",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
      }
     }
+   },
+   "SortDirection": {
+    "title": "SortDirection",
+    "enum": [
+     "asc",
+     "desc"
+    ],
+    "type": "string",
+    "description": "An enumeration."
+   },
+   "Sorting": {
+    "title": "Sorting",
+    "enum": [
+     "name",
+     "count"
+    ],
+    "type": "string",
+    "description": "An enumeration."
    },
    "ValidationError": {
     "title": "ValidationError",
