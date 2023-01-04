@@ -1,7 +1,7 @@
 import React from "react";
 import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
-import { Stage, Layer, Line, Rect, Circle } from "react-konva";
+import { Circle, Layer, Line, Rect, Stage } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
 import LabelsList from "./LabelsList";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
@@ -354,14 +354,31 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       case Tool.Polygon:
         const polygon = shape as PolygonShape;
         return (
-          <Line
-            {...common}
-            points={polygon.points.concat(polygon.preview)}
-            closed={polygon.finished}
-            stroke={alpha(color, 0.8)}
-            tension={0}
-            lineCap="round"
-          />
+          <>
+            <Line
+              {...common}
+              points={polygon.points.concat(polygon.preview)}
+              closed={polygon.finished}
+              stroke={alpha(color, 0.8)}
+              tension={0}
+              lineCap="round"
+            />
+            <Circle
+              x={polygon.points[0]}
+              y={polygon.points[1]}
+              radius={5}
+              opacity={0}
+              onMouseEnter={(e) => {
+                const container = e.target.getStage()?.container();
+                if (container !== undefined)
+                  container.style.cursor = "crosshair";
+              }}
+              onMouseLeave={(e) => {
+                const container = e.target.getStage()?.container();
+                if (container !== undefined) container.style.cursor = "default";
+              }}
+            />
+          </>
         );
       default:
         return null;
