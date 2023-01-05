@@ -38,4 +38,4 @@ class Colors:
     def parse(self, table):
         if table is None:
             return self.default
-        return ColorTable(json.parse(table))
+        return ColorTable(json.loads(table))
