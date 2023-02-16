@@ -204,10 +204,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         break;
       }
       case Tool.Polygon: {
-        setActiveShape({
-          ...activeShape,
-          preview: [pos.x, pos.y],
-        });
+        let polygon = activeShape as PolygonShape;
+        if (!polygon.finished) {
+          setActiveShape({
+            ...activeShape,
+            preview: [pos.x, pos.y],
+          });
+        }
         break;
       }
     }
@@ -252,6 +255,51 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // ensure shape does not change anymore
     setActiveShape({ ...activeShape, locked: true });
     setLabelPopup(popupPos);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!activeShape || activeShape.locked) return;
+
+    if (activeShape.tool === Tool.Polygon) {
+      // Hotkey for closing is pressed
+      if (event.code === "KeyK" && event.ctrlKey) {
+        let polygon = activeShape as PolygonShape;
+        setActiveShape({
+          ...activeShape,
+          points: [...polygon.points, polygon.points[0], polygon.points[1]],
+          finished: true,
+          preview: [],
+        });
+      }
+    }
+  };
+
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!activeShape || activeShape.locked) return;
+
+    if (event.code === "KeyK" && event.ctrlKey) {
+      if (activeShape.tool === Tool.Polygon) {
+        let polygon = activeShape as PolygonShape;
+        if (!polygon.finished) return;
+
+        if (activeLabel) {
+          // label is pre-selected, create annotation right away
+          createAnnotation(activeLabel);
+          return;
+        }
+
+        // calculate a nice position
+        const popupPos = {
+          left: polygon.points[0] + 10,
+          top: polygon.points[1],
+          bottom: 2500,
+        };
+
+        // ensure shape does not change anymore
+        setActiveShape({ ...activeShape, locked: true });
+        setLabelPopup(popupPos);
+      }
+    }
   };
 
   const renderShape = (
@@ -356,36 +404,38 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onCancel={cancelAnnotation}
         />
       </div>
-      <Stage
-        style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
-        width={window.innerWidth}
-        height={window.innerHeight}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchMove={handleMouseMove}
-        onTouchEnd={handleMouseUp}
-        onContextMenu={(e) => e.evt.preventDefault()}
-      >
-        <Layer>
-          {imageUri && <BackgroundImage imageUri={imageUri} />}
-          {activeShape &&
-            renderShape(activeShape, activeLabel?.color ?? annotationColor)}
-          {annotations.map(
-            (annotation) =>
-              annotation.shape &&
-              !annotation.hidden &&
-              renderShape(
-                annotation.shape,
-                annotation.label?.color ?? annotationColor,
-                annotation.id,
-                annotation.selected,
-                () => toggleAnnotationSelection(annotation)
-              )
-          )}
-        </Layer>
-      </Stage>
+      <div tabIndex={0} onKeyUp={handleKeyUp} onKeyDown={handleKeyDown}>
+        <Stage
+          style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
+          width={window.innerWidth}
+          height={window.innerHeight}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
+          onContextMenu={(e) => e.evt.preventDefault()}
+        >
+          <Layer>
+            {imageUri && <BackgroundImage imageUri={imageUri} />}
+            {activeShape &&
+              renderShape(activeShape, activeLabel?.color ?? annotationColor)}
+            {annotations.map(
+              (annotation) =>
+                annotation.shape &&
+                !annotation.hidden &&
+                renderShape(
+                  annotation.shape,
+                  annotation.label?.color ?? annotationColor,
+                  annotation.id,
+                  annotation.selected,
+                  () => toggleAnnotationSelection(annotation)
+                )
+            )}
+          </Layer>
+        </Stage>
+      </div>
     </div>
   );
 };
