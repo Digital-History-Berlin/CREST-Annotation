@@ -3,7 +3,7 @@ import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
 import { Circle, Layer, Line, Rect, Stage } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
-import LabelsList from "./LabelsList";
+import LabelsPopup from "./LabelsPopup";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
@@ -375,7 +375,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               }}
               onMouseLeave={(e) => {
                 const container = e.target.getStage()?.container();
-                if (container !== undefined) container.style.cursor = "default";
+                if (container !== undefined)
+                  container.style.cursor =
+                    tool === Tool.Select ? "pointer" : "crosshair";
               }}
             />
           </>
@@ -396,7 +398,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           zIndex: 1500,
         }}
       >
-        <LabelsList
+        <LabelsPopup
           projectId={projectId}
           onSelect={createAnnotation}
           onCancel={cancelAnnotation}
@@ -404,6 +406,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       </div>
       <div tabIndex={0} onKeyUp={handleKeyUp} onKeyDown={handleKeyDown}>
         <Stage
+          style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
           width={window.innerWidth}
           height={window.innerHeight}
           onMouseDown={handleMouseDown}

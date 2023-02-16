@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+# TODO: schemas are outdated, see label.py
 class BaseObject(BaseModel):
     annotation_data: str
 

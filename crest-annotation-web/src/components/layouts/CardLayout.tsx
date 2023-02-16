@@ -23,7 +23,7 @@ type Props<T> = IProps<T> & LayoutProps;
  * Shows a list of objects as a grid of cards.
  * Can be used instead of the default layout.
  */
-export default function CardLayout<T>({
+export default function CardLayout<T extends { id: string }>({
   query,
   footer,
   placeholder,
@@ -39,7 +39,7 @@ export default function CardLayout<T>({
           <Container maxWidth="md">
             <Grid container columns={{ xs: 2, sm: 4, md: 6 }} spacing={2}>
               {data.map((item) => (
-                <Grid item xs={2} sm={2} md={2}>
+                <Grid item key={item.id} xs={2} sm={2} md={2}>
                   {renderCard(item)}
                 </Grid>
               ))}
