@@ -20,7 +20,7 @@ def patch(*identifiers):
     return dec
 
 
-def create(*optional):
+def create(*optionals):
     """
     Decorator to modify an existing pydantic model for create requests
 
@@ -28,7 +28,7 @@ def create(*optional):
     """
 
     def dec(_cls):
-        for field in optional:
+        for field in optionals:
             _cls.__fields__[field].required = False
         return _cls
 

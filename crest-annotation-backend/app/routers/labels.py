@@ -1,5 +1,3 @@
-import json
-
 from typing import List, Union
 from uuid import uuid4
 from enum import auto
@@ -196,10 +194,10 @@ async def import_ontology(
             if not label["name"]:
                 continue
 
-            id = uuid4()
+            label_id = uuid4()
             db.add(
                 Label(
-                    id=id,
+                    id=label_id,
                     parent_id=parent_id,
                     project_id=project_id,
                     reference=label["id"],
@@ -209,7 +207,7 @@ async def import_ontology(
                 )
             )
 
-            _add_branch(label["children"], id)
+            _add_branch(label["children"], label_id)
 
     project: Project = db.query(Project).filter_by(id=project_id).first()
     if not project:

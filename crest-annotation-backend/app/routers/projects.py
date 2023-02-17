@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from ..dependencies.colors import Colors
+from ..dependencies.colors import Colors, ColorTable
 from ..dependencies.db import get_db
 from ..models.projects import Project
 from .. import schemas
@@ -27,6 +27,12 @@ class Mapper:
             # parse color table from JSON or use default
             "color_table": self._colors.parse(project.color_table).colors,
         }
+
+    def map_dict(self, project_dict) -> Project:
+        color_table = project_dict["color_table"]
+        if color_table is not None:
+            project_dict["color_table"] = ColorTable(color_table).jsonify()
+        return project_dict
 
 
 @router.get("/", response_model=List[schemas.Project])
@@ -52,10 +58,11 @@ async def get_project(
 @router.patch("/", response_model=schemas.Project)
 async def update_project(
     shallow: schemas.ShallowProject,
+    mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
     projects = db.query(Project).filter_by(id=shallow.id)
-    projects.update(shallow.dict(exclude_none=True))
+    projects.update(mapper.map_dict(shallow.dict(exclude_none=True)))
 
     project = projects.first()
     if not project:
@@ -64,21 +71,22 @@ async def update_project(
     db.commit()
     db.refresh(project)
 
-    return JSONResponse(map_project(project))
+    return JSONResponse(mapper.map_project(project))
 
 
 @router.post("/", response_model=schemas.Project)
 async def create_project(
     shallow: schemas.ShallowProject,
+    mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
-    project = Project(**shallow.dict())
+    project = Project(**mapper.map_dict(shallow.dict()))
 
     db.add(project)
     db.commit()
     db.refresh(project)
 
-    return JSONResponse(map_project(project))
+    return JSONResponse(mapper.map_project(project))
 
 
 @router.delete("/{project_id}")
