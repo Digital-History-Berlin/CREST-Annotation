@@ -14,6 +14,9 @@ class ColorTable:
 
         return self.colors[index % self.len]
 
+    def jsonify(self):
+        return json.dumps(self.colors)
+
 
 class Colors:
     """
@@ -39,3 +42,8 @@ class Colors:
         if table is None:
             return self.default
         return ColorTable(json.loads(table))
+
+    def stringify(self, table):
+        if table is None:
+            return self.default.jsonify()
+        return table.jsonify()
