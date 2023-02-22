@@ -8,7 +8,6 @@ import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
   Annotation,
-  deleteAnnotation,
   selectActiveLabel,
   selectActiveTool,
   selectAnnotation,
@@ -24,7 +23,6 @@ import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
 import { alpha } from "@mui/material";
-import { TRUE } from "sass";
 
 interface PopupPosition {
   left?: number | string;
