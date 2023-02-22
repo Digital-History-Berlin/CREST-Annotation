@@ -51,11 +51,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
 
   const [editAnnotation, setEditAnnotation] = React.useState<Annotation>();
+  const [editAnnotationIndex, setEditAnnotationIndex] =
+    React.useState<number>();
 
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
       annotation.selected
-        ? dispatch(unselectAnnotation(annotation))
+        ? dispatch(unselectAnnotation())
         : dispatch(selectAnnotation(annotation));
   };
 
@@ -95,7 +97,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     switch (tool) {
       case Tool.Select: {
-        // Get all annotations of type polygon from state and check if one of them has point at mouse location
+        // Check if an area around a polygon point was clicked
         const polygonAnnotation = annotations.find(
           (annotation) =>
             annotation.selected === true &&
@@ -111,10 +113,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
             let y = points[i + 1];
 
             if (Math.abs(pos.x - x) <= 5 && Math.abs(pos.y - y) <= 5) {
-              setActiveShape(polygonAnnotation.shape);
+              setEditAnnotationIndex(i);
+              //setEditAnnotation(JSON.parse(JSON.stringify(polygonAnnotation)));
               setEditAnnotation(polygonAnnotation);
-              console.log("edit try registered");
-              console.log("all ann:", annotations);
               return;
             }
           }
@@ -196,11 +197,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseMove = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    // no drawing - skipping
-    if (!activeShape || activeShape.locked) return;
-
     const pos = event.target.getStage()?.getPointerPosition();
     if (pos === undefined || pos === null) return;
+
+    // check if we are editing a polygon
+    if (editAnnotation !== undefined && editAnnotationIndex !== undefined) {
+      const shape = editAnnotation.shape as PolygonShape;
+      const points = shape.points;
+
+      let newPoints = [...points];
+      newPoints[editAnnotationIndex] = pos.x;
+      newPoints[editAnnotationIndex + 1] = pos.y;
+
+      dispatch(
+        updateAnnotation({
+          ...editAnnotation,
+          shape: {
+            ...editAnnotation.shape,
+            points: newPoints,
+          },
+        })
+      );
+      return;
+    }
+
+    // no drawing - skipping
+    if (!activeShape || activeShape.locked) return;
 
     switch (activeShape.tool) {
       case Tool.Pen: {
@@ -240,32 +262,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
             ...activeShape,
             preview: [pos.x, pos.y],
           });
-        } else if (editAnnotation !== undefined) {
-          // Find the closest point to the mouse and update it to current mouse position
-          let points = [...polygon.points];
-
-          let count = points.length;
-          let closest = { x: 0, y: 0, distance: 1000000, index: -1 };
-          for (let i = 0; i < count; i += 2) {
-            let x = points[i];
-            let y = points[i + 1];
-            let distance = Math.sqrt(
-              Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2)
-            );
-            if (distance < closest.distance) {
-              closest = { x, y, distance, index: i };
-            }
-          }
-          if (closest.distance < 10) {
-            // Update the point
-            let index = closest.index;
-            points[index] = pos.x;
-            points[index + 1] = pos.y;
-            setActiveShape({
-              ...activeShape,
-              points: [...points],
-            });
-          }
         }
         break;
       }
@@ -275,6 +271,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseUp = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
+    setEditAnnotationIndex(undefined);
+    setEditAnnotation(undefined);
+
     // no drawing - skipping
     if (!activeShape || activeShape.locked) return;
 
@@ -284,23 +283,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       if (!polygon.finished) return;
       // clear polygon preview line
       polygon.preview = [];
-
-      if (editAnnotation !== undefined) {
-        // Update the annotation
-        console.log("updated ann: ", { ...editAnnotation, shape: polygon });
-
-        dispatch(
-          updateAnnotation({
-            ...editAnnotation,
-            shape: polygon,
-          })
-        );
-
-        setEditAnnotation(undefined);
-        setActiveShape(undefined);
-        console.log("upadated ann after dispatch: ", annotations);
-        return;
-      }
     }
 
     if (activeShape.tool === Tool.Pen) {
@@ -443,7 +425,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               opacity={0}
               onMouseEnter={(e) => {
                 const container = e.target.getStage()?.container();
-                if (container !== undefined)
+                if (container !== undefined && !polygon.finished)
                   container.style.cursor = "crosshair";
               }}
               onMouseLeave={(e) => {
