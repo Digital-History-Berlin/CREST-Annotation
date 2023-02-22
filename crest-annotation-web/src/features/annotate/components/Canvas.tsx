@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   addAnnotation,
   Annotation,
+  deleteAnnotation,
   selectActiveLabel,
   selectActiveTool,
   selectAnnotation,
@@ -15,6 +16,7 @@ import {
   Shape,
   Tool,
   unselectAnnotation,
+  updateAnnotation,
 } from "../slice";
 import { Line as LineShape } from "../tools/line";
 import { Rectangle as RectangleShape } from "../tools/rectangle";
@@ -22,6 +24,7 @@ import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
 import { alpha } from "@mui/material";
+import { TRUE } from "sass";
 
 interface PopupPosition {
   left?: number | string;
@@ -48,6 +51,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = React.useState<Shape>();
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
+
+  const [editAnnotation, setEditAnnotation] = React.useState<Annotation>();
 
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
@@ -91,6 +96,33 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     if (labelPopup) return;
 
     switch (tool) {
+      case Tool.Select: {
+        // Get all annotations of type polygon from state and check if one of them has point at mouse location
+        const polygonAnnotation = annotations.find(
+          (annotation) =>
+            annotation.selected === true &&
+            annotation.shape?.tool === Tool.Polygon
+        );
+        if (polygonAnnotation !== undefined) {
+          const shape = polygonAnnotation.shape as PolygonShape;
+          const points = shape.points;
+          const count = points.length;
+
+          for (let i = 0; i < count; i += 2) {
+            let x = points[i];
+            let y = points[i + 1];
+
+            if (Math.abs(pos.x - x) <= 5 && Math.abs(pos.y - y) <= 5) {
+              setActiveShape(polygonAnnotation.shape);
+              setEditAnnotation(polygonAnnotation);
+              console.log("edit try registered");
+              console.log("all ann:", annotations);
+              return;
+            }
+          }
+        }
+        break;
+      }
       case Tool.Pen: {
         setActiveShape({
           points: [pos.x, pos.y],
@@ -210,6 +242,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
             ...activeShape,
             preview: [pos.x, pos.y],
           });
+        } else if (editAnnotation !== undefined) {
+          // Find the closest point to the mouse and update it to current mouse position
+          let points = [...polygon.points];
+
+          let count = points.length;
+          let closest = { x: 0, y: 0, distance: 1000000, index: -1 };
+          for (let i = 0; i < count; i += 2) {
+            let x = points[i];
+            let y = points[i + 1];
+            let distance = Math.sqrt(
+              Math.pow(pos.x - x, 2) + Math.pow(pos.y - y, 2)
+            );
+            if (distance < closest.distance) {
+              closest = { x, y, distance, index: i };
+            }
+          }
+          if (closest.distance < 10) {
+            // Update the point
+            let index = closest.index;
+            points[index] = pos.x;
+            points[index + 1] = pos.y;
+            setActiveShape({
+              ...activeShape,
+              points: [...points],
+            });
+          }
         }
         break;
       }
@@ -228,6 +286,23 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       if (!polygon.finished) return;
       // clear polygon preview line
       polygon.preview = [];
+
+      if (editAnnotation !== undefined) {
+        // Update the annotation
+        console.log("updated ann: ", { ...editAnnotation, shape: polygon });
+
+        dispatch(
+          updateAnnotation({
+            ...editAnnotation,
+            shape: polygon,
+          })
+        );
+
+        setEditAnnotation(undefined);
+        setActiveShape(undefined);
+        console.log("upadated ann after dispatch: ", annotations);
+        return;
+      }
     }
 
     if (activeShape.tool === Tool.Pen) {
