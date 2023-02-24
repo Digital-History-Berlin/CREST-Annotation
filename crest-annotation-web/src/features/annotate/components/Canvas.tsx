@@ -411,9 +411,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               />
             )}
             {tool === Tool.Edit &&
-              polygon.points.map((point, index) => {
-                if (index % 2 === 0) {
-                  return (
+              polygon.points.map(
+                (point, index) =>
+                  index % 2 === 0 && (
                     <Circle
                       key={index}
                       x={polygon.points[index]}
@@ -425,9 +425,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                         onDragPolygonPoint(e, index, polygon, key);
                       }}
                     />
-                  );
-                } else return null;
-              })}
+                  )
+              )}
           </>
         );
       default:
