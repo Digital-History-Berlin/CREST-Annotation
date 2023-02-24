@@ -167,11 +167,11 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseMove = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    const pos = event.target.getStage()?.getPointerPosition();
-    if (pos === undefined || pos === null) return;
-
     // no drawing - skipping
     if (!activeShape || activeShape.locked) return;
+
+    const pos = event.target.getStage()?.getPointerPosition();
+    if (pos === undefined || pos === null) return;
 
     switch (activeShape.tool) {
       case Tool.Pen: {
@@ -381,55 +381,67 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         );
       case Tool.Polygon:
         const polygon = shape as PolygonShape;
-        return (
-          <>
-            {polygon.points.map((point, index) => {
-              if (tool !== Tool.Edit) {
-                return (
-                  <Circle
-                    x={polygon.points[0]}
-                    y={polygon.points[1]}
-                    radius={5}
-                    opacity={0}
-                    onMouseEnter={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container !== undefined && !polygon.finished)
-                        container.style.cursor = "crosshair";
-                    }}
-                    onMouseLeave={(e) => {
-                      const container = e.target.getStage()?.container();
-                      if (container !== undefined && !polygon.finished)
-                        container.style.cursor =
-                          tool === Tool.Select ? "pointer" : "crosshair";
-                    }}
-                  />
-                );
-              } else if (index % 2 === 0) {
-                return (
-                  <Circle
-                    key={index}
-                    x={polygon.points[index]}
-                    y={polygon.points[index + 1]}
-                    radius={5}
-                    fill={alpha(color, 0.8)}
-                    draggable
-                    onDragMove={(e) => {
-                      onDragPolygonPoint(e, index, polygon, key);
-                    }}
-                  />
-                );
-              } else return null;
-            })}
-            <Line
-              {...common}
-              points={polygon.points.concat(polygon.preview)}
-              closed={polygon.finished}
-              stroke={alpha(color, 0.8)}
-              tension={0}
-              lineCap="round"
-            />
-          </>
-        );
+        if (tool !== Tool.Edit) {
+          return (
+            <>
+              <Circle
+                x={polygon.points[0]}
+                y={polygon.points[1]}
+                radius={5}
+                opacity={0}
+                onMouseEnter={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined && !polygon.finished)
+                    container.style.cursor = "crosshair";
+                }}
+                onMouseLeave={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined && !polygon.finished)
+                    container.style.cursor =
+                      tool === Tool.Select ? "pointer" : "crosshair";
+                }}
+              />
+              <Line
+                {...common}
+                points={polygon.points.concat(polygon.preview)}
+                closed={polygon.finished}
+                stroke={alpha(color, 0.8)}
+                tension={0}
+                lineCap="round"
+              />
+            </>
+          );
+        } else {
+          return (
+            <>
+              {polygon.points.map((point, index) => {
+                if (index % 2 === 0) {
+                  return (
+                    <Circle
+                      key={index}
+                      x={polygon.points[index]}
+                      y={polygon.points[index + 1]}
+                      radius={5}
+                      fill={alpha(color, 0.8)}
+                      draggable
+                      onDragMove={(e) => {
+                        onDragPolygonPoint(e, index, polygon, key);
+                      }}
+                    />
+                  );
+                } else return null;
+              })}
+              <Line
+                {...common}
+                points={polygon.points.concat(polygon.preview)}
+                closed={polygon.finished}
+                stroke={alpha(color, 0.8)}
+                tension={0}
+                lineCap="round"
+              />
+            </>
+          );
+        }
       default:
         return null;
     }
