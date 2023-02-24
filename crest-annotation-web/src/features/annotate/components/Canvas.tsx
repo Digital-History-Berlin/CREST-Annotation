@@ -50,10 +50,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const [activeShape, setActiveShape] = React.useState<Shape>();
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
 
-  const [editAnnotation, setEditAnnotation] = React.useState<Annotation>();
-  const [editAnnotationIndex, setEditAnnotationIndex] =
-    React.useState<number>();
-
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
       annotation.selected
@@ -96,32 +92,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     if (labelPopup) return;
 
     switch (tool) {
-      case Tool.Select: {
-        // Check if an area around a polygon point was clicked
-        const polygonAnnotation = annotations.find(
-          (annotation) =>
-            annotation.selected === true &&
-            annotation.shape?.tool === Tool.Polygon
-        );
-        if (polygonAnnotation !== undefined) {
-          const shape = polygonAnnotation.shape as PolygonShape;
-          const points = shape.points;
-          const count = points.length;
-
-          for (let i = 0; i < count; i += 2) {
-            let x = points[i];
-            let y = points[i + 1];
-
-            if (Math.abs(pos.x - x) <= 5 && Math.abs(pos.y - y) <= 5) {
-              setEditAnnotationIndex(i);
-              //setEditAnnotation(JSON.parse(JSON.stringify(polygonAnnotation)));
-              setEditAnnotation(polygonAnnotation);
-              return;
-            }
-          }
-        }
-        break;
-      }
       case Tool.Pen: {
         setActiveShape({
           points: [pos.x, pos.y],
@@ -200,27 +170,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     const pos = event.target.getStage()?.getPointerPosition();
     if (pos === undefined || pos === null) return;
 
-    // check if we are editing a polygon
-    if (editAnnotation !== undefined && editAnnotationIndex !== undefined) {
-      const shape = editAnnotation.shape as PolygonShape;
-      const points = shape.points;
-
-      let newPoints = [...points];
-      newPoints[editAnnotationIndex] = pos.x;
-      newPoints[editAnnotationIndex + 1] = pos.y;
-
-      dispatch(
-        updateAnnotation({
-          ...editAnnotation,
-          shape: {
-            ...editAnnotation.shape,
-            points: newPoints,
-          },
-        })
-      );
-      return;
-    }
-
     // no drawing - skipping
     if (!activeShape || activeShape.locked) return;
 
@@ -271,9 +220,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseUp = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    setEditAnnotationIndex(undefined);
-    setEditAnnotation(undefined);
-
     // no drawing - skipping
     if (!activeShape || activeShape.locked) return;
 
@@ -357,6 +303,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     }
   };
 
+  function onDragPoint(
+    e: Konva.KonvaEventObject<DragEvent>,
+    index: number,
+    polygon: PolygonShape,
+    key?: string
+  ) {
+    const polygonAnnotation = annotations.find(
+      (annotation) => annotation.id === key
+    );
+    if (polygonAnnotation === undefined) return;
+
+    let newPoints = [...polygon.points];
+    newPoints[index] = e.target.x();
+    newPoints[index + 1] = e.target.y();
+
+    dispatch(
+      updateAnnotation({
+        ...polygonAnnotation,
+        shape: {
+          ...polygonAnnotation.shape,
+          points: newPoints,
+        },
+      })
+    );
+  }
+
   const renderShape = (
     shape: Shape,
     color: string,
@@ -408,35 +380,66 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         );
       case Tool.Polygon:
         const polygon = shape as PolygonShape;
-        return (
-          <>
-            <Line
-              {...common}
-              points={polygon.points.concat(polygon.preview)}
-              closed={polygon.finished}
-              stroke={alpha(color, 0.8)}
-              tension={0}
-              lineCap="round"
-            />
-            <Circle
-              x={polygon.points[0]}
-              y={polygon.points[1]}
-              radius={5}
-              opacity={0}
-              onMouseEnter={(e) => {
-                const container = e.target.getStage()?.container();
-                if (container !== undefined && !polygon.finished)
-                  container.style.cursor = "crosshair";
-              }}
-              onMouseLeave={(e) => {
-                const container = e.target.getStage()?.container();
-                if (container !== undefined)
-                  container.style.cursor =
-                    tool === Tool.Select ? "pointer" : "crosshair";
-              }}
-            />
-          </>
-        );
+        if (tool === Tool.Edit) {
+          return (
+            <>
+              <Line
+                {...common}
+                points={polygon.points.concat(polygon.preview)}
+                closed={polygon.finished}
+                stroke={alpha(color, 0.8)}
+                tension={0}
+                lineCap="round"
+              />
+              {polygon.points.map((point, index) => {
+                if (index % 2 === 0) {
+                  return (
+                    <Circle
+                      key={index}
+                      x={polygon.points[index]}
+                      y={polygon.points[index + 1]}
+                      radius={5}
+                      fill={alpha(color, 0.8)}
+                      draggable
+                      onDragMove={(e) => {
+                        onDragPoint(e, index, polygon, key);
+                      }}
+                    />
+                  );
+                }
+              })}
+            </>
+          );
+        } else
+          return (
+            <>
+              <Line
+                {...common}
+                points={polygon.points.concat(polygon.preview)}
+                closed={polygon.finished}
+                stroke={alpha(color, 0.8)}
+                tension={0}
+                lineCap="round"
+              />
+              <Circle
+                x={polygon.points[0]}
+                y={polygon.points[1]}
+                radius={5}
+                opacity={0}
+                onMouseEnter={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined && !polygon.finished)
+                    container.style.cursor = "crosshair";
+                }}
+                onMouseLeave={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined && !polygon.finished)
+                    container.style.cursor =
+                      tool === Tool.Select ? "pointer" : "crosshair";
+                }}
+              />
+            </>
+          );
       default:
         return null;
     }
