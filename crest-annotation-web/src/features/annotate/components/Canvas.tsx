@@ -342,6 +342,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       strokeWidth: selected ? 4 : 2,
       fill: alpha(color, 0.3),
       onClick: onClick,
+      listening: tool !== Tool.Edit,
     };
 
     switch (shape.tool) {
@@ -382,14 +383,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         const polygon = shape as PolygonShape;
         return (
           <>
-            <Line
-              {...common}
-              points={polygon.points.concat(polygon.preview)}
-              closed={polygon.finished}
-              stroke={alpha(color, 0.8)}
-              tension={0}
-              lineCap="round"
-            />
             {polygon.points.map((point, index) => {
               if (tool !== Tool.Edit) {
                 return (
@@ -427,6 +420,14 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                 );
               } else return null;
             })}
+            <Line
+              {...common}
+              points={polygon.points.concat(polygon.preview)}
+              closed={polygon.finished}
+              stroke={alpha(color, 0.8)}
+              tension={0}
+              lineCap="round"
+            />
           </>
         );
       default:
