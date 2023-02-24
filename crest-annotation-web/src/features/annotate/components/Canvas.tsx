@@ -410,27 +410,24 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                 }}
               />
             )}
-            {tool === Tool.Edit && (
-              <>
-                {polygon.points.map((point, index) => {
-                  if (index % 2 === 0) {
-                    return (
-                      <Circle
-                        key={index}
-                        x={polygon.points[index]}
-                        y={polygon.points[index + 1]}
-                        radius={5}
-                        fill={alpha(color, 0.8)}
-                        draggable
-                        onDragMove={(e) => {
-                          onDragPolygonPoint(e, index, polygon, key);
-                        }}
-                      />
-                    );
-                  } else return null;
-                })}
-              </>
-            )}
+            {tool === Tool.Edit &&
+              polygon.points.map((point, index) => {
+                if (index % 2 === 0) {
+                  return (
+                    <Circle
+                      key={index}
+                      x={polygon.points[index]}
+                      y={polygon.points[index + 1]}
+                      radius={5}
+                      fill={alpha(color, 0.8)}
+                      draggable
+                      onDragMove={(e) => {
+                        onDragPolygonPoint(e, index, polygon, key);
+                      }}
+                    />
+                  );
+                } else return null;
+              })}
           </>
         );
       default:
