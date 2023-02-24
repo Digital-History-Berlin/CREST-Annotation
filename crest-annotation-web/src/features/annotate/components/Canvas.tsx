@@ -399,12 +399,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                 opacity={0}
                 onMouseEnter={(e) => {
                   const container = e.target.getStage()?.container();
-                  if (container !== undefined && !polygon.finished)
+                  if (container !== undefined)
                     container.style.cursor = "crosshair";
                 }}
                 onMouseLeave={(e) => {
                   const container = e.target.getStage()?.container();
-                  if (container !== undefined && !polygon.finished)
+                  if (container !== undefined)
                     container.style.cursor =
                       tool === Tool.Select ? "pointer" : "crosshair";
                 }}
