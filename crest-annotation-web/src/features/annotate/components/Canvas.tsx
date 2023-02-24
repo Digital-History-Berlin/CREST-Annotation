@@ -425,7 +425,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                     }}
                   />
                 );
-              }
+              } else return null;
             })}
           </>
         );
