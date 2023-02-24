@@ -381,9 +381,17 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         );
       case Tool.Polygon:
         const polygon = shape as PolygonShape;
-        if (tool !== Tool.Edit) {
-          return (
-            <>
+        return (
+          <>
+            <Line
+              {...common}
+              points={polygon.points.concat(polygon.preview)}
+              closed={polygon.finished}
+              stroke={alpha(color, 0.8)}
+              tension={0}
+              lineCap="round"
+            />
+            {!polygon.finished && (
               <Circle
                 x={polygon.points[0]}
                 y={polygon.points[1]}
@@ -401,47 +409,30 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
                       tool === Tool.Select ? "pointer" : "crosshair";
                 }}
               />
-              <Line
-                {...common}
-                points={polygon.points.concat(polygon.preview)}
-                closed={polygon.finished}
-                stroke={alpha(color, 0.8)}
-                tension={0}
-                lineCap="round"
-              />
-            </>
-          );
-        } else {
-          return (
-            <>
-              {polygon.points.map((point, index) => {
-                if (index % 2 === 0) {
-                  return (
-                    <Circle
-                      key={index}
-                      x={polygon.points[index]}
-                      y={polygon.points[index + 1]}
-                      radius={5}
-                      fill={alpha(color, 0.8)}
-                      draggable
-                      onDragMove={(e) => {
-                        onDragPolygonPoint(e, index, polygon, key);
-                      }}
-                    />
-                  );
-                } else return null;
-              })}
-              <Line
-                {...common}
-                points={polygon.points.concat(polygon.preview)}
-                closed={polygon.finished}
-                stroke={alpha(color, 0.8)}
-                tension={0}
-                lineCap="round"
-              />
-            </>
-          );
-        }
+            )}
+            {tool === Tool.Edit && (
+              <>
+                {polygon.points.map((point, index) => {
+                  if (index % 2 === 0) {
+                    return (
+                      <Circle
+                        key={index}
+                        x={polygon.points[index]}
+                        y={polygon.points[index + 1]}
+                        radius={5}
+                        fill={alpha(color, 0.8)}
+                        draggable
+                        onDragMove={(e) => {
+                          onDragPolygonPoint(e, index, polygon, key);
+                        }}
+                      />
+                    );
+                  } else return null;
+                })}
+              </>
+            )}
+          </>
+        );
       default:
         return null;
     }
