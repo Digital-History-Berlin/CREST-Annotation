@@ -78,9 +78,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    const pos = event.target.getStage()?.getPointerPosition();
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
+
+    let pos = stage.getPointerPosition();
     if (pos === undefined || pos === null) return;
 
+    pos = correctCoordinatesForZoom(pos, stage);
     // right click - cancel
     if (event.evt instanceof MouseEvent)
       if (event.evt.button === 2) {
@@ -170,8 +174,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // no drawing - skipping
     if (!activeShape || activeShape.locked) return;
 
-    const pos = event.target.getStage()?.getPointerPosition();
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
+
+    let pos = stage.getPointerPosition();
     if (pos === undefined || pos === null) return;
+
+    pos = correctCoordinatesForZoom(pos, stage);
 
     switch (activeShape.tool) {
       case Tool.Pen: {
@@ -242,9 +251,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     }
 
     // no label selected, show popup
-    const stage = event.target.getStage();
-    const pos = stage?.getPointerPosition();
-    if (stage === null || pos === null || pos === undefined) return;
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
+
+    let pos = stage.getPointerPosition();
+    if (pos === undefined || pos === null) return;
+
+    pos = correctCoordinatesForZoom(pos, stage);
 
     // calculate a nice position
     const popupPos = {
@@ -302,6 +315,42 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       }
     }
   };
+
+  function handleMouseWheel(event: Konva.KonvaEventObject<WheelEvent>) {
+    event.evt.preventDefault();
+
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
+
+    const pos = stage.getPointerPosition();
+    if (pos === undefined || pos === null) return;
+
+    const posCorrected = correctCoordinatesForZoom(pos, stage);
+
+    const oldScale = stage.scaleX();
+
+    const scaleBy = 1.03;
+    const newScale =
+      event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+    const newPos = {
+      x: pos.x - posCorrected.x * newScale,
+      y: pos.y - posCorrected.y * newScale,
+    };
+
+    stage.scale({ x: newScale, y: newScale });
+    stage.position(newPos);
+  }
+
+  function correctCoordinatesForZoom(
+    pos: { x: number; y: number },
+    stage: Konva.Stage
+  ) {
+    return {
+      x: (pos.x - stage.x()) / stage.scaleX(),
+      y: (pos.y - stage.y()) / stage.scaleX(),
+    };
+  }
 
   function onDragPolygonPoint(
     e: Konva.KonvaEventObject<DragEvent>,
@@ -462,7 +511,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onTouchStart={handleMouseDown}
           onTouchMove={handleMouseMove}
           onTouchEnd={handleMouseUp}
+          onWheel={handleMouseWheel}
           onContextMenu={(e) => e.evt.preventDefault()}
+          draggable={tool === Tool.Select}
+          id={"stage"}
         >
           <Layer>
             {imageUri && <BackgroundImage imageUri={imageUri} />}
