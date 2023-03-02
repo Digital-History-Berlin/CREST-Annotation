@@ -21,7 +21,7 @@ export type Shape = (Rectangle | Circle | Line | Polygon) & { tool: Tool };
 
 export interface Annotation {
   id: string;
-  position: number;
+  position?: number;
   label?: Label;
   shape?: Shape;
 

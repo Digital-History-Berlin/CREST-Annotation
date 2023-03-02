@@ -1,7 +1,7 @@
 import React from "react";
 import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
-import { Circle, Layer, Line, Rect, Stage } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
 import LabelsPopup from "./LabelsPopup";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
@@ -21,6 +21,10 @@ import { Line as LineShape } from "../tools/line";
 import { Rectangle as RectangleShape } from "../tools/rectangle";
 import { Circle as CircleShape } from "../tools/circle";
 import { Polygon as PolygonShape } from "../tools/polygon";
+import CircleComponent from "./tools/Circle";
+import LineComponent from "./tools/Line";
+import PolygonComponent from "./tools/Polygon";
+import RectangleComponent from "./tools/Rectangle";
 import { Label } from "../../../api/openApi";
 import { alpha } from "@mui/material";
 
@@ -39,8 +43,51 @@ interface IProps {
 
 const defaultProps = { annotationColor: "#D00000" };
 
+const shapeMap = {
+  [Tool.Pen]: {
+    render: LineComponent,
+    create: (pos: { x: number; y: number }) => ({
+      points: [pos.x, pos.y],
+      tool: Tool.Pen,
+      finished: false,
+    }),
+  },
+  [Tool.Circle]: {
+    render: CircleComponent,
+    create: (pos: { x: number; y: number }) => ({
+      x: pos.x,
+      y: pos.y,
+      width: 0,
+      height: 0,
+      tool: Tool.Rectangle,
+    }),
+  },
+  [Tool.Rectangle]: {
+    render: RectangleComponent,
+    create: (pos: { x: number; y: number }) => ({
+      x: pos.x,
+      y: pos.y,
+      radius: 0,
+      tool: Tool.Circle,
+    }),
+  },
+  [Tool.Polygon]: {
+    render: PolygonComponent,
+    create: (pos: { x: number; y: number }) => ({
+      points: [pos.x, pos.y],
+      preview: [pos.x, pos.y],
+      finished: false,
+      tool: Tool.Polygon,
+    }),
+  },
+  [Tool.Select]: undefined,
+  [Tool.Edit]: undefined,
+};
+
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
+
+  const stage = React.useRef<Konva.Stage>(null);
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
@@ -49,6 +96,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = React.useState<Shape>();
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
+
+  // gets the default cursor that is shown when hovering the canvas
+  const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
 
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
@@ -85,6 +135,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     if (pos === undefined || pos === null) return;
 
     pos = correctCoordinatesForZoom(pos, stage);
+
     // right click - cancel
     if (event.evt instanceof MouseEvent)
       if (event.evt.button === 2) {
@@ -95,75 +146,40 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // TODO: what should happen if the popup is open
     if (labelPopup) return;
 
-    switch (tool) {
-      case Tool.Pen: {
-        setActiveShape({
-          points: [pos.x, pos.y],
-          tool: Tool.Pen,
-          finished: false,
-        });
-        break;
-      }
-      case Tool.Rectangle: {
-        setActiveShape({
-          x: pos.x,
-          y: pos.y,
-          width: 0,
-          height: 0,
-          tool: Tool.Rectangle,
-        });
-        break;
-      }
-      case Tool.Circle: {
-        setActiveShape({
-          x: pos.x,
-          y: pos.y,
-          radius: 0,
-          tool: Tool.Circle,
-        });
-        break;
-      }
-      case Tool.Polygon: {
-        // check if we just started drawing the first point of the polygon
-        if (activeShape === undefined) {
-          setActiveShape({
-            points: [pos.x, pos.y],
-            preview: [pos.x, pos.y],
-            finished: false,
-            tool: Tool.Polygon,
-          });
-        } else {
-          let polygon = activeShape as PolygonShape;
-          let count = polygon.points.length;
+    // if no shape is currently active, try to create a new shape
+    if (activeShape === undefined) {
+      const shape = shapeMap[tool]?.create(pos);
+      if (shape) setActiveShape(shape);
+    } else if (activeShape.tool === Tool.Polygon) {
+      // TODO: move somewhere else
+      let polygon = activeShape as PolygonShape;
+      let count = polygon.points.length;
 
-          let first = { x: polygon.points[0], y: polygon.points[1] };
-          let last = {
-            x: polygon.points[count - 2],
-            y: polygon.points[count - 1],
-          };
+      let first = { x: polygon.points[0], y: polygon.points[1] };
+      let last = {
+        x: polygon.points[count - 2],
+        y: polygon.points[count - 1],
+      };
 
-          // finish drawing polygon
-          // - if area around starting point is clicked
-          // - if area around current point is clicked (double click)
-          if (
-            (Math.abs(pos.x - last.x) <= 5 && Math.abs(pos.y - last.y) <= 5) ||
-            (Math.abs(pos.x - first.x) <= 5 && Math.abs(pos.y - first.y) <= 5)
-          ) {
-            // add last point, which is the same as the first point
-            setActiveShape({
-              ...activeShape,
-              points: [...polygon.points, polygon.points[0], polygon.points[1]],
-              finished: true,
-            });
-            // otherwise add new point
-          } else {
-            setActiveShape({
-              ...activeShape,
-              points: [...polygon.points, pos.x, pos.y],
-            });
-          }
-        }
-        break;
+      // finish drawing polygon
+      // - if area around starting point is clicked
+      // - if area around current point is clicked (double click)
+      if (
+        (Math.abs(pos.x - last.x) <= 5 && Math.abs(pos.y - last.y) <= 5) ||
+        (Math.abs(pos.x - first.x) <= 5 && Math.abs(pos.y - first.y) <= 5)
+      ) {
+        // add last point, which is the same as the first point
+        setActiveShape({
+          ...activeShape,
+          points: [...polygon.points, polygon.points[0], polygon.points[1]],
+          finished: true,
+        });
+        // otherwise add new point
+      } else {
+        setActiveShape({
+          ...activeShape,
+          points: [...polygon.points, pos.x, pos.y],
+        });
       }
     }
   };
@@ -352,135 +368,34 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     };
   }
 
-  function onDragPolygonPoint(
-    e: Konva.KonvaEventObject<DragEvent>,
-    index: number,
-    polygon: PolygonShape,
-    key?: string
-  ) {
-    const polygonAnnotation = annotations.find(
-      (annotation) => annotation.id === key
-    );
-    if (polygonAnnotation === undefined) return;
-
-    let newPoints = [...polygon.points];
-    newPoints[index] = e.target.x();
-    newPoints[index + 1] = e.target.y();
-
-    dispatch(
-      updateAnnotation({
-        ...polygonAnnotation,
-        shape: {
-          ...polygonAnnotation.shape,
-          points: newPoints,
-        },
-      })
-    );
-  }
-
-  const renderShape = (
-    shape: Shape,
+  const renderAnnotation = (
+    annotation: Annotation,
     color: string,
-    key?: string,
-    selected?: boolean,
     onClick?: () => void
   ) => {
-    const common = {
-      key: key,
-      stroke: alpha(color, 0.8),
-      strokeWidth: selected ? 4 : 2,
-      fill: alpha(color, 0.3),
-      onClick: onClick,
-      listening: tool !== Tool.Edit,
-    };
+    const tool = annotation.shape?.tool;
+    if (tool === undefined) return;
 
-    switch (shape.tool) {
-      case Tool.Pen:
-        const line = shape as LineShape;
-        return (
-          <Line
-            {...common}
-            points={line.points}
-            closed={line.finished}
-            tension={0.5}
-            lineCap="round"
-            globalCompositeOperation="source-over"
-          />
-        );
-      case Tool.Rectangle:
-        const rectangle = shape as RectangleShape;
-        return (
-          <Rect
-            {...common}
-            x={rectangle.x}
-            y={rectangle.y}
-            width={rectangle.width}
-            height={rectangle.height}
-          />
-        );
-      case Tool.Circle:
-        const circle = shape as CircleShape;
-        return (
-          <Circle
-            {...common}
-            x={circle.x}
-            y={circle.y}
-            radius={circle.radius}
-          />
-        );
-      case Tool.Polygon:
-        const polygon = shape as PolygonShape;
-        return (
-          <>
-            <Line
-              {...common}
-              points={polygon.points.concat(polygon.preview)}
-              closed={polygon.finished}
-              stroke={alpha(color, 0.8)}
-              tension={0}
-              lineCap="round"
-            />
-            {!polygon.finished && (
-              <Circle
-                x={polygon.points[0]}
-                y={polygon.points[1]}
-                radius={5}
-                opacity={0}
-                onMouseEnter={(e) => {
-                  const container = e.target.getStage()?.container();
-                  if (container !== undefined)
-                    container.style.cursor = "crosshair";
-                }}
-                onMouseLeave={(e) => {
-                  const container = e.target.getStage()?.container();
-                  if (container !== undefined)
-                    container.style.cursor =
-                      tool === Tool.Select ? "pointer" : "crosshair";
-                }}
-              />
-            )}
-            {tool === Tool.Edit &&
-              polygon.points.map(
-                (point, index) =>
-                  index % 2 === 0 && (
-                    <Circle
-                      key={index}
-                      x={polygon.points[index]}
-                      y={polygon.points[index + 1]}
-                      radius={5}
-                      fill={alpha(color, 0.8)}
-                      draggable
-                      onDragMove={(e) => {
-                        onDragPolygonPoint(e, index, polygon, key);
-                      }}
-                    />
-                  )
-              )}
-          </>
-        );
-      default:
-        return null;
-    }
+    return shapeMap[tool]?.render({
+      annotation,
+      color,
+      editing: tool === Tool.Edit,
+      onRequestCursor: (cursor) => {
+        const container = stage.current?.container();
+        if (container !== undefined)
+          container.style.cursor = cursor ?? defaultCursor();
+      },
+      onUpdate: (annotation) => {
+        dispatch(updateAnnotation(annotation));
+      },
+      shapeConfig: {
+        stroke: alpha(color, 0.8),
+        strokeWidth: annotation.selected ? 4 : 2,
+        fill: alpha(color, 0.3),
+        onClick: onClick,
+        listening: tool !== Tool.Edit,
+      },
+    });
   };
 
   return (
@@ -502,7 +417,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       </div>
       <div tabIndex={0} onKeyUp={handleKeyUp} onKeyDown={handleKeyDown}>
         <Stage
-          style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
+          style={{ cursor: defaultCursor() }}
           width={window.innerWidth}
           height={window.innerHeight}
           onMouseDown={handleMouseDown}
@@ -514,21 +429,25 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onWheel={handleMouseWheel}
           onContextMenu={(e) => e.evt.preventDefault()}
           draggable={tool === Tool.Select}
-          id={"stage"}
+          ref={stage}
         >
           <Layer>
             {imageUri && <BackgroundImage imageUri={imageUri} />}
             {activeShape &&
-              renderShape(activeShape, activeLabel?.color ?? annotationColor)}
+              renderAnnotation(
+                {
+                  id: "__active__",
+                  shape: activeShape,
+                },
+                activeLabel?.color ?? annotationColor
+              )}
             {annotations.map(
               (annotation) =>
                 annotation.shape &&
                 !annotation.hidden &&
-                renderShape(
-                  annotation.shape,
-                  annotation.label?.color ?? annotationColor,
-                  annotation.id,
-                  annotation.selected,
+                renderAnnotation(
+                  annotation,
+                  annotation.label?.color ?? "#f00",
                   () => toggleAnnotationSelection(annotation)
                 )
             )}
