@@ -148,6 +148,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     // if no shape is currently active, try to create a new shape
     if (activeShape === undefined) {
+      console.log(pos);
       const shape = shapeMap[tool]?.create(pos);
       if (shape) setActiveShape(shape);
     } else if (activeShape.tool === Tool.Polygon) {
@@ -373,10 +374,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     color: string,
     onClick?: () => void
   ) => {
-    const tool = annotation.shape?.tool;
-    if (tool === undefined) return;
+    const annotationTool = annotation.shape?.tool;
+    if (annotationTool === undefined) return;
 
-    return shapeMap[tool]?.render({
+    return shapeMap[annotationTool]?.render({
       annotation,
       color,
       editing: tool === Tool.Edit,
