@@ -95,6 +95,7 @@ const AnnotatePage = () => {
 
   return (
     <Layout
+      scrollable={true}
       header={<Toolbar tools={renderTools()} />}
       left={
         <Stack

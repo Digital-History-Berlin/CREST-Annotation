@@ -1,7 +1,8 @@
 import React from "react";
 import { Circle as KonvaCircle, Ring } from "react-konva";
 import { Circle as CircleShape } from "../../tools/circle";
-import ShapeProps from "./ShapeProps";
+import { Shape, Tool } from "../../slice";
+import { Position, ShapeProps, ShapeTool } from "./Shape";
 import Konva from "konva";
 
 const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
@@ -59,6 +60,32 @@ const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
   );
 };
 
-export const createCircle = () => {};
+const onCreate = ({ x, y }: Position) => ({
+  x: x,
+  y: y,
+  radius: 0,
+  tool: Tool.Circle,
+});
 
-export default Circle;
+const onMove = (shape: Shape, { x, y }: Position) => {
+  const circle = shape as CircleShape;
+
+  return {
+    ...shape,
+    radius: Math.sqrt(Math.pow(x - circle.x, 2) + Math.pow(y - circle.y, 2)),
+  };
+};
+
+const onUp = (shape: Shape, { x, y }: Position) => ({
+  ...shape,
+  finished: true,
+});
+
+const CircleTool = {
+  component: Circle,
+  onCreate,
+  onMove,
+  onUp,
+} as ShapeTool;
+
+export default CircleTool;
