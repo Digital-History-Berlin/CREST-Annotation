@@ -5,20 +5,11 @@ import ShapeProps from "./ShapeProps";
 import Konva from "konva";
 
 const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
-  //const [down, setDown] = React.useState<boolean>(false);
-
   const circle = annotation.shape as CircleShape;
 
-  const onMouseDownCircle = () => {
-    //setDown(true);
-  };
-
-  const onMouseUpCircle = () => {
-    //setDown(false);
-  };
-
   const onDragCircle = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    //if (down) return;
+    // Edit only with left mouse button
+    if (e.evt.buttons !== 1) return;
 
     const shape = annotation.shape;
     if (shape === undefined) return;
@@ -32,7 +23,7 @@ const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
     const radius = Math.sqrt(
       Math.pow(pos.x - circle.x, 2) + Math.pow(pos.y - circle.y, 2)
     );
-    console.log(pos, circle, shape);
+
     onUpdate?.({
       ...annotation,
       shape: {
@@ -61,12 +52,6 @@ const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
           fill={"red"}
           onMouseMove={(e) => {
             onDragCircle(e);
-          }}
-          onMouseDown={() => {
-            onMouseDownCircle();
-          }}
-          onMouseUp={() => {
-            onMouseUpCircle();
           }}
         />
       )}
