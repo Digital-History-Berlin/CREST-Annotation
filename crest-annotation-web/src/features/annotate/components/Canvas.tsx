@@ -377,26 +377,31 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     const annotationTool = annotation.shape?.tool;
     if (annotationTool === undefined) return;
 
-    return shapeMap[annotationTool]?.render({
-      annotation,
-      color,
-      editing: tool === Tool.Edit,
-      onRequestCursor: (cursor) => {
-        const container = stage.current?.container();
-        if (container !== undefined)
-          container.style.cursor = cursor ?? defaultCursor();
-      },
-      onUpdate: (annotation) => {
-        dispatch(updateAnnotation(annotation));
-      },
-      shapeConfig: {
-        stroke: alpha(color, 0.8),
-        strokeWidth: annotation.selected ? 4 : 2,
-        fill: alpha(color, 0.3),
-        onClick: onClick,
-        listening: tool !== Tool.Edit,
-      },
-    });
+    const Component = shapeMap[annotationTool]?.render;
+    if (!Component) return undefined;
+
+    return (
+      <Component
+        annotation={annotation}
+        color={color}
+        editing={tool === Tool.Edit}
+        onRequestCursor={(cursor) => {
+          const container = stage.current?.container();
+          if (container !== undefined)
+            container.style.cursor = cursor ?? defaultCursor();
+        }}
+        onUpdate={(annotation) => {
+          dispatch(updateAnnotation(annotation));
+        }}
+        shapeConfig={{
+          stroke: alpha(color, 0.8),
+          strokeWidth: annotation.selected ? 4 : 2,
+          fill: alpha(color, 0.3),
+          onClick: onClick,
+          listening: tool !== Tool.Edit,
+        }}
+      />
+    );
   };
 
   return (
