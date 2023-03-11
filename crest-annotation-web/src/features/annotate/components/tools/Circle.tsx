@@ -1,25 +1,33 @@
 import React from "react";
-import { Circle as KonvaCircle, Ring } from "react-konva";
+import { Circle as KonvaCircle, Group, Ring } from "react-konva";
 import { Circle as CircleShape } from "../../tools/circle";
 import { Shape, Tool } from "../../slice";
 import { Position, ShapeProps, ShapeTool } from "./Shape";
 import Konva from "konva";
+import { alpha } from "@mui/material";
 
-const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
+const Circle = ({
+  annotation,
+  color,
+  shapeConfig,
+  editing,
+  onUpdate,
+  getTransformedPointerPosition,
+}: ShapeProps) => {
   const circle = annotation.shape as CircleShape;
 
-  const onDragCircle = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Edit only with left mouse button
-    if (e.evt.buttons !== 1) return;
-
+  const onDragBorder = (e: Konva.KonvaEventObject<DragEvent>) => {
     const shape = annotation.shape;
     if (shape === undefined) return;
 
-    const stage = e.target?.getStage();
-    if (stage === undefined || stage === null) return;
+    const pos = getTransformedPointerPosition(e);
+    if (pos === undefined) return;
 
-    const pos = stage.getPointerPosition();
-    if (pos === undefined || pos === null) return;
+    // stop konva from changing the position of the ring object and keep it in the center of the original circle
+    e.target?.setAttrs({
+      x: circle.x,
+      y: circle.y,
+    });
 
     const radius = Math.sqrt(
       Math.pow(pos.x - circle.x, 2) + Math.pow(pos.y - circle.y, 2)
@@ -34,29 +42,59 @@ const Circle = ({ annotation, shapeConfig, editing, onUpdate }: ShapeProps) => {
     });
   };
 
+  const onDragCenter = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const shape = annotation.shape;
+    if (shape === undefined) return;
+
+    const pos = getTransformedPointerPosition(e);
+    if (pos === undefined) return;
+
+    onUpdate?.({
+      ...annotation,
+      shape: {
+        ...shape,
+        x: pos.x,
+        y: pos.y,
+      },
+    });
+  };
+
   return (
-    <>
+    <Group key={annotation.id}>
       <KonvaCircle
         {...shapeConfig}
-        key={annotation.id}
         x={circle.x}
         y={circle.y}
         radius={circle.radius}
       />
       {editing && (
-        <Ring
-          x={circle.x}
-          y={circle.y}
-          innerRadius={circle.radius * 0.9}
-          outerRadius={circle.radius * 1.1}
-          listening={true}
-          fill={"red"}
-          onMouseMove={(e) => {
-            onDragCircle(e);
-          }}
-        />
+        <>
+          <Ring
+            x={circle.x}
+            y={circle.y}
+            innerRadius={circle.radius - 3}
+            outerRadius={circle.radius + 3}
+            offset={{ x: 0, y: 0 }}
+            listening={true}
+            fill={alpha(color, 0.8)}
+            draggable
+            onDragMove={(e) => {
+              onDragBorder(e);
+            }}
+          />
+          <KonvaCircle
+            x={circle.x}
+            y={circle.y}
+            radius={5}
+            fill={alpha(color, 0.8)}
+            draggable
+            onDragMove={(e) => {
+              onDragCenter(e);
+            }}
+          />
+        </>
       )}
-    </>
+    </Group>
   );
 };
 
@@ -76,7 +114,7 @@ const onMove = (shape: Shape, { x, y }: Position) => {
   };
 };
 
-const onUp = (shape: Shape, { x, y }: Position) => ({
+const onUp = (shape: Shape) => ({
   ...shape,
   finished: true,
 });

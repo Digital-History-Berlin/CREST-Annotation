@@ -19,7 +19,9 @@ export interface ShapeProps {
   editing: boolean;
   onRequestCursor?: (cursor: string | undefined) => void;
   onUpdate?: (annotation: Annotation) => void;
-  transformation: Transformation;
+  getTransformedPointerPosition: (
+    event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
+  ) => Position | undefined;
 }
 
 export interface ShapeTool {

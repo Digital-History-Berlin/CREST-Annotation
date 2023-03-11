@@ -17,8 +17,6 @@ import {
   unselectAnnotation,
   updateAnnotation,
 } from "../slice";
-import { Line as LineShape } from "../tools/line";
-import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
 import { alpha } from "@mui/material";
 import RectangleTool from "./tools/Rectangle";
@@ -283,7 +281,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onClick: onClick,
           listening: tool !== Tool.Edit,
         }}
-        transformation={transform}
+        getTransformedPointerPosition={getTransformedPointerPosition}
       />
     );
   };

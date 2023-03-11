@@ -18,8 +18,7 @@ const Polygon = ({
 
   const onDragPolygonPoint = (
     e: Konva.KonvaEventObject<DragEvent>,
-    index: number,
-    polygon: PolygonShape
+    index: number
   ) => {
     const shape = annotation.shape;
     if (shape === undefined) return;
@@ -69,7 +68,7 @@ const Polygon = ({
                 fill={alpha(color, 0.8)}
                 draggable
                 onDragMove={(e) => {
-                  onDragPolygonPoint(e, index, polygon);
+                  onDragPolygonPoint(e, index);
                 }}
               />
             )
