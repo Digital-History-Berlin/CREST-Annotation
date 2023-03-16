@@ -17,6 +17,8 @@ import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
 import FinishedIcon from "@mui/icons-material/Check";
+import EditIcon from "@mui/icons-material/CropRotate";
+import ObjectsIcon from "@mui/icons-material/Apps";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
 import {
@@ -92,7 +94,7 @@ const AnnotatePage = () => {
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
         { tool: Tool.Polygon, icon: PolygonIcon },
-        { tool: Tool.Edit, icon: PenIcon },
+        { tool: Tool.Edit, icon: EditIcon },
       ].map((button) => {
         return (
           <ToolbarToggleButton
@@ -110,6 +112,9 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
+      <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
+        <ObjectsIcon />
+      </ToolbarButton>
       <ToolbarButton onClick={() => markAsFinished()}>
         <FinishedIcon />
       </ToolbarButton>
