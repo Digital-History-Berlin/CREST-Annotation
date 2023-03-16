@@ -64,7 +64,7 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
         <Box sx={{ flex: "1 0 0", justifyContent: "flex-end" }}>{actions}</Box>
         <ToolbarButton onClick={() => markAsFinished()}>
           <Typography variant="h5" noWrap>
-            CREST
+            Finish Image
           </Typography>
         </ToolbarButton>
       </MuiToolbar>
