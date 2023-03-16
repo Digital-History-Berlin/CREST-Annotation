@@ -7,6 +7,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { ToolbarButton } from "./ToolbarButton";
+import { useMarkAsFinishedMutation } from "../api/enhancedApi";
 
 interface IProps {
   title?: string;
@@ -26,6 +27,14 @@ const defaultProps = {};
 const Toolbar = ({ title, tools, actions, sx }: IProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
+
+  const [requestMarkAsFinished] = useMarkAsFinishedMutation();
+
+  const markAsFinished = async () => {
+    await requestMarkAsFinished({
+      objectId: "cb018526-f9de-4f66-bc60-37f65d834d33",
+    }).unwrap();
+  };
 
   return (
     <div
@@ -51,6 +60,11 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
           {tools}
         </Box>
         <Box sx={{ flex: "1 0 0", justifyContent: "flex-end" }}>{actions}</Box>
+        <ToolbarButton onClick={() => markAsFinished()}>
+          <Typography variant="h5" noWrap>
+            CREST
+          </Typography>
+        </ToolbarButton>
       </MuiToolbar>
     </div>
   );
