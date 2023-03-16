@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Toolbar as MuiToolbar,
@@ -29,10 +29,12 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
   const theme = useTheme();
 
   const [requestMarkAsFinished] = useMarkAsFinishedMutation();
+  const { objectId } = useParams<{ objectId: string }>();
 
   const markAsFinished = async () => {
+    if (objectId === undefined) return;
     await requestMarkAsFinished({
-      objectId: "cb018526-f9de-4f66-bc60-37f65d834d33",
+      objectId: objectId,
     }).unwrap();
   };
 
