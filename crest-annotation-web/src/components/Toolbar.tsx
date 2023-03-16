@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Toolbar as MuiToolbar,
@@ -7,7 +7,6 @@ import {
   useTheme,
 } from "@mui/material";
 import { ToolbarButton } from "./ToolbarButton";
-import { useMarkAsFinishedMutation } from "../api/enhancedApi";
 
 interface IProps {
   title?: string;
