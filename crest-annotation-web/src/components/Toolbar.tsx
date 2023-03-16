@@ -28,16 +28,6 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  const [requestMarkAsFinished] = useMarkAsFinishedMutation();
-  const { objectId } = useParams<{ objectId: string }>();
-
-  const markAsFinished = async () => {
-    if (objectId === undefined) return;
-    await requestMarkAsFinished({
-      objectId: objectId,
-    }).unwrap();
-  };
-
   return (
     <div
       style={{
@@ -46,7 +36,7 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
       }}
     >
       <MuiToolbar sx={sx}>
-        <Box sx={{ flex: "1 0 0", justifyContent: "flex-start" }}>
+        <Box flex="1 0 0" display="flex" justifyContent="flex-start">
           <ToolbarButton onClick={() => navigate("/")}>
             <Typography variant="h5" noWrap>
               CREST
@@ -61,12 +51,9 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
           )}
           {tools}
         </Box>
-        <Box sx={{ flex: "1 0 0", justifyContent: "flex-end" }}>{actions}</Box>
-        <ToolbarButton onClick={() => markAsFinished()}>
-          <Typography variant="h5" noWrap>
-            Finish Image
-          </Typography>
-        </ToolbarButton>
+        <Box flex="1 0 0" display="flex" justifyContent="flex-end">
+          {actions}
+        </Box>
       </MuiToolbar>
     </div>
   );

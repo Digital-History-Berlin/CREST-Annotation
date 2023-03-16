@@ -16,15 +16,19 @@ import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
+import FinishedIcon from "@mui/icons-material/Check";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
-import { ToolbarToggleButton } from "../../components/ToolbarButton";
+import {
+  ToolbarButton,
+  ToolbarToggleButton,
+} from "../../components/ToolbarButton";
 import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
 import LabelsExplorer from "./components/LabelsExplorer";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
-import { enhancedApi } from "../../api/enhancedApi";
+import { enhancedApi, useMarkAsFinishedMutation } from "../../api/enhancedApi";
 import Loader from "../../components/Loader";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import { Label } from "../../api/openApi";
@@ -42,6 +46,7 @@ const AnnotatePage = () => {
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
+  const [requestMarkAsFinished] = useMarkAsFinishedMutation();
 
   const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -69,6 +74,16 @@ const AnnotatePage = () => {
     setShowCreate(true);
   };
 
+  const markAsFinished = async () => {
+    if (!objectId) return;
+
+    await requestMarkAsFinished({
+      objectId: objectId,
+    }).unwrap();
+
+    if (projectId) navigateRandom(projectId);
+  };
+
   const renderTools = () => (
     <Stack direction="row">
       {[
@@ -93,10 +108,18 @@ const AnnotatePage = () => {
     </Stack>
   );
 
+  const renderActions = () => (
+    <Stack direction="row">
+      <ToolbarButton onClick={() => markAsFinished()}>
+        <FinishedIcon />
+      </ToolbarButton>
+    </Stack>
+  );
+
   return (
     <Layout
       scrollable={true}
-      header={<Toolbar tools={renderTools()} />}
+      header={<Toolbar tools={renderTools()} actions={renderActions()} />}
       left={
         <Stack
           sx={{
