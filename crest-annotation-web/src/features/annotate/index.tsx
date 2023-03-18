@@ -77,6 +77,7 @@ const AnnotatePage = () => {
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
         { tool: Tool.Polygon, icon: PolygonIcon },
+        { tool: Tool.Edit, icon: PenIcon },
       ].map((button) => {
         return (
           <ToolbarToggleButton

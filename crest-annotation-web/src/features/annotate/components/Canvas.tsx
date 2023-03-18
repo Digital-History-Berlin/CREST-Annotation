@@ -15,6 +15,7 @@ import {
   Shape,
   Tool,
   unselectAnnotation,
+  updateAnnotation,
 } from "../slice";
 import { Line as LineShape } from "../tools/line";
 import { Rectangle as RectangleShape } from "../tools/rectangle";
@@ -52,7 +53,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
       annotation.selected
-        ? dispatch(unselectAnnotation(annotation))
+        ? dispatch(unselectAnnotation())
         : dispatch(selectAnnotation(annotation));
   };
 
@@ -302,6 +303,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     }
   };
 
+  function onDragPolygonPoint(
+    e: Konva.KonvaEventObject<DragEvent>,
+    index: number,
+    polygon: PolygonShape,
+    key?: string
+  ) {
+    const polygonAnnotation = annotations.find(
+      (annotation) => annotation.id === key
+    );
+    if (polygonAnnotation === undefined) return;
+
+    let newPoints = [...polygon.points];
+    newPoints[index] = e.target.x();
+    newPoints[index + 1] = e.target.y();
+
+    dispatch(
+      updateAnnotation({
+        ...polygonAnnotation,
+        shape: {
+          ...polygonAnnotation.shape,
+          points: newPoints,
+        },
+      })
+    );
+  }
+
   const renderShape = (
     shape: Shape,
     color: string,
@@ -315,6 +342,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       strokeWidth: selected ? 4 : 2,
       fill: alpha(color, 0.3),
       onClick: onClick,
+      listening: tool !== Tool.Edit,
     };
 
     switch (shape.tool) {
@@ -363,23 +391,42 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
               tension={0}
               lineCap="round"
             />
-            <Circle
-              x={polygon.points[0]}
-              y={polygon.points[1]}
-              radius={5}
-              opacity={0}
-              onMouseEnter={(e) => {
-                const container = e.target.getStage()?.container();
-                if (container !== undefined)
-                  container.style.cursor = "crosshair";
-              }}
-              onMouseLeave={(e) => {
-                const container = e.target.getStage()?.container();
-                if (container !== undefined)
-                  container.style.cursor =
-                    tool === Tool.Select ? "pointer" : "crosshair";
-              }}
-            />
+            {!polygon.finished && (
+              <Circle
+                x={polygon.points[0]}
+                y={polygon.points[1]}
+                radius={5}
+                opacity={0}
+                onMouseEnter={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined)
+                    container.style.cursor = "crosshair";
+                }}
+                onMouseLeave={(e) => {
+                  const container = e.target.getStage()?.container();
+                  if (container !== undefined)
+                    container.style.cursor =
+                      tool === Tool.Select ? "pointer" : "crosshair";
+                }}
+              />
+            )}
+            {tool === Tool.Edit &&
+              polygon.points.map(
+                (point, index) =>
+                  index % 2 === 0 && (
+                    <Circle
+                      key={index}
+                      x={polygon.points[index]}
+                      y={polygon.points[index + 1]}
+                      radius={5}
+                      fill={alpha(color, 0.8)}
+                      draggable
+                      onDragMove={(e) => {
+                        onDragPolygonPoint(e, index, polygon, key);
+                      }}
+                    />
+                  )
+              )}
           </>
         );
       default:

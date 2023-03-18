@@ -42,7 +42,7 @@ const AnnotationsList = ({ projectId }: IProps) => {
 
   const toggleAnnotationSelection = (annotation: Annotation) =>
     annotation.selected
-      ? dispatch(unselectAnnotation(annotation))
+      ? dispatch(unselectAnnotation())
       : dispatch(selectAnnotation(annotation));
 
   const renderActions = (annotation: Annotation) => (

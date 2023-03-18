@@ -13,6 +13,7 @@ export enum Tool {
   Circle,
   Rectangle,
   Polygon,
+  Edit,
 }
 
 /// Combines all available shape types with meta fields
@@ -96,11 +97,11 @@ export const slice = createSlice({
         selected: a.id === action.payload.id,
       }));
     },
-    unselectAnnotation: (state, action) => {
-      state.annotations = replaceAnnotation(state, {
-        ...action.payload,
+    unselectAnnotation: (state) => {
+      state.annotations = state.annotations.map((a) => ({
+        ...a,
         selected: false,
-      });
+      }));
     },
     lockAnnotation: (state, action) => {
       state.annotations = replaceAnnotation(state, {
