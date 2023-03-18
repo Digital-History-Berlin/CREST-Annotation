@@ -622,6 +622,49 @@
     }
    }
   },
+  "/objects/finished/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Mark As Finished",
+    "operationId": "mark_as_finished",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/projects/": {
    "get": {
     "tags": [

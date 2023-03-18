@@ -1,7 +1,8 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
+import { Shape, Tool } from "../../slice";
 import { Line as LineShape } from "../../tools/line";
-import ShapeProps from "./ShapeProps";
+import { Position, ShapeProps, ShapeTool } from "./Shape";
 
 const Line = ({ annotation, shapeConfig }: ShapeProps) => {
   const line = annotation.shape as LineShape;
@@ -19,4 +20,31 @@ const Line = ({ annotation, shapeConfig }: ShapeProps) => {
   );
 };
 
-export default Line;
+const onCreate = ({ x, y }: Position) => ({
+  points: [x, y],
+  tool: Tool.Pen,
+  finished: false,
+});
+
+const onMove = (shape: Shape, { x, y }: Position) => {
+  let line = shape as LineShape;
+
+  return {
+    ...shape,
+    points: [...line.points, x, y],
+  };
+};
+
+const onUp = (shape: Shape, { x, y }: Position) => ({
+  ...shape,
+  finished: true,
+});
+
+const LineTool = {
+  component: Line,
+  onCreate,
+  onMove,
+  onUp,
+} as ShapeTool;
+
+export default LineTool;

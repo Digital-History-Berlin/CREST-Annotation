@@ -35,7 +35,7 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
       }}
     >
       <MuiToolbar sx={sx}>
-        <Box sx={{ flex: "1 0 0", justifyContent: "flex-start" }}>
+        <Box flex="1 0 0" display="flex" justifyContent="flex-start">
           <ToolbarButton onClick={() => navigate("/")}>
             <Typography variant="h5" noWrap>
               CREST
@@ -50,7 +50,9 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
           )}
           {tools}
         </Box>
-        <Box sx={{ flex: "1 0 0", justifyContent: "flex-end" }}>{actions}</Box>
+        <Box flex="1 0 0" display="flex" justifyContent="flex-end">
+          {actions}
+        </Box>
       </MuiToolbar>
     </div>
   );
