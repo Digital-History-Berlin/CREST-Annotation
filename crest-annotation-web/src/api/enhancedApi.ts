@@ -65,4 +65,5 @@ export const {
   useUpdateProjectMutation,
   useGetProjectQuery,
   useDeleteProjectMutation,
+  useMarkAsFinishedMutation,
 } = enhancedApi;
