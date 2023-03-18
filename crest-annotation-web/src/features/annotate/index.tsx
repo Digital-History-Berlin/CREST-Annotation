@@ -30,7 +30,7 @@ import AnnotationsList from "./components/AnnotationsList";
 import LabelsExplorer from "./components/LabelsExplorer";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
-import { enhancedApi, useMarkAsFinishedMutation } from "../../api/enhancedApi";
+import { enhancedApi, useFinishObjectMutation } from "../../api/enhancedApi";
 import Loader from "../../components/Loader";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import { Label } from "../../api/openApi";
@@ -48,7 +48,7 @@ const AnnotatePage = () => {
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
-  const [requestMarkAsFinished] = useMarkAsFinishedMutation();
+  const [rqeuestFinishObject] = useFinishObjectMutation();
 
   const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -76,10 +76,10 @@ const AnnotatePage = () => {
     setShowCreate(true);
   };
 
-  const markAsFinished = async () => {
+  const finishObject = async () => {
     if (!objectId) return;
 
-    await requestMarkAsFinished({
+    await rqeuestFinishObject({
       objectId: objectId,
     }).unwrap();
 
@@ -115,7 +115,7 @@ const AnnotatePage = () => {
       <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
         <ObjectsIcon />
       </ToolbarButton>
-      <ToolbarButton onClick={() => markAsFinished()}>
+      <ToolbarButton onClick={() => finishObject()}>
         <FinishedIcon />
       </ToolbarButton>
     </Stack>

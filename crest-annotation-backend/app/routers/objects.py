@@ -116,10 +116,8 @@ async def store_annotations(
     return Response()
 
 
-@router.post("/finished/{object_id}")
-async def mark_as_finished(
-    object_id: str, db: Session = Depends(get_db)
-):
+@router.post("/finish/{object_id}")
+async def finish_object(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")

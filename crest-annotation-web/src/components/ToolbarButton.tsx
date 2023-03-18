@@ -5,6 +5,7 @@ import { styled, Button, ToggleButton } from "@mui/material";
  */
 export const ToolbarButton = styled(Button)(({ theme }) => ({
   "&": {
+    minWidth: 0,
     padding: theme.spacing(1),
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),

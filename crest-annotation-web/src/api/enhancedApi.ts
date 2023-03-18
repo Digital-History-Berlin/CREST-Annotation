@@ -60,10 +60,10 @@ export const {
   useGetImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
+  useFinishObjectMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useGetProjectQuery,
   useDeleteProjectMutation,
-  useMarkAsFinishedMutation,
 } = enhancedApi;

@@ -622,13 +622,13 @@
     }
    }
   },
-  "/objects/finished/{object_id}": {
+  "/objects/finish/{object_id}": {
    "post": {
     "tags": [
      "object"
     ],
-    "summary": "Mark As Finished",
-    "operationId": "mark_as_finished",
+    "summary": "Finish Object",
+    "operationId": "finish_object",
     "parameters": [
      {
       "required": true,
