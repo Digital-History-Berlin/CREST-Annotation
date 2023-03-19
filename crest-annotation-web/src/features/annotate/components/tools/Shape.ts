@@ -2,11 +2,6 @@ import Konva from "konva";
 import { ShapeConfig } from "konva/lib/Shape";
 import { Shape } from "../../slice";
 
-export type Transformation = {
-  (position: Position): Position | undefined;
-  (position: Position, stage: Konva.Stage): Position;
-};
-
 export interface Position {
   x: number;
   y: number;

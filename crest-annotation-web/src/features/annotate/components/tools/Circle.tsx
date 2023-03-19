@@ -1,7 +1,8 @@
 import React from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
-import { Group, Circle as KonvaCircle, Ring } from "react-konva";
+import { Group, Circle as KonvaCircle } from "react-konva";
+import Anchor from "./Anchor";
 import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Circle as CircleShape } from "../../tools/circle";
@@ -11,6 +12,7 @@ const Circle = ({
   shape,
   color,
   shapeConfig,
+  editingPointConfig,
   editing,
   onUpdate,
   getTransformedPointerPosition,
@@ -24,7 +26,7 @@ const Circle = ({
     // stop konva from changing the position of the ring object
     // and keep it in the center of the original circle
     e.target?.setAttrs({
-      x: circle.x,
+      x: circle.x + circle.radius,
       y: circle.y,
     });
 
@@ -56,26 +58,22 @@ const Circle = ({
         x={circle.x}
         y={circle.y}
         radius={circle.radius}
+        stroke={alpha(color, 0.8)}
       />
       {editing && (
         <>
-          <Ring
-            x={circle.x}
+          <Anchor
+            {...editingPointConfig}
+            x={circle.x + circle.radius}
             y={circle.y}
-            innerRadius={circle.radius - 3}
-            outerRadius={circle.radius + 3}
-            offset={{ x: 0, y: 0 }}
-            listening={true}
-            fill={alpha(color, 0.8)}
-            draggable
+            fill={color}
             onDragMove={onDragBorder}
           />
-          <KonvaCircle
+          <Anchor
+            {...editingPointConfig}
             x={circle.x}
             y={circle.y}
-            radius={5}
-            fill={alpha(color, 0.8)}
-            draggable
+            fill={color}
             onDragMove={onDragCenter}
           />
         </>

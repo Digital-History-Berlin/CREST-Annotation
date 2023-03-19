@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { alpha } from "@mui/material";
+import { Box, alpha } from "@mui/material";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
 import { v4 as uuidv4 } from "uuid";
@@ -9,7 +9,7 @@ import CircleTool from "./tools/Circle";
 import LineTool from "./tools/Line";
 import PolygonTool from "./tools/Polygon";
 import RectangleTool from "./tools/Rectangle";
-import { Position, Transformation } from "./tools/Shape";
+import { Position } from "./tools/Shape";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
@@ -24,8 +24,11 @@ import {
   selectActiveTool,
   selectAnnotation,
   selectAnnotations,
+  selectTransformation,
   unselectAnnotation,
   updateAnnotation,
+  updateShape,
+  updateTransformation,
 } from "../slice";
 
 interface PopupPosition {
@@ -55,6 +58,7 @@ const shapeMap = {
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
 
+  const container = useRef<HTMLDivElement>(null);
   const stage = useRef<Konva.Stage>(null);
 
   const tool = useAppSelector(selectActiveTool);
@@ -62,6 +66,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const activeAnnotation = useAppSelector(selectActiveAnnotation);
   const modifiers = useAppSelector(selectActiveModifiers);
   const annotations = useAppSelector(selectAnnotations);
+  const transformation = useAppSelector(selectTransformation);
 
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = useState<Shape>();
@@ -76,6 +81,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // this should explicitly only trigger when the active label changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLabel]);
+
+  // update the zoom on change
+  useEffect(() => {
+    stage.current?.scale({ x: transformation.scale, y: transformation.scale });
+    stage.current?.position(transformation.translate);
+  }, [transformation]);
 
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
@@ -172,18 +183,19 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    // right click - cancel
-    if (event.evt instanceof MouseEvent)
-      if (event.evt.button === 2) {
-        cancelAnnotation();
-        return;
-      }
+    const cancel =
+      // right click
+      (event.evt instanceof MouseEvent && event.evt.button === 2) ||
+      // popup open
+      labelPopup;
 
-    if (labelPopup) {
-      // popup is open - cancel
+    if (cancel) {
       cancelAnnotation();
       return;
     }
+
+    const ignore = event.evt instanceof MouseEvent && event.evt.button === 1;
+    if (ignore) return;
 
     const pos = getTransformedPointerPosition(event);
     if (pos === undefined) return;
@@ -214,10 +226,30 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // (used to display popup near cursor position)
     setCursorPos(pos);
 
+    const translate =
+      (event.evt instanceof MouseEvent && event.evt.buttons === 4) ||
+      (tool === Tool.Select &&
+        event.evt instanceof MouseEvent &&
+        event.evt.buttons) ||
+      (tool === Tool.Select && event.evt instanceof TouchEvent);
+
+    if (translate) {
+      dispatch(
+        updateTransformation({
+          ...transformation,
+          translate: {
+            x: transformation.translate.x + pos.x - cursorPos.x,
+            y: transformation.translate.y + pos.y - cursorPos.y,
+          },
+        })
+      );
+      return;
+    }
+
     // no drawing - skipping
     if (!activeShape || activeShape.finished) return;
 
-    const transformed = transform(pos, stage);
+    const transformed = transform(pos);
     const shape = shapeMap[tool]?.onMove?.(activeShape, transformed);
     if (shape) updateActiveShape(shape);
   };
@@ -250,45 +282,39 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     const pos = stage.getPointerPosition();
     if (pos === undefined || pos === null) return;
+    const transformed = transform(pos);
 
-    const posCorrected = transform(pos, stage);
+    // TODO: maybe configure
+    const distance = event.evt.deltaY * 0.01;
+    const scale =
+      event.evt.deltaY > 0
+        ? transformation.scale * distance
+        : transformation.scale / -distance;
 
-    const oldScale = stage.scaleX();
-
-    const scaleBy = 1.2;
-    const newScale =
-      event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-
-    const newPos = {
-      x: pos.x - posCorrected.x * newScale,
-      y: pos.y - posCorrected.y * newScale,
-    };
-
-    stage.scale({ x: newScale, y: newScale });
-    stage.position(newPos);
+    dispatch(
+      updateTransformation({
+        translate: {
+          x: pos.x - transformed.x * scale,
+          y: pos.y - transformed.y * scale,
+        },
+        scale: scale,
+      })
+    );
   }
 
-  const transform = ((
-    pos: { x: number; y: number },
-    activeStage?: Konva.Stage
-  ) => {
-    if (!activeStage) {
-      if (!stage.current) return undefined;
-      activeStage = stage.current;
-    }
-
+  const transform = (pos: { x: number; y: number }) => {
     return {
-      x: (pos.x - activeStage.x()) / activeStage.scaleX(),
-      y: (pos.y - activeStage.y()) / activeStage.scaleX(),
+      x: (pos.x - transformation.translate.x) / transformation.scale,
+      y: (pos.y - transformation.translate.y) / transformation.scale,
     };
-  }) as Transformation;
+  };
 
   const renderShape = (
     identifier: string,
     shape: Shape,
     color: string,
     selected?: boolean,
-    onUpdate?: () => void,
+    onUpdate?: (shape: Shape) => void,
     onClick?: () => void
   ) => {
     const annotationTool = shape?.tool;
@@ -300,14 +326,16 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // properties passed to shape
     const shapeConfig = {
       stroke: alpha(color, 0.8),
-      strokeWidth: selected ? 4 : 2,
+      strokeWidth: (selected ? 4 : 2) / transformation.scale,
       fill: alpha(color, 0.3),
       onClick: onClick,
       listening: tool !== Tool.Edit,
     };
 
     // properties passed to editing points
-    const editingPointConfig = {};
+    const editingPointConfig = {
+      radius: 5 / transformation.scale,
+    };
 
     return (
       <Component
@@ -333,8 +361,14 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         shape,
         annotation.label?.color ?? "#f00",
         annotation.selected,
-        () => {
-          /* TODO */
+        (shape) => {
+          dispatch(
+            updateShape({
+              annotation,
+              shape,
+              index,
+            })
+          );
         },
         () => toggleAnnotationSelection(annotation)
       )
@@ -342,7 +376,14 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   };
 
   return (
-    <div style={{ position: "relative", display: "flex", overflow: "hidden" }}>
+    <Box
+      position="relative"
+      display="flex"
+      overflow="hidden"
+      flex="1 1"
+      ref={container}
+      onKeyDown={handleKeyDown}
+    >
       <div
         style={{
           ...labelPopup,
@@ -360,35 +401,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onCancel={cancelAnnotation}
         />
       </div>
-      <div tabIndex={0} onKeyDown={handleKeyDown}>
-        <Stage
-          style={{ cursor: defaultCursor() }}
-          width={window.innerWidth}
-          height={window.innerHeight}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onTouchStart={handleMouseDown}
-          onTouchMove={handleMouseMove}
-          onTouchEnd={handleMouseUp}
-          onWheel={handleMouseWheel}
-          onContextMenu={(e) => e.evt.preventDefault()}
-          draggable={tool === Tool.Select}
-          ref={stage}
-        >
-          <Layer>
-            {imageUri && <BackgroundImage imageUri={imageUri} />}
-            {activeShape &&
-              renderShape(
-                "__active__",
-                activeShape,
-                activeLabel?.color ?? annotationColor
-              )}
-            {annotations.map(renderAnnotation)}
-          </Layer>
-        </Stage>
-      </div>
-    </div>
+      <Stage
+        style={{ cursor: defaultCursor(), position: "absolute" }}
+        width={container.current?.clientWidth}
+        height={container.current?.clientHeight}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchMove={handleMouseMove}
+        onTouchEnd={handleMouseUp}
+        onWheel={handleMouseWheel}
+        onContextMenu={(e) => e.evt.preventDefault()}
+        ref={stage}
+      >
+        <Layer>
+          {imageUri && <BackgroundImage imageUri={imageUri} />}
+          {activeShape &&
+            renderShape(
+              "__active__",
+              activeShape,
+              activeLabel?.color ?? annotationColor
+            )}
+          {annotations.map(renderAnnotation)}
+        </Layer>
+      </Stage>
+    </Box>
   );
 };
 

@@ -40,6 +40,17 @@ export interface Annotation {
   locked?: boolean;
 }
 
+export interface Transformation {
+  scale: number;
+  translate: { x: number; y: number };
+}
+
+export const defaultTransformation = {
+  translate: { x: 0.0, y: 0.0 },
+  // uniform scaling
+  scale: 1.0,
+};
+
 export interface InspectionSlice {
   objectId: string | null;
   // active tools for annotation process
@@ -50,6 +61,8 @@ export interface InspectionSlice {
   // annotation data
   annotations: Annotation[];
   latestChange: number | null;
+  // canvas state
+  transformation: Transformation;
 }
 
 const initialState: InspectionSlice = {
@@ -59,6 +72,7 @@ const initialState: InspectionSlice = {
   activeModifiers: [],
   annotations: [],
   latestChange: null,
+  transformation: defaultTransformation,
 };
 
 const except = <T>(items: T[], item: T) => items.filter((i) => i !== item);
@@ -131,6 +145,27 @@ export const slice = createSlice({
     updateAnnotation: (state, action: PayloadAction<Annotation>) => {
       state.annotations = replaceAnnotation(state, action.payload);
     },
+    updateShape: (
+      state,
+      {
+        payload: { annotation, shape, index },
+      }: PayloadAction<{
+        annotation: Annotation;
+        shape: Shape;
+        index: number;
+      }>
+    ) => {
+      if (annotation.shapes)
+        state.annotations = replaceAnnotation(state, {
+          ...annotation,
+          // replace the shape at the given index
+          shapes: [
+            ...annotation.shapes.slice(0, index),
+            shape,
+            ...annotation.shapes.slice(index + 1),
+          ],
+        });
+    },
     deleteAnnotation: (state, action: PayloadAction<Annotation>) => {
       state.annotations = state.annotations.filter(
         (a) => a.id !== action.payload.id
@@ -177,6 +212,9 @@ export const slice = createSlice({
         hidden: false,
       });
     },
+    updateTransformation: (state, action: PayloadAction<Transformation>) => {
+      state.transformation = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addMatcher(isAnnotationMutation, (state) => {
@@ -201,6 +239,7 @@ export const {
   setActiveLabel,
   addAnnotation,
   updateAnnotation,
+  updateShape,
   deleteAnnotation,
   selectAnnotation,
   unselectAnnotation,
@@ -211,6 +250,7 @@ export const {
   setModifiers,
   setModifier,
   toggleModifier,
+  updateTransformation,
 } = slice.actions;
 
 export const selectObjectId = (state: RootState) => state.annotate.objectId;
@@ -223,6 +263,8 @@ export const selectActiveModifiers = (state: RootState) =>
   state.annotate.activeModifiers;
 export const selectAnnotations = (state: RootState) =>
   state.annotate.annotations;
+export const selectTransformation = (state: RootState) =>
+  state.annotate.transformation;
 
 export default slice.reducer;
 

@@ -1,7 +1,8 @@
 import React from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
-import { Circle, Group, Rect as KonvaRectangle } from "react-konva";
+import { Group, Rect as KonvaRectangle } from "react-konva";
+import Anchor from "./Anchor";
 import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Rectangle as RectangleShape } from "../../tools/rectangle";
@@ -21,6 +22,7 @@ const Rectangle = ({
   shape,
   color,
   shapeConfig,
+  editingPointConfig,
   editing,
   getTransformedPointerPosition,
   onUpdate,
@@ -91,18 +93,6 @@ const Rectangle = ({
         break;
     }
 
-    // validate width
-    if (patch.width < 0) {
-      patch.x = patch.x + patch.width;
-      patch.width = -patch.width;
-    }
-
-    // validate height
-    if (patch.height < 0) {
-      patch.y = patch.y + patch.height;
-      patch.height = -patch.height;
-    }
-
     onUpdate?.(patch as Shape);
   };
 
@@ -114,16 +104,19 @@ const Rectangle = ({
         y={rectangle.y}
         width={rectangle.width}
         height={rectangle.height}
+        stroke={alpha(color, 0.8)}
       />
       {editing &&
-        editingPoints.map((editPoint) => (
-          <Circle
+        editingPoints.map((editPoint, index) => (
+          <Anchor
+            key={index}
+            {...editingPointConfig}
             x={xCoord(editPoint[0])}
             y={yCoord(editPoint[1])}
-            radius={5}
-            fill={alpha(color, 0.8)}
-            draggable
-            onDragMove={(e) => onDragEditPoint(e, editPoint)}
+            fill={color}
+            onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
+              onDragEditPoint(e, editPoint)
+            }
           />
         ))}
     </Group>

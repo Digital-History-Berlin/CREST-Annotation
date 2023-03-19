@@ -152,7 +152,7 @@ const AnnotatePage = () => {
 
   return (
     <Layout
-      scrollable={true}
+      sx={{ display: "flex" }}
       header={<Toolbar tools={renderTools()} actions={renderActions()} />}
       left={
         <Stack
