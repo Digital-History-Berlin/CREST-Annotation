@@ -1,10 +1,10 @@
-import React from "react";
+import React, { forwardRef } from "react";
+import { Theme } from "@mui/material";
+import { LinkProps } from "@mui/material/Link";
 import {
   Link as RouterLink,
   LinkProps as RouterLinkProps,
 } from "react-router-dom";
-import { LinkProps } from "@mui/material/Link";
-import { Theme } from "@mui/material";
 
 /**
  * Override MaterialUI Link to render a React Router Link
@@ -12,8 +12,8 @@ import { Theme } from "@mui/material";
  * This allows to use the MaterialUI styling and theme
  * while using the functionality of the React Router.
  */
-export default function Link(theme: Theme) {
-  const LinkBehavior = React.forwardRef<
+export default function Link(_: Theme) {
+  const LinkBehavior = forwardRef<
     HTMLAnchorElement,
     Omit<RouterLinkProps, "to"> & { href: RouterLinkProps["to"] }
   >((props, ref) => {

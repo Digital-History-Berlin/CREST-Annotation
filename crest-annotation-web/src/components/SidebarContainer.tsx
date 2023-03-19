@@ -1,11 +1,10 @@
-import React, { ReactNode } from "react";
-import { Stack, Box, styled, IconButton, Typography } from "@mui/material";
+import React, { PropsWithChildren, ReactNode } from "react";
+import { Box, IconButton, Stack, Typography, styled } from "@mui/material";
 import BackIcon from "@mui/icons-material/ChevronLeft";
 
 interface IProps {
   title?: string;
   actions?: ReactNode;
-  children?: ReactNode;
   onBack?: () => void;
 }
 
@@ -38,7 +37,12 @@ const TitleBox = styled(Box)(({ theme }) => ({
  * Renders a header and scrollable content.
  * All containers will equally share the available height.
  */
-const SidebarContainer = ({ title, actions, children, onBack }: IProps) => {
+const SidebarContainer = ({
+  title,
+  actions,
+  children,
+  onBack,
+}: PropsWithChildren<IProps>) => {
   return (
     // stretch stack to available size
     // share equally between multiple stacks

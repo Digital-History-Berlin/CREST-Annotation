@@ -1,10 +1,10 @@
 import React from "react";
-import { Circle, Group, Rect as KonvaRectangle } from "react-konva";
-import { Shape, Tool } from "../../slice";
-import { Rectangle as RectangleShape } from "../../tools/rectangle";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { alpha } from "@mui/material";
 import Konva from "konva";
+import { Circle, Group, Rect as KonvaRectangle } from "react-konva";
+import { Position, ShapeProps, ShapeTool } from "./Shape";
+import { Shape, Tool } from "../../slice";
+import { Rectangle as RectangleShape } from "../../tools/rectangle";
 
 const Rectangle = ({
   annotation,

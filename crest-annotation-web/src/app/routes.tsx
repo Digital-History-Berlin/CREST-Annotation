@@ -1,8 +1,8 @@
 import React from "react";
 import {
+  Route,
   createBrowserRouter,
   createRoutesFromElements,
-  Route,
 } from "react-router-dom";
 import App from "../App";
 import AnnotatePage from "../features/annotate";

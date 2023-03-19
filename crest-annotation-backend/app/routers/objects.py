@@ -22,6 +22,8 @@ router = APIRouter(
 def map_object(data_object: Object) -> schemas.Object:
     return {
         "id": data_object.id,
+        "uri": data_object.uri,
+        "thumbnail_uri": data_object.thumbnail_uri,
         "annotated": data_object.annotated,
         "annotation_data": data_object.annotation_data,
     }
@@ -78,6 +80,15 @@ async def get_objects(project_id: str, db: Session = Depends(get_db)):
     objects: List[Object] = db.query(Object).filter_by(project_id=project_id)
 
     return JSONResponse(list(map(map_object, objects)))
+
+
+@router.get("/id/{object_id}")
+async def get_object(object_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    return JSONResponse(map_object(data_object))
 
 
 @router.get("/image/{object_id}")

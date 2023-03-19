@@ -1,10 +1,10 @@
 import React from "react";
-import Konva from "konva";
 import { alpha } from "@mui/material";
-import { Line, Circle, Group } from "react-konva";
-import { Polygon as PolygonShape } from "../../tools/polygon";
+import Konva from "konva";
+import { Circle, Group, Line } from "react-konva";
 import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
+import { Polygon as PolygonShape } from "../../tools/polygon";
 
 const Polygon = ({
   annotation,
@@ -85,11 +85,11 @@ const onCreate = ({ x, y }: Position) => ({
 });
 
 const onDown = (shape: Shape, { x, y }: Position) => {
-  let polygon = shape as PolygonShape;
-  let count = polygon.points.length;
+  const polygon = shape as PolygonShape;
+  const count = polygon.points.length;
 
-  let first = { x: polygon.points[0], y: polygon.points[1] };
-  let last = {
+  const first = { x: polygon.points[0], y: polygon.points[1] };
+  const last = {
     x: polygon.points[count - 2],
     y: polygon.points[count - 1],
   };

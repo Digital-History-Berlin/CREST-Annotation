@@ -1,11 +1,11 @@
 import React, { CSSProperties, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Toolbar as MuiToolbar,
   Typography,
   useTheme,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { ToolbarButton } from "./ToolbarButton";
 
 interface IProps {

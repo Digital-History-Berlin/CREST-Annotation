@@ -1,21 +1,15 @@
-import React, { useMemo } from "react";
-
+import React, { PropsWithChildren, useMemo } from "react";
 // material-ui
 import { CssBaseline, StyledEngineProvider, ThemeOptions } from "@mui/material";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 // project import
+import ComponentsOverrides from "./overrides";
 import Palette from "./palette";
 import Typography from "./typography";
-import ComponentsOverrides from "./overrides";
-
-interface IProps {
-  children?: React.ReactNode;
-}
 
 const defaultProps = {};
 
-const Theme = ({ children }: IProps) => {
+const Theme = ({ children }: PropsWithChildren<void>) => {
   const typography = Typography(`'Public Sans', sans-serif`);
   const palette = Palette();
 

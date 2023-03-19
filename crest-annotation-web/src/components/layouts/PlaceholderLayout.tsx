@@ -1,18 +1,22 @@
-import React, { ReactNode } from "react";
+import React, { PropsWithChildren, ReactNode } from "react";
 import { Box, Breakpoint, Container, Typography } from "@mui/material";
 
 interface IProps {
   width?: false | Breakpoint;
   title?: ReactNode;
   description?: ReactNode;
-  children?: ReactNode;
 }
 
 const defaultProps = {
   width: "xs",
 };
 
-const PlaceholderLayout = ({ width, title, description, children }: IProps) => {
+const PlaceholderLayout = ({
+  width,
+  title,
+  description,
+  children,
+}: PropsWithChildren<IProps>) => {
   return (
     <Container maxWidth={width}>
       {title && <Typography variant="h5">{title}</Typography>}

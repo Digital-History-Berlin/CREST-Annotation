@@ -1,11 +1,11 @@
-import { AnyAction, createSlice, Middleware } from "@reduxjs/toolkit";
-import { RootState } from "../../app/store";
+import { AnyAction, Middleware, createSlice } from "@reduxjs/toolkit";
 import { Circle } from "./tools/circle";
 import { Line } from "./tools/line";
-import { Rectangle } from "./tools/rectangle";
 import { Polygon } from "./tools/polygon";
-import { Label } from "../../api/openApi";
+import { Rectangle } from "./tools/rectangle";
 import { enhancedApi } from "../../api/enhancedApi";
+import { Label } from "../../api/openApi";
+import { RootState } from "../../app/store";
 
 export enum Tool {
   Select,
@@ -131,7 +131,7 @@ export const slice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addMatcher(isAnnotationMutation, (state, action) => {
+    builder.addMatcher(isAnnotationMutation, (state) => {
       state.latestChange = Date.now();
     });
     builder.addMatcher(
@@ -171,7 +171,7 @@ export const selectAnnotations = (state: RootState) =>
 
 export default slice.reducer;
 
-export const annotateMiddleware: Middleware<{}, RootState> =
+export const annotateMiddleware: Middleware<void, RootState> =
   (store) => (next) => (action) => {
     next(action);
 

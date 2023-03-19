@@ -1,4 +1,4 @@
-import { styled, Button, ToggleButton } from "@mui/material";
+import { Button, ToggleButton, styled } from "@mui/material";
 
 /**
  * Button optimized to be used inside the toolbar

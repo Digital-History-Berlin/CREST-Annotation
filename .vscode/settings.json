@@ -1,13 +1,18 @@
 {
-    "editor.formatOnSave": true,
-    "[python]": {
-        "editor.defaultFormatter": null
-    },
-    "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
-    "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
-    "python.formatting.provider": "black",
-    // disable default formatters in favor of prettier
-    "typescript.format.enable": false,
-    "css.format.enable": false,
-    "prettier.enable": true
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": null
+  },
+  "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
+  "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
+  "python.formatting.provider": "black",
+  // disable default formatters in favor of prettier
+  "typescript.format.enable": false,
+  "javascript.format.enable": false,
+  "css.format.enable": false,
+  "prettier.enable": true,
+  // apply linter rules if possible
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
 }

@@ -1,32 +1,34 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useGetProjectsQuery } from "../../api/enhancedApi";
-import { Project } from "../../api/openApi";
 import {
   Box,
   Button,
   Card,
   CardActionArea,
-  CardContent,
-  Typography,
   CardActions,
+  CardContent,
   IconButton,
+  Typography,
 } from "@mui/material";
-import CardLayout from "../../components/layouts/CardLayout";
-import Toolbar from "../../components/Toolbar";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ObjectsIcon from "@mui/icons-material/Apps";
-import SettingsIcon from "@mui/icons-material/Settings";
+import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
+import ObjectsIcon from "@mui/icons-material/Apps";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { useGetProjectsQuery } from "../../api/enhancedApi";
+import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
+import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
+import Toolbar from "../../components/Toolbar";
 
 const ProjectsPage = () => {
   const navigate = useNavigate();
 
   const [showCreate, setShowCreate] = useState(false);
 
-  const deleteProject = (project: Project) => {};
+  const deleteProject = (_: Project) => {
+    // TODO: delete project
+  };
 
   const renderCard = (project: Project) => (
     <Card>

@@ -1,13 +1,12 @@
-import React, { CSSProperties, ReactNode } from "react";
+import React, { CSSProperties, PropsWithChildren, ReactNode } from "react";
 import styles from "./Layout.module.scss";
-import classnames from "classnames";
 import { useTheme } from "@mui/material";
+import classnames from "classnames";
 
 export interface LayoutProps {
   header?: ReactNode;
   left?: ReactNode;
   right?: ReactNode;
-  children?: ReactNode;
   scrollable?: boolean;
   sx?: CSSProperties;
 }
@@ -27,7 +26,7 @@ const Layout = ({
   children,
   scrollable,
   sx,
-}: LayoutProps) => {
+}: PropsWithChildren<LayoutProps>) => {
   const theme = useTheme();
 
   return (

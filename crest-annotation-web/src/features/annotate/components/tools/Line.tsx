@@ -1,8 +1,8 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
+import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Line as LineShape } from "../../tools/line";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
 
 const Line = ({ annotation, shapeConfig }: ShapeProps) => {
   const line = annotation.shape as LineShape;
@@ -27,7 +27,7 @@ const onCreate = ({ x, y }: Position) => ({
 });
 
 const onMove = (shape: Shape, { x, y }: Position) => {
-  let line = shape as LineShape;
+  const line = shape as LineShape;
 
   return {
     ...shape,
@@ -35,7 +35,7 @@ const onMove = (shape: Shape, { x, y }: Position) => {
   };
 };
 
-const onUp = (shape: Shape, { x, y }: Position) => ({
+const onUp = (shape: Shape) => ({
   ...shape,
   finished: true,
 });

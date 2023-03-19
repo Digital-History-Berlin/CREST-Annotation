@@ -1,34 +1,29 @@
 import React from "react";
+import { Card, CardActionArea, CardMedia, Link } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { Link, Card, CardActionArea, CardMedia } from "@mui/material";
-import CardLayout from "../../components/layouts/CardLayout";
-import Toolbar from "../../components/Toolbar";
-import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
-import { Object } from "../../api/openApi";
-import { useEnv } from "../../app/hooks";
+import { Object as DataObject } from "../../api/openApi";
+import CardLayout from "../../components/layouts/CardLayout";
+import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
+import Toolbar from "../../components/Toolbar";
 
 const ObjectsPage = () => {
   const navigate = useNavigate();
-  const env = useEnv();
 
   const { projectId } = useParams();
 
   const { data: project } = useGetProjectQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
     { skip: !projectId }
   );
 
-  const renderCard = (object: Object) => (
+  const renderCard = (object: DataObject) => (
     <Card>
       <CardActionArea
         onClick={() => navigate(`/annotate/${projectId}/${object.id}`)}
       >
-        <CardMedia
-          component="img"
-          height="140"
-          image={`${env.REACT_APP_BACKEND}/objects/image/${object.id}`}
-        />
+        <CardMedia component="img" height="140" image={object.uri} />
       </CardActionArea>
     </Card>
   );
@@ -37,6 +32,7 @@ const ObjectsPage = () => {
     <>
       <CardLayout
         query={useGetObjectsQuery(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           { projectId: projectId! },
           { skip: !projectId }
         )}

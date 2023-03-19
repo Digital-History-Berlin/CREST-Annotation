@@ -35,30 +35,6 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    getOntologyImport: build.query<
-      GetOntologyImportApiResponse,
-      GetOntologyImportApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/labels/import/ontology`,
-        params: { url: queryArg.url },
-      }),
-    }),
-    importOntology: build.mutation<
-      ImportOntologyApiResponse,
-      ImportOntologyApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/labels/import/ontology`,
-        method: "POST",
-        body: queryArg.body,
-        params: {
-          url: queryArg.url,
-          project_id: queryArg.projectId,
-          method: queryArg.method,
-        },
-      }),
-    }),
     collectObjects: build.mutation<
       CollectObjectsApiResponse,
       CollectObjectsApiArg
@@ -78,6 +54,9 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     getObjects: build.query<GetObjectsApiResponse, GetObjectsApiArg>({
       query: (queryArg) => ({ url: `/objects/of/${queryArg.projectId}` }),
+    }),
+    getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
+      query: (queryArg) => ({ url: `/objects/id/${queryArg.objectId}` }),
     }),
     getImage: build.query<GetImageApiResponse, GetImageApiArg>({
       query: (queryArg) => ({ url: `/objects/image/${queryArg.objectId}` }),
@@ -141,6 +120,42 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
+    getOntologyImport: build.mutation<
+      GetOntologyImportApiResponse,
+      GetOntologyImportApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/import/ontology`,
+        method: "GET",
+        params: { url: queryArg.url },
+      }),
+    }),
+    importOntology: build.mutation<
+      ImportOntologyApiResponse,
+      ImportOntologyApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/import/ontology`,
+        method: "POST",
+        body: queryArg.body,
+        params: {
+          url: queryArg.url,
+          project_id: queryArg.projectId,
+          method: queryArg.method,
+        },
+      }),
+    }),
+    importIiif3: build.mutation<ImportIiif3ApiResponse, ImportIiif3ApiArg>({
+      query: (queryArg) => ({
+        url: `/import/iiif/3`,
+        method: "POST",
+        params: {
+          url: queryArg.url,
+          project_id: queryArg.projectId,
+          commit: queryArg.commit,
+        },
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -168,19 +183,6 @@ export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
 export type DeleteLabelApiArg = {
   labelId: string;
 };
-export type GetOntologyImportApiResponse =
-  /** status 200 Successful Response */ Ontology;
-export type GetOntologyImportApiArg = {
-  url: string;
-};
-export type ImportOntologyApiResponse =
-  /** status 200 Successful Response */ any;
-export type ImportOntologyApiArg = {
-  url: string;
-  projectId: string;
-  method?: string;
-  body: string[];
-};
 export type CollectObjectsApiResponse =
   /** status 200 Successful Response */ any;
 export type CollectObjectsApiArg = {
@@ -195,6 +197,10 @@ export type GetObjectsApiResponse =
   /** status 200 Successful Response */ Object[];
 export type GetObjectsApiArg = {
   projectId: string;
+};
+export type GetObjectApiResponse = /** status 200 Successful Response */ any;
+export type GetObjectApiArg = {
+  objectId: string;
 };
 export type GetImageApiResponse = /** status 200 Successful Response */ any;
 export type GetImageApiArg = {
@@ -238,6 +244,26 @@ export type DeleteProjectApiResponse =
 export type DeleteProjectApiArg = {
   projectId: string;
 };
+export type GetOntologyImportApiResponse =
+  /** status 200 Successful Response */ Ontology;
+export type GetOntologyImportApiArg = {
+  url: string;
+};
+export type ImportOntologyApiResponse =
+  /** status 200 Successful Response */ any;
+export type ImportOntologyApiArg = {
+  url: string;
+  projectId: string;
+  method?: string;
+  body: string[];
+};
+export type ImportIiif3ApiResponse =
+  /** status 200 Successful Response */ Iiif3Import;
+export type ImportIiif3ApiArg = {
+  url: string;
+  projectId: string;
+  commit?: boolean;
+};
 export type Label = {
   id: string;
   parent_id?: string;
@@ -278,6 +304,25 @@ export type PatchLabel = {
   count?: number;
   color?: string;
 };
+export type Object = {
+  id: string;
+  uri: string;
+  thumbnail_uri?: string;
+  annotated: boolean;
+  annotation_data: string;
+};
+export type Project = {
+  name: string;
+  id: string;
+  source?: string;
+  color_table: string[];
+};
+export type ShallowProject = {
+  name: string;
+  id?: string;
+  source?: string;
+  color_table?: string[];
+};
 export type OntologyDescription = {
   language: string;
   value: string;
@@ -295,32 +340,34 @@ export type Ontology = {
   labels: OntologyLabel[];
   problems: string[];
 };
-export type Object = {
-  annotation_data: string;
-  id: string;
+export type Iiif3Data = {
+  canvas: string;
+  page: string;
+  annotation: string;
 };
-export type Project = {
-  name: string;
-  id: string;
-  source?: string;
-  color_table: string[];
+export type Iiif3Image = {
+  uri: string;
+  thumbnail_uri?: string;
+  object_data: Iiif3Data;
 };
-export type ShallowProject = {
-  name: string;
-  id?: string;
-  source?: string;
-  color_table?: string[];
+export type Iiif3Import = {
+  title?: {
+    [key: string]: string;
+  };
+  display?: string;
+  images: Iiif3Image[];
+  added: Iiif3Image[];
+  problems: string[];
 };
 export const {
   useGetProjectLabelsQuery,
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useGetOntologyImportQuery,
-  useImportOntologyMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
+  useGetObjectQuery,
   useGetImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
@@ -330,4 +377,7 @@ export const {
   useUpdateProjectMutation,
   useGetProjectQuery,
   useDeleteProjectMutation,
+  useGetOntologyImportMutation,
+  useImportOntologyMutation,
+  useImportIiif3Mutation,
 } = injectedRtkApi;

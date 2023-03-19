@@ -1,9 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useGetProjectsQuery } from "../../api/enhancedApi";
-import { Project } from "../../api/openApi";
-import Loader from "../Loader";
-import DefaultDialog from "./DefaultDialog";
 import {
   List,
   ListItem,
@@ -11,7 +6,12 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import AddIcon from "@mui/icons-material/Add";
+import DefaultDialog from "./DefaultDialog";
+import { useGetProjectsQuery } from "../../api/enhancedApi";
+import { Project } from "../../api/openApi";
+import Loader from "../Loader";
 
 interface IProps {
   activeProjectId?: string;

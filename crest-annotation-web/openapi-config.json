@@ -4,5 +4,11 @@
   "apiFile": "./src/api/rootApi.ts",
   "outputFile": "./src/api/openApi.ts",
   "exportName": "crestApi",
-  "hooks": true
+  "hooks": true,
+  "endpointOverrides": [
+    {
+      "pattern": "getOntologyImport",
+      "type": "mutation"
+    }
+  ]
 }

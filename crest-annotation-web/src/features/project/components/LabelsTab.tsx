@@ -1,9 +1,9 @@
 import React from "react";
-import { Project } from "../../../api/openApi";
-import Loader from "../../../components/Loader";
-import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { TreeView } from "@mui/lab";
 import LabelsBranch from "./LabelsBranch";
+import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
+import { Project } from "../../../api/openApi";
+import Loader from "../../../components/Loader";
 
 interface IProps {
   project: Project;
