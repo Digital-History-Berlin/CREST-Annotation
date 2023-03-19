@@ -172,9 +172,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    const pos = getTransformedPointerPosition(event);
-    if (pos === undefined) return;
-
     // right click - cancel
     if (event.evt instanceof MouseEvent)
       if (event.evt.button === 2) {
@@ -182,8 +179,14 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         return;
       }
 
-    // TODO: what should happen if the popup is open
-    if (labelPopup) return;
+    if (labelPopup) {
+      // popup is open - cancel
+      cancelAnnotation();
+      return;
+    }
+
+    const pos = getTransformedPointerPosition(event);
+    if (pos === undefined) return;
 
     // if no shape is currently active, try to create a new shape
     if (activeShape === undefined) {
