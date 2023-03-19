@@ -1,3 +1,3 @@
 export interface BaseShape {
-  locked?: boolean;
+  finished?: boolean;
 }

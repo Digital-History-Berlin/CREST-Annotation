@@ -100,6 +100,12 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.body,
       }),
     }),
+    finishObject: build.mutation<FinishObjectApiResponse, FinishObjectApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/finish/${queryArg.objectId}`,
+        method: "POST",
+      }),
+    }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
       query: () => ({ url: `/projects/` }),
     }),
@@ -204,6 +210,10 @@ export type StoreAnnotationsApiResponse =
 export type StoreAnnotationsApiArg = {
   objectId: string;
   body: string;
+};
+export type FinishObjectApiResponse = /** status 200 Successful Response */ any;
+export type FinishObjectApiArg = {
+  objectId: string;
 };
 export type GetProjectsApiResponse =
   /** status 200 Successful Response */ Project[];
@@ -314,6 +324,7 @@ export const {
   useGetImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
+  useFinishObjectMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

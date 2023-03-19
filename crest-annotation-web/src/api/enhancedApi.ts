@@ -60,6 +60,7 @@ export const {
   useGetImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
+  useFinishObjectMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

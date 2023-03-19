@@ -1,7 +1,7 @@
 import React from "react";
 import Konva from "konva";
 import { v4 as uuidv4 } from "uuid";
-import { Circle, Layer, Line, Rect, Stage } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import BackgroundImage from "./BackgroundImage";
 import LabelsPopup from "./LabelsPopup";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
@@ -17,12 +17,13 @@ import {
   unselectAnnotation,
   updateAnnotation,
 } from "../slice";
-import { Line as LineShape } from "../tools/line";
-import { Rectangle as RectangleShape } from "../tools/rectangle";
-import { Circle as CircleShape } from "../tools/circle";
-import { Polygon as PolygonShape } from "../tools/polygon";
 import { Label } from "../../../api/openApi";
 import { alpha } from "@mui/material";
+import RectangleTool from "./tools/Rectangle";
+import PolygonTool from "./tools/Polygon";
+import LineTool from "./tools/Line";
+import CircleTool from "./tools/Circle";
+import { Position, Transformation } from "./tools/Shape";
 
 interface PopupPosition {
   left?: number | string;
@@ -39,8 +40,19 @@ interface IProps {
 
 const defaultProps = { annotationColor: "#D00000" };
 
+const shapeMap = {
+  [Tool.Pen]: LineTool,
+  [Tool.Circle]: CircleTool,
+  [Tool.Rectangle]: RectangleTool,
+  [Tool.Polygon]: PolygonTool,
+  [Tool.Select]: undefined,
+  [Tool.Edit]: undefined,
+};
+
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
+
+  const stage = React.useRef<Konva.Stage>(null);
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
@@ -49,6 +61,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = React.useState<Shape>();
   const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
+  const [cursorPos, setCursorPos] = React.useState<Position>({ x: 0, y: 0 });
+
+  // gets the default cursor that is shown when hovering the canvas
+  const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
 
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
@@ -57,10 +73,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         : dispatch(selectAnnotation(annotation));
   };
 
-  const createAnnotation = (label: Label) => {
+  const createAnnotation = (label: Label, shape: Shape) => {
     dispatch(
       addAnnotation({
-        shape: activeShape,
+        shape: shape,
         label: label,
         id: uuidv4(),
       })
@@ -75,11 +91,59 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     setLabelPopup(undefined);
   };
 
+  const displayPopup = (pos?: Position) => {
+    if (!stage.current) return;
+
+    // use cursor position if no explicit position is given
+    const { x, y } = pos ?? cursorPos;
+
+    // calculate a nice position
+    const popupPos = {
+      left: x + 10,
+      top: y <= stage.current.height() / 2 ? y : undefined,
+      bottom:
+        y > stage.current.height() / 2 ? stage.current.height() - y : undefined,
+    };
+
+    // ensure shape does not change anymore
+    setLabelPopup(popupPos);
+  };
+
+  const updateActiveShape = (shape: Shape): void => {
+    if (!shape.finished) {
+      // shape not yet finished, update active shape
+      setActiveShape(shape);
+      return;
+    }
+
+    if (activeLabel) {
+      // label is pre-selected, create annotation right away
+      createAnnotation(activeLabel, shape);
+      return;
+    }
+
+    // label is to be selected, display popup
+    setActiveShape(shape);
+    displayPopup();
+  };
+
+  const getTransformedPointerPosition = (
+    event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
+  ): Position | undefined => {
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
+
+    const pos = stage.getPointerPosition();
+    if (pos === undefined || pos === null) return;
+
+    return transform(pos);
+  };
+
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    const pos = event.target.getStage()?.getPointerPosition();
-    if (pos === undefined || pos === null) return;
+    const pos = getTransformedPointerPosition(event);
+    if (pos === undefined) return;
 
     // right click - cancel
     if (event.evt instanceof MouseEvent)
@@ -91,351 +155,139 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // TODO: what should happen if the popup is open
     if (labelPopup) return;
 
-    switch (tool) {
-      case Tool.Pen: {
-        setActiveShape({
-          points: [pos.x, pos.y],
-          tool: Tool.Pen,
-          finished: false,
-        });
-        break;
-      }
-      case Tool.Rectangle: {
-        setActiveShape({
-          x: pos.x,
-          y: pos.y,
-          width: 0,
-          height: 0,
-          tool: Tool.Rectangle,
-        });
-        break;
-      }
-      case Tool.Circle: {
-        setActiveShape({
-          x: pos.x,
-          y: pos.y,
-          radius: 0,
-          tool: Tool.Circle,
-        });
-        break;
-      }
-      case Tool.Polygon: {
-        // check if we just started drawing the first point of the polygon
-        if (activeShape === undefined) {
-          setActiveShape({
-            points: [pos.x, pos.y],
-            preview: [pos.x, pos.y],
-            finished: false,
-            tool: Tool.Polygon,
-          });
-        } else {
-          let polygon = activeShape as PolygonShape;
-          let count = polygon.points.length;
+    // if no shape is currently active, try to create a new shape
+    if (activeShape === undefined) {
+      const shape = shapeMap[tool]?.onCreate(pos);
+      if (shape) updateActiveShape(shape);
+    }
 
-          let first = { x: polygon.points[0], y: polygon.points[1] };
-          let last = {
-            x: polygon.points[count - 2],
-            y: polygon.points[count - 1],
-          };
-
-          // finish drawing polygon
-          // - if area around starting point is clicked
-          // - if area around current point is clicked (double click)
-          if (
-            (Math.abs(pos.x - last.x) <= 5 && Math.abs(pos.y - last.y) <= 5) ||
-            (Math.abs(pos.x - first.x) <= 5 && Math.abs(pos.y - first.y) <= 5)
-          ) {
-            // add last point, which is the same as the first point
-            setActiveShape({
-              ...activeShape,
-              points: [...polygon.points, polygon.points[0], polygon.points[1]],
-              finished: true,
-            });
-            // otherwise add new point
-          } else {
-            setActiveShape({
-              ...activeShape,
-              points: [...polygon.points, pos.x, pos.y],
-            });
-          }
-        }
-        break;
-      }
+    // active shape found, forward to component
+    else if (!activeShape.finished) {
+      const shape = shapeMap[tool]?.onDown?.(activeShape, pos);
+      if (shape) updateActiveShape(shape);
     }
   };
 
   const handleMouseMove = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
-    // no drawing - skipping
-    if (!activeShape || activeShape.locked) return;
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
 
-    const pos = event.target.getStage()?.getPointerPosition();
+    const pos = stage.getPointerPosition();
     if (pos === undefined || pos === null) return;
 
-    switch (activeShape.tool) {
-      case Tool.Pen: {
-        let line = activeShape as LineShape;
+    // store cursor position so it is available outside of events
+    // (used to display popup near cursor position)
+    setCursorPos(pos);
 
-        setActiveShape({
-          ...activeShape,
-          points: [...line.points, pos.x, pos.y],
-        });
-        break;
-      }
-      case Tool.Rectangle: {
-        let rectangle = activeShape as RectangleShape;
+    // no drawing - skipping
+    if (!activeShape || activeShape.finished) return;
 
-        setActiveShape({
-          ...activeShape,
-          width: pos.x - rectangle.x,
-          height: pos.y - rectangle.y,
-        });
-        break;
-      }
-      case Tool.Circle: {
-        let circle = activeShape as CircleShape;
-
-        setActiveShape({
-          ...activeShape,
-          radius: Math.sqrt(
-            Math.pow(pos.x - circle.x, 2) + Math.pow(pos.y - circle.y, 2)
-          ),
-        });
-        break;
-      }
-      case Tool.Polygon: {
-        let polygon = activeShape as PolygonShape;
-        if (!polygon.finished) {
-          setActiveShape({
-            ...activeShape,
-            preview: [pos.x, pos.y],
-          });
-        }
-        break;
-      }
-    }
+    const transformed = transform(pos, stage);
+    const shape = shapeMap[tool]?.onMove?.(activeShape, transformed);
+    if (shape) updateActiveShape(shape);
   };
 
   const handleMouseUp = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
     // no drawing - skipping
-    if (!activeShape || activeShape.locked) return;
+    if (!activeShape || activeShape.finished) return;
 
-    if (activeShape.tool === Tool.Polygon) {
-      let polygon = activeShape as PolygonShape;
-      // polygon still open
-      if (!polygon.finished) return;
-      // clear polygon preview line
-      polygon.preview = [];
-    }
+    const pos = getTransformedPointerPosition(event);
+    if (pos === undefined) return;
 
-    if (activeShape.tool === Tool.Pen) {
-      (activeShape as LineShape).finished = true;
-    }
-
-    if (activeLabel) {
-      // label is pre-selected, create annotation right away
-      createAnnotation(activeLabel);
-      return;
-    }
-
-    // no label selected, show popup
-    const stage = event.target.getStage();
-    const pos = stage?.getPointerPosition();
-    if (stage === null || pos === null || pos === undefined) return;
-
-    // calculate a nice position
-    const popupPos = {
-      left: pos.x + 10,
-      top: pos.y <= stage.height() / 2 ? pos.y : undefined,
-      bottom: pos.y > stage.height() / 2 ? stage.height() - pos.y : undefined,
-    };
-
-    // ensure shape does not change anymore
-    setActiveShape({ ...activeShape, locked: true });
-    setLabelPopup(popupPos);
+    const shape = shapeMap[tool]?.onUp?.(activeShape, pos);
+    if (shape) updateActiveShape(shape);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!activeShape || activeShape.locked) return;
+    if (!activeShape || activeShape.finished) return;
 
-    if (activeShape.tool === Tool.Polygon) {
-      // Hotkey for closing is pressed
-      if (event.code === "KeyK" && event.ctrlKey) {
-        let polygon = activeShape as PolygonShape;
-        setActiveShape({
-          ...activeShape,
-          points: [...polygon.points, polygon.points[0], polygon.points[1]],
-          finished: true,
-          preview: [],
-        });
-      }
-    }
+    const shape = shapeMap[tool]?.onKeyDown?.(activeShape, event);
+    if (shape) updateActiveShape(shape);
   };
 
-  const handleKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!activeShape || activeShape.locked) return;
+  function handleMouseWheel(event: Konva.KonvaEventObject<WheelEvent>) {
+    event.evt.preventDefault();
 
-    if (event.code === "KeyK" && event.ctrlKey) {
-      if (activeShape.tool === Tool.Polygon) {
-        let polygon = activeShape as PolygonShape;
-        if (!polygon.finished) return;
+    const stage = event.target?.getStage();
+    if (stage === undefined || stage === null) return;
 
-        if (activeLabel) {
-          // label is pre-selected, create annotation right away
-          createAnnotation(activeLabel);
-          return;
-        }
+    const pos = stage.getPointerPosition();
+    if (pos === undefined || pos === null) return;
 
-        // calculate a nice position
-        const popupPos = {
-          left: polygon.points[0] + 10,
-          top: polygon.points[1],
-          bottom: 2500,
-        };
+    const posCorrected = transform(pos, stage);
 
-        // ensure shape does not change anymore
-        setActiveShape({ ...activeShape, locked: true });
-        setLabelPopup(popupPos);
-      }
-    }
-  };
+    const oldScale = stage.scaleX();
 
-  function onDragPolygonPoint(
-    e: Konva.KonvaEventObject<DragEvent>,
-    index: number,
-    polygon: PolygonShape,
-    key?: string
-  ) {
-    const polygonAnnotation = annotations.find(
-      (annotation) => annotation.id === key
-    );
-    if (polygonAnnotation === undefined) return;
+    const scaleBy = 1.03;
+    const newScale =
+      event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-    let newPoints = [...polygon.points];
-    newPoints[index] = e.target.x();
-    newPoints[index + 1] = e.target.y();
-
-    dispatch(
-      updateAnnotation({
-        ...polygonAnnotation,
-        shape: {
-          ...polygonAnnotation.shape,
-          points: newPoints,
-        },
-      })
-    );
-  }
-
-  const renderShape = (
-    shape: Shape,
-    color: string,
-    key?: string,
-    selected?: boolean,
-    onClick?: () => void
-  ) => {
-    const common = {
-      key: key,
-      stroke: alpha(color, 0.8),
-      strokeWidth: selected ? 4 : 2,
-      fill: alpha(color, 0.3),
-      onClick: onClick,
-      listening: tool !== Tool.Edit,
+    const newPos = {
+      x: pos.x - posCorrected.x * newScale,
+      y: pos.y - posCorrected.y * newScale,
     };
 
-    switch (shape.tool) {
-      case Tool.Pen:
-        const line = shape as LineShape;
-        return (
-          <Line
-            {...common}
-            points={line.points}
-            closed={line.finished}
-            tension={0.5}
-            lineCap="round"
-            globalCompositeOperation="source-over"
-          />
-        );
-      case Tool.Rectangle:
-        const rectangle = shape as RectangleShape;
-        return (
-          <Rect
-            {...common}
-            x={rectangle.x}
-            y={rectangle.y}
-            width={rectangle.width}
-            height={rectangle.height}
-          />
-        );
-      case Tool.Circle:
-        const circle = shape as CircleShape;
-        return (
-          <Circle
-            {...common}
-            x={circle.x}
-            y={circle.y}
-            radius={circle.radius}
-          />
-        );
-      case Tool.Polygon:
-        const polygon = shape as PolygonShape;
-        return (
-          <>
-            <Line
-              {...common}
-              points={polygon.points.concat(polygon.preview)}
-              closed={polygon.finished}
-              stroke={alpha(color, 0.8)}
-              tension={0}
-              lineCap="round"
-            />
-            {!polygon.finished && (
-              <Circle
-                x={polygon.points[0]}
-                y={polygon.points[1]}
-                radius={5}
-                opacity={0}
-                onMouseEnter={(e) => {
-                  const container = e.target.getStage()?.container();
-                  if (container !== undefined)
-                    container.style.cursor = "crosshair";
-                }}
-                onMouseLeave={(e) => {
-                  const container = e.target.getStage()?.container();
-                  if (container !== undefined)
-                    container.style.cursor =
-                      tool === Tool.Select ? "pointer" : "crosshair";
-                }}
-              />
-            )}
-            {tool === Tool.Edit &&
-              polygon.points.map(
-                (point, index) =>
-                  index % 2 === 0 && (
-                    <Circle
-                      key={index}
-                      x={polygon.points[index]}
-                      y={polygon.points[index + 1]}
-                      radius={5}
-                      fill={alpha(color, 0.8)}
-                      draggable
-                      onDragMove={(e) => {
-                        onDragPolygonPoint(e, index, polygon, key);
-                      }}
-                    />
-                  )
-              )}
-          </>
-        );
-      default:
-        return null;
+    stage.scale({ x: newScale, y: newScale });
+    stage.position(newPos);
+  }
+
+  const transform = ((
+    pos: { x: number; y: number },
+    activeStage?: Konva.Stage
+  ) => {
+    if (!activeStage) {
+      if (!stage.current) return undefined;
+      activeStage = stage.current;
     }
+
+    return {
+      x: (pos.x - activeStage.x()) / activeStage.scaleX(),
+      y: (pos.y - activeStage.y()) / activeStage.scaleX(),
+    };
+  }) as Transformation;
+
+  const renderAnnotation = (
+    annotation: Annotation,
+    color: string,
+    onClick?: () => void
+  ) => {
+    const annotationTool = annotation.shape?.tool;
+    if (annotationTool === undefined) return;
+
+    const Component = shapeMap[annotationTool]?.component;
+    if (!Component) return undefined;
+
+    return (
+      <Component
+        annotation={annotation}
+        color={color}
+        editing={tool === Tool.Edit}
+        onRequestCursor={(cursor) => {
+          const container = stage.current?.container();
+          if (container !== undefined)
+            container.style.cursor = cursor ?? defaultCursor();
+        }}
+        onUpdate={(annotation) => {
+          dispatch(updateAnnotation(annotation));
+        }}
+        shapeConfig={{
+          stroke: alpha(color, 0.8),
+          strokeWidth: annotation.selected ? 4 : 2,
+          fill: alpha(color, 0.3),
+          onClick: onClick,
+          listening: tool !== Tool.Edit,
+        }}
+        getTransformedPointerPosition={getTransformedPointerPosition}
+      />
+    );
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", display: "flex", overflow: "hidden" }}>
       <div
         style={{
           ...labelPopup,
@@ -447,13 +299,15 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       >
         <LabelsPopup
           projectId={projectId}
-          onSelect={createAnnotation}
+          onSelect={(label) =>
+            activeShape && createAnnotation(label, activeShape)
+          }
           onCancel={cancelAnnotation}
         />
       </div>
-      <div tabIndex={0} onKeyUp={handleKeyUp} onKeyDown={handleKeyDown}>
+      <div tabIndex={0} onKeyDown={handleKeyDown}>
         <Stage
-          style={{ cursor: tool === Tool.Select ? "pointer" : "crosshair" }}
+          style={{ cursor: defaultCursor() }}
           width={window.innerWidth}
           height={window.innerHeight}
           onMouseDown={handleMouseDown}
@@ -462,21 +316,28 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onTouchStart={handleMouseDown}
           onTouchMove={handleMouseMove}
           onTouchEnd={handleMouseUp}
+          onWheel={handleMouseWheel}
           onContextMenu={(e) => e.evt.preventDefault()}
+          draggable={tool === Tool.Select}
+          ref={stage}
         >
           <Layer>
             {imageUri && <BackgroundImage imageUri={imageUri} />}
             {activeShape &&
-              renderShape(activeShape, activeLabel?.color ?? annotationColor)}
+              renderAnnotation(
+                {
+                  id: "__active__",
+                  shape: activeShape,
+                },
+                activeLabel?.color ?? annotationColor
+              )}
             {annotations.map(
               (annotation) =>
                 annotation.shape &&
                 !annotation.hidden &&
-                renderShape(
-                  annotation.shape,
-                  annotation.label?.color ?? annotationColor,
-                  annotation.id,
-                  annotation.selected,
+                renderAnnotation(
+                  annotation,
+                  annotation.label?.color ?? "#f00",
                   () => toggleAnnotationSelection(annotation)
                 )
             )}

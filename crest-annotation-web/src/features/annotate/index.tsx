@@ -16,15 +16,21 @@ import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
+import FinishedIcon from "@mui/icons-material/Check";
+import EditIcon from "@mui/icons-material/CropRotate";
+import ObjectsIcon from "@mui/icons-material/Apps";
 import Layout from "../../components/layouts/Layout";
 import Toolbar from "../../components/Toolbar";
-import { ToolbarToggleButton } from "../../components/ToolbarButton";
+import {
+  ToolbarButton,
+  ToolbarToggleButton,
+} from "../../components/ToolbarButton";
 import Canvas from "./components/Canvas";
 import AnnotationsList from "./components/AnnotationsList";
 import LabelsExplorer from "./components/LabelsExplorer";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
-import { enhancedApi } from "../../api/enhancedApi";
+import { enhancedApi, useFinishObjectMutation } from "../../api/enhancedApi";
 import Loader from "../../components/Loader";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import { Label } from "../../api/openApi";
@@ -42,6 +48,7 @@ const AnnotatePage = () => {
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
+  const [rqeuestFinishObject] = useFinishObjectMutation();
 
   const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -69,6 +76,16 @@ const AnnotatePage = () => {
     setShowCreate(true);
   };
 
+  const finishObject = async () => {
+    if (!objectId) return;
+
+    await rqeuestFinishObject({
+      objectId: objectId,
+    }).unwrap();
+
+    if (projectId) navigateRandom(projectId);
+  };
+
   const renderTools = () => (
     <Stack direction="row">
       {[
@@ -77,7 +94,7 @@ const AnnotatePage = () => {
         { tool: Tool.Rectangle, icon: RectangleIcon },
         { tool: Tool.Circle, icon: CircleIcon },
         { tool: Tool.Polygon, icon: PolygonIcon },
-        { tool: Tool.Edit, icon: PenIcon },
+        { tool: Tool.Edit, icon: EditIcon },
       ].map((button) => {
         return (
           <ToolbarToggleButton
@@ -93,9 +110,21 @@ const AnnotatePage = () => {
     </Stack>
   );
 
+  const renderActions = () => (
+    <Stack direction="row">
+      <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
+        <ObjectsIcon />
+      </ToolbarButton>
+      <ToolbarButton onClick={() => finishObject()}>
+        <FinishedIcon />
+      </ToolbarButton>
+    </Stack>
+  );
+
   return (
     <Layout
-      header={<Toolbar tools={renderTools()} />}
+      scrollable={true}
+      header={<Toolbar tools={renderTools()} actions={renderActions()} />}
       left={
         <Stack
           sx={{
