@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
@@ -14,10 +14,13 @@ import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   Annotation,
+  Modifiers,
   Shape,
   Tool,
   addAnnotation,
+  selectActiveAnnotation,
   selectActiveLabel,
+  selectActiveModifiers,
   selectActiveTool,
   selectAnnotation,
   selectAnnotations,
@@ -56,6 +59,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
+  const activeAnnotation = useAppSelector(selectActiveAnnotation);
+  const modifiers = useAppSelector(selectActiveModifiers);
   const annotations = useAppSelector(selectAnnotations);
 
   // tracks the shape that is currently drawn
@@ -63,9 +68,25 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const [labelPopup, setLabelPopup] = useState<PopupPosition>();
   const [cursorPos, setCursorPos] = useState<Position>({ x: 0, y: 0 });
 
+  // allow to complete an annotation by selecting a label in the sidebar
+  // (in case the popup has already been opened)
+  useEffect(() => {
+    if (labelPopup && activeLabel && activeShape)
+      createAnnotation(activeLabel, activeShape);
+    // this should explicitly only trigger when the active label changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLabel]);
+
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
+  // change the current cursor
+  const changeCursor = (cursor: string | undefined) => {
+    const container = stage.current?.container();
+    if (container !== undefined)
+      container.style.cursor = cursor ?? defaultCursor();
+  };
 
+  // select or deselect given annotation
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
       annotation.selected
@@ -73,14 +94,23 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         : dispatch(selectAnnotation(annotation));
   };
 
+  // create new annotation with given label and shape
   const createAnnotation = (label: Label, shape: Shape) => {
-    dispatch(
-      addAnnotation({
-        shape: shape,
-        label: label,
-        id: uuidv4(),
-      })
-    );
+    if (modifiers.includes(Modifiers.Group) && activeAnnotation)
+      dispatch(
+        updateAnnotation({
+          ...activeAnnotation,
+          shapes: [...(activeAnnotation.shapes || []), shape],
+        })
+      );
+    else
+      dispatch(
+        addAnnotation({
+          shapes: [shape],
+          label: label,
+          id: uuidv4(),
+        })
+      );
 
     setActiveShape(undefined);
     setLabelPopup(undefined);
@@ -250,39 +280,61 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     };
   }) as Transformation;
 
-  const renderAnnotation = (
-    annotation: Annotation,
+  const renderShape = (
+    identifier: string,
+    shape: Shape,
     color: string,
+    selected?: boolean,
+    onUpdate?: () => void,
     onClick?: () => void
   ) => {
-    const annotationTool = annotation.shape?.tool;
+    const annotationTool = shape?.tool;
     if (annotationTool === undefined) return;
 
     const Component = shapeMap[annotationTool]?.component;
     if (!Component) return undefined;
 
+    // properties passed to shape
+    const shapeConfig = {
+      stroke: alpha(color, 0.8),
+      strokeWidth: selected ? 4 : 2,
+      fill: alpha(color, 0.3),
+      onClick: onClick,
+      listening: tool !== Tool.Edit,
+    };
+
+    // properties passed to editing points
+    const editingPointConfig = {};
+
     return (
       <Component
-        annotation={annotation}
+        identifier={identifier}
+        shape={shape}
         color={color}
         editing={tool === Tool.Edit}
-        onRequestCursor={(cursor) => {
-          const container = stage.current?.container();
-          if (container !== undefined)
-            container.style.cursor = cursor ?? defaultCursor();
-        }}
-        onUpdate={(annotation) => {
-          dispatch(updateAnnotation(annotation));
-        }}
-        shapeConfig={{
-          stroke: alpha(color, 0.8),
-          strokeWidth: annotation.selected ? 4 : 2,
-          fill: alpha(color, 0.3),
-          onClick: onClick,
-          listening: tool !== Tool.Edit,
-        }}
+        shapeConfig={shapeConfig}
+        editingPointConfig={editingPointConfig}
+        onRequestCursor={changeCursor}
+        onUpdate={onUpdate}
         getTransformedPointerPosition={getTransformedPointerPosition}
       />
+    );
+  };
+
+  const renderAnnotation = (annotation: Annotation) => {
+    if (annotation.hidden || !annotation.shapes?.length) return;
+
+    return annotation.shapes.map((shape, index) =>
+      renderShape(
+        `${annotation.id}.${index}`,
+        shape,
+        annotation.label?.color ?? "#f00",
+        annotation.selected,
+        () => {
+          /* TODO */
+        },
+        () => toggleAnnotationSelection(annotation)
+      )
     );
   };
 
@@ -324,23 +376,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           <Layer>
             {imageUri && <BackgroundImage imageUri={imageUri} />}
             {activeShape &&
-              renderAnnotation(
-                {
-                  id: "__active__",
-                  shape: activeShape,
-                },
+              renderShape(
+                "__active__",
+                activeShape,
                 activeLabel?.color ?? annotationColor
               )}
-            {annotations.map(
-              (annotation) =>
-                annotation.shape &&
-                !annotation.hidden &&
-                renderAnnotation(
-                  annotation,
-                  annotation.label?.color ?? "#f00",
-                  () => toggleAnnotationSelection(annotation)
-                )
-            )}
+            {annotations.map(renderAnnotation)}
           </Layer>
         </Stage>
       </div>

@@ -1,6 +1,6 @@
 import Konva from "konva";
 import { ShapeConfig } from "konva/lib/Shape";
-import { Annotation, Shape } from "../../slice";
+import { Shape } from "../../slice";
 
 export type Transformation = {
   (position: Position): Position | undefined;
@@ -12,18 +12,29 @@ export interface Position {
   y: number;
 }
 
+/// Properties provided to a shape component
 export interface ShapeProps {
-  annotation: Annotation;
-  shapeConfig: ShapeConfig;
+  identifier: string;
+  shape: Shape;
   color: string;
   editing: boolean;
+
+  // properties passed to child components
+  shapeConfig?: ShapeConfig;
+  editingPointConfig?: ShapeConfig;
+
+  // shape wants to change the cursor appearance
   onRequestCursor?: (cursor: string | undefined) => void;
-  onUpdate?: (annotation: Annotation) => void;
+  // shape wants to update itself
+  onUpdate?: (shape: Shape) => void;
+
+  // allows to retrieve the cursor position relative to the canvas
   getTransformedPointerPosition: (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => Position | undefined;
 }
 
+/// Combines a shape component with additional properties
 export interface ShapeTool {
   component: (props: ShapeProps) => React.ReactElement;
   onCreate: (position: Position) => Shape;

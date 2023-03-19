@@ -6,6 +6,7 @@ import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
 import EditIcon from "@mui/icons-material/CropRotate";
+import GroupIcon from "@mui/icons-material/DashboardCustomize";
 import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
@@ -14,12 +15,15 @@ import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
 import {
+  Modifiers,
   Tool,
   selectActiveLabel,
+  selectActiveModifiers,
   selectActiveTool,
   setActiveLabel,
   setActiveTool,
   setObjectId,
+  toggleModifier,
 } from "./slice";
 import {
   enhancedApi,
@@ -36,6 +40,7 @@ import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
   ToolbarButton,
+  ToolbarDivider,
   ToolbarToggleButton,
 } from "../../components/ToolbarButton";
 
@@ -48,6 +53,7 @@ const AnnotatePage = () => {
 
   const activeTool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
+  const activeModifiers = useAppSelector(selectActiveModifiers);
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
@@ -70,7 +76,7 @@ const AnnotatePage = () => {
 
   const toggleLabelSelection = (label: Label) =>
     activeLabel?.id === label.id
-      ? dispatch(setActiveLabel(null))
+      ? dispatch(setActiveLabel(undefined))
       : dispatch(setActiveLabel(label));
 
   useEffect(() => {
@@ -112,6 +118,19 @@ const AnnotatePage = () => {
             value={button.tool}
             onClick={() => dispatch(setActiveTool(button.tool))}
             selected={activeTool === button.tool}
+          >
+            {<button.icon />}
+          </ToolbarToggleButton>
+        );
+      })}
+      <ToolbarDivider />
+      {[{ modifier: Modifiers.Group, icon: GroupIcon }].map((button) => {
+        return (
+          <ToolbarToggleButton
+            key={button.modifier}
+            value={button.modifier}
+            onClick={() => dispatch(toggleModifier(button.modifier))}
+            selected={activeModifiers.includes(button.modifier)}
           >
             {<button.icon />}
           </ToolbarToggleButton>

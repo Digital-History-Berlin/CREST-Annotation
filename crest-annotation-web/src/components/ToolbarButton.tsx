@@ -1,4 +1,4 @@
-import { Button, ToggleButton, styled } from "@mui/material";
+import { Button, Divider, ToggleButton, styled } from "@mui/material";
 
 /**
  * Button optimized to be used inside the toolbar
@@ -40,5 +40,14 @@ export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
     "&.Mui-disabled": {
       color: theme.palette.primary.light,
     },
+  },
+}));
+
+export const ToolbarDivider = styled(Divider)(({ theme }) => ({
+  "&": {
+    backgroundColor: theme.palette.primary.contrastText,
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
+    width: "1px",
   },
 }));

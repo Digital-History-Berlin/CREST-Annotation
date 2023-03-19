@@ -6,144 +6,124 @@ import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Rectangle as RectangleShape } from "../../tools/rectangle";
 
+enum Edges {
+  Left = 0,
+  Top = 0,
+  Center = 0.5,
+  Right = 1,
+  Bottom = 1,
+}
+
+type EditPoint = [Edges, Edges];
+
 const Rectangle = ({
-  annotation,
+  identifier,
+  shape,
   color,
   shapeConfig,
   editing,
   getTransformedPointerPosition,
   onUpdate,
 }: ShapeProps) => {
-  const rectangle = annotation.shape as RectangleShape;
+  const rectangle = shape as RectangleShape;
 
   const editingPoints = [
-    {
-      x: rectangle.x + rectangle.width / 2,
-      y: rectangle.y + rectangle.height / 2,
-    },
-    { x: rectangle.x, y: rectangle.y },
-    { x: rectangle.x + rectangle.width / 2, y: rectangle.y },
-    { x: rectangle.x + rectangle.width, y: rectangle.y },
-    { x: rectangle.x + rectangle.width, y: rectangle.y + rectangle.height / 2 },
-    { x: rectangle.x + rectangle.width, y: rectangle.y + rectangle.height },
-    { x: rectangle.x + rectangle.width / 2, y: rectangle.y + rectangle.height },
-    { x: rectangle.x, y: rectangle.y + rectangle.height },
-    { x: rectangle.x, y: rectangle.y + rectangle.height / 2 },
-  ];
+    [Edges.Center, Edges.Center],
+    [Edges.Left, Edges.Bottom],
+    [Edges.Left, Edges.Center],
+    [Edges.Left, Edges.Top],
+    [Edges.Center, Edges.Top],
+    [Edges.Right, Edges.Top],
+    [Edges.Right, Edges.Center],
+    [Edges.Right, Edges.Bottom],
+    [Edges.Center, Edges.Bottom],
+  ] as EditPoint[];
+
+  // convert coordinate to position
+  const xCoord = (edge: Edges) => rectangle.x + rectangle.width * edge;
+  // convert coordinate to position
+  const yCoord = (edge: Edges) => rectangle.y + rectangle.height * edge;
 
   const onDragEditPoint = (
     e: Konva.KonvaEventObject<DragEvent>,
-    index: number
+    editPoint: EditPoint
   ) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
-
     const pos = getTransformedPointerPosition(e);
     if (pos === undefined) return;
 
-    let changes = {};
-
-    switch (index) {
-      // center
-      case 0:
-        changes = {
-          x: pos.x - rectangle.width / 2,
-          y: pos.y - rectangle.height / 2,
-        };
-        break;
-      // top left
-      case 1:
-        changes = {
-          x: pos.x,
-          y: pos.y,
-          width: rectangle.x + rectangle.width - pos.x,
-          height: rectangle.y + rectangle.height - pos.y,
-        };
-        break;
-      // top middle
-      case 2:
-        // lock edit point in x-axis, only move in y-axis
-        e.target.x(rectangle.x + rectangle.width / 2);
-        changes = {
-          y: pos.y,
-          height: rectangle.y + rectangle.height - pos.y,
-        };
-        break;
-      // top right
-      case 3:
-        changes = {
-          y: pos.y,
-          height: rectangle.y + rectangle.height - pos.y,
-          width: pos.x - rectangle.x,
-        };
-        break;
-      // right middle
-      case 4:
-        // lock edit point in y-axis, only move in x-axis
-        e.target.y(rectangle.y + rectangle.height / 2);
-        changes = { width: pos.x - rectangle.x };
-        break;
-      // bottom right
-      case 5:
-        changes = {
-          width: pos.x - rectangle.x,
-          height: pos.y - rectangle.y,
-        };
-        break;
-      // bottom middle
-      case 6:
-        // lock edit point in x-axis, only move in y-axis
-        e.target.x(rectangle.x + rectangle.width / 2);
-        changes = { height: pos.y - rectangle.y };
-        break;
-      // bottom left
-      case 7:
-        changes = {
-          x: pos.x,
-          width: rectangle.x + rectangle.width - pos.x,
-          height: pos.y - rectangle.y,
-        };
-        break;
-      // left middle
-      case 8:
-        // lock edit point in y-axis, only move in x-axis
-        e.target.y(rectangle.y + rectangle.height / 2);
-        changes = {
-          x: pos.x,
-          width: rectangle.x + rectangle.width - pos.x,
-        };
+    // move on center point
+    if (editPoint[0] === Edges.Center && editPoint[1] === Edges.Center) {
+      onUpdate?.({
+        ...shape,
+        x: pos.x - rectangle.width / 2,
+        y: pos.y - rectangle.height / 2,
+      });
+      return;
     }
 
-    onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        ...changes,
-      },
-    });
+    const patch = { ...rectangle };
+
+    // change width
+    switch (editPoint[0]) {
+      case Edges.Left:
+        patch.x = pos.x;
+        patch.width = rectangle.x + rectangle.width - pos.x;
+        break;
+      case Edges.Center:
+        e.target.x(rectangle.x + rectangle.width / 2);
+        break;
+      case Edges.Right:
+        patch.width = pos.x - rectangle.x;
+        break;
+    }
+
+    // change height
+    switch (editPoint[1]) {
+      case Edges.Top:
+        patch.y = pos.y;
+        patch.height = rectangle.y + rectangle.height - pos.y;
+        break;
+      case Edges.Center:
+        e.target.y(rectangle.y + rectangle.height / 2);
+        break;
+      case Edges.Right:
+        patch.height = pos.y - rectangle.y;
+        break;
+    }
+
+    // validate width
+    if (patch.width < 0) {
+      patch.x = patch.x + patch.width;
+      patch.width = -patch.width;
+    }
+
+    // validate height
+    if (patch.height < 0) {
+      patch.y = patch.y + patch.height;
+      patch.height = -patch.height;
+    }
+
+    onUpdate?.(patch as Shape);
   };
 
   return (
-    <Group key={annotation.id}>
+    <Group key={identifier}>
       <KonvaRectangle
         {...shapeConfig}
-        key={annotation.id}
         x={rectangle.x}
         y={rectangle.y}
         width={rectangle.width}
         height={rectangle.height}
       />
       {editing &&
-        editingPoints.map((editPoint, index) => (
+        editingPoints.map((editPoint) => (
           <Circle
-            x={editPoint.x}
-            y={editPoint.y}
+            x={xCoord(editPoint[0])}
+            y={yCoord(editPoint[1])}
             radius={5}
             fill={alpha(color, 0.8)}
             draggable
-            onDragMove={(e) => {
-              onDragEditPoint(e, index);
-            }}
+            onDragMove={(e) => onDragEditPoint(e, editPoint)}
           />
         ))}
     </Group>

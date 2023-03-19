@@ -7,23 +7,22 @@ import { Shape, Tool } from "../../slice";
 import { Circle as CircleShape } from "../../tools/circle";
 
 const Circle = ({
-  annotation,
+  identifier,
+  shape,
   color,
   shapeConfig,
   editing,
   onUpdate,
   getTransformedPointerPosition,
 }: ShapeProps) => {
-  const circle = annotation.shape as CircleShape;
+  const circle = shape as CircleShape;
 
   const onDragBorder = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
-
     const pos = getTransformedPointerPosition(e);
     if (pos === undefined) return;
 
-    // stop konva from changing the position of the ring object and keep it in the center of the original circle
+    // stop konva from changing the position of the ring object
+    // and keep it in the center of the original circle
     e.target?.setAttrs({
       x: circle.x,
       y: circle.y,
@@ -34,33 +33,24 @@ const Circle = ({
     );
 
     onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        radius: radius,
-      },
+      ...shape,
+      radius: radius,
     });
   };
 
   const onDragCenter = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
-
     const pos = getTransformedPointerPosition(e);
     if (pos === undefined) return;
 
     onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        x: pos.x,
-        y: pos.y,
-      },
+      ...shape,
+      x: pos.x,
+      y: pos.y,
     });
   };
 
   return (
-    <Group key={annotation.id}>
+    <Group key={identifier}>
       <KonvaCircle
         {...shapeConfig}
         x={circle.x}
@@ -78,9 +68,7 @@ const Circle = ({
             listening={true}
             fill={alpha(color, 0.8)}
             draggable
-            onDragMove={(e) => {
-              onDragBorder(e);
-            }}
+            onDragMove={onDragBorder}
           />
           <KonvaCircle
             x={circle.x}
@@ -88,9 +76,7 @@ const Circle = ({
             radius={5}
             fill={alpha(color, 0.8)}
             draggable
-            onDragMove={(e) => {
-              onDragCenter(e);
-            }}
+            onDragMove={onDragCenter}
           />
         </>
       )}
