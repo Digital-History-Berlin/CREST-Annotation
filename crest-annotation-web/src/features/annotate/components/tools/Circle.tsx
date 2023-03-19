@@ -1,10 +1,10 @@
 import React from "react";
-import { Circle as KonvaCircle, Group, Ring } from "react-konva";
-import { Circle as CircleShape } from "../../tools/circle";
-import { Shape, Tool } from "../../slice";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
-import Konva from "konva";
 import { alpha } from "@mui/material";
+import Konva from "konva";
+import { Group, Circle as KonvaCircle, Ring } from "react-konva";
+import { Position, ShapeProps, ShapeTool } from "./Shape";
+import { Shape, Tool } from "../../slice";
+import { Circle as CircleShape } from "../../tools/circle";
 
 const Circle = ({
   annotation,

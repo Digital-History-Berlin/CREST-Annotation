@@ -1,45 +1,48 @@
 import React, { useEffect, useState } from "react";
+import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAppDispatch, useAppSelector, useEnv } from "../../app/hooks";
+// TODO: better icons
+import ObjectsIcon from "@mui/icons-material/Apps";
+import FinishedIcon from "@mui/icons-material/Check";
+import CircleIcon from "@mui/icons-material/CircleTwoTone";
+import EditIcon from "@mui/icons-material/CropRotate";
+import PenIcon from "@mui/icons-material/Edit";
+import PolygonIcon from "@mui/icons-material/PolylineOutlined";
+import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
+import SelectIcon from "@mui/icons-material/TouchApp";
+import AnnotationsList from "./components/AnnotationsList";
+import Canvas from "./components/Canvas";
+import LabelsExplorer from "./components/LabelsExplorer";
 import {
+  Tool,
   selectActiveLabel,
   selectActiveTool,
   setActiveLabel,
   setActiveTool,
   setObjectId,
-  Tool,
 } from "./slice";
-import { Link, Stack, useTheme } from "@mui/material";
-// TODO: better icons
-import SelectIcon from "@mui/icons-material/TouchApp";
-import PenIcon from "@mui/icons-material/Edit";
-import PolygonIcon from "@mui/icons-material/PolylineOutlined";
-import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
-import CircleIcon from "@mui/icons-material/CircleTwoTone";
-import FinishedIcon from "@mui/icons-material/Check";
-import EditIcon from "@mui/icons-material/CropRotate";
-import ObjectsIcon from "@mui/icons-material/Apps";
+import {
+  enhancedApi,
+  useFinishObjectMutation,
+  useGetObjectQuery,
+} from "../../api/enhancedApi";
+import { Label } from "../../api/openApi";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
+import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
 import Layout from "../../components/layouts/Layout";
+import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
+import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
   ToolbarButton,
   ToolbarToggleButton,
 } from "../../components/ToolbarButton";
-import Canvas from "./components/Canvas";
-import AnnotationsList from "./components/AnnotationsList";
-import LabelsExplorer from "./components/LabelsExplorer";
-import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
-import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
-import { enhancedApi, useFinishObjectMutation } from "../../api/enhancedApi";
-import Loader from "../../components/Loader";
-import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
-import { Label } from "../../api/openApi";
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
-  const env = useEnv();
 
   const { projectId, objectId } = useParams();
 
@@ -49,6 +52,13 @@ const AnnotatePage = () => {
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
   const [rqeuestFinishObject] = useFinishObjectMutation();
+
+  // TODO: move to image component
+  const { data: object } = useGetObjectQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { objectId: objectId! },
+    { skip: !objectId }
+  );
 
   const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -153,9 +163,9 @@ const AnnotatePage = () => {
       />
       <Loader
         query={{
-          isLoading: !projectId || (!objectId && !randomError),
+          isLoading: !projectId || (!object && !randomError),
           isError: randomError,
-          data: objectId,
+          data: object,
         }}
         errorPlaceholder={
           <PlaceholderLayout
@@ -169,11 +179,8 @@ const AnnotatePage = () => {
             }
           />
         }
-        render={({ data: objectId }) => (
-          <Canvas
-            projectId={projectId}
-            imageUri={`${env.REACT_APP_BACKEND}/objects/image/${objectId}`}
-          />
+        render={({ data: object }) => (
+          <Canvas projectId={projectId} imageUri={object.uri} />
         )}
       />
     </Layout>

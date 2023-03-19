@@ -1,23 +1,11 @@
 import React from "react";
-import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
-  selectAnnotations,
-  deleteAnnotation,
-  selectAnnotation,
-  unselectAnnotation,
-  lockAnnotation,
-  unlockAnnotation,
-  hideAnnotation,
-  showAnnotation,
-  Annotation,
-} from "../slice";
-import {
-  Stack,
   IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
+  Stack,
   useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -25,9 +13,21 @@ import LockedIcon from "@mui/icons-material/Lock";
 import UnlockedIcon from "@mui/icons-material/LockOpen";
 import VisibleIcon from "@mui/icons-material/Visibility";
 import HiddenIcon from "@mui/icons-material/VisibilityOff";
-import Loader from "../../../components/Loader";
+import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import Dot from "../../../components/Dot";
+import Loader from "../../../components/Loader";
 import SidebarContainer from "../../../components/SidebarContainer";
+import {
+  Annotation,
+  deleteAnnotation,
+  hideAnnotation,
+  lockAnnotation,
+  selectAnnotation,
+  selectAnnotations,
+  showAnnotation,
+  unlockAnnotation,
+  unselectAnnotation,
+} from "../slice";
 
 interface IProps {
   projectId?: string;

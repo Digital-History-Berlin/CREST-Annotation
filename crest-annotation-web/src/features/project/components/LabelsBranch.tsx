@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { TreeItem } from "@mui/lab";
+import { Box, styled } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LabelRow, { PartialLabel } from "./LabelRow";
 import {
   useCreateLabelMutation,
   useDeleteLabelMutation,
   useUpdateLabelMutation,
 } from "../../../api/enhancedApi";
 import { Label, Project } from "../../../api/openApi";
-import { TreeItem } from "@mui/lab";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import LabelRow, { PartialLabel } from "./LabelRow";
-import { Box, styled } from "@mui/material";
 
 interface IProps {
   project: Project;
@@ -18,7 +18,7 @@ interface IProps {
   remoteLabels?: Label[];
 }
 
-const Expandable = styled(TreeItem)(({ theme }) => ({
+const Expandable = styled(TreeItem)(() => ({
   "& .MuiTreeItem-content": {
     padding: "0px",
     backgroundColor: "transparent !important",
@@ -35,7 +35,7 @@ const Expandable = styled(TreeItem)(({ theme }) => ({
   },
 }));
 
-const AddRow = styled(Box)(({ theme }) => ({
+const AddRow = styled(Box)(() => ({
   "&": {
     marginLeft: "40px",
   },
@@ -90,6 +90,7 @@ const LabelsBranch = ({ project, parent, remoteLabels }: IProps) => {
         id: undefined,
         project_id: project.id,
         parent_id: parent?.id,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         name: label.name!,
         color: getLabelColor(),
       },

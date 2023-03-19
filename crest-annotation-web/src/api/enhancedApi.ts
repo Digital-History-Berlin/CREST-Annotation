@@ -19,13 +19,22 @@ export const enhancedApi = api.enhanceEndpoints({
       invalidatesTags: ["Project"],
     },
 
+    getObject: {
+      providesTags: ["Object"],
+    },
     getObjects: {
       providesTags: ["Object"],
     },
     getRandomObject: {
       providesTags: ["Object"],
     },
+    finishObject: {
+      invalidatesTags: ["Object"],
+    },
     collectObjects: {
+      invalidatesTags: ["Object"],
+    },
+    importIiif3: {
       invalidatesTags: ["Object"],
     },
 
@@ -52,11 +61,10 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useGetOntologyImportQuery,
-  useImportOntologyMutation,
   useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
+  useGetObjectQuery,
   useGetImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
@@ -66,4 +74,7 @@ export const {
   useUpdateProjectMutation,
   useGetProjectQuery,
   useDeleteProjectMutation,
+  useGetOntologyImportMutation,
+  useImportOntologyMutation,
+  useImportIiif3Mutation,
 } = enhancedApi;

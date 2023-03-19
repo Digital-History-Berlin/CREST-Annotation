@@ -1,23 +1,30 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
-import { useGetProjectQuery } from "../../api/enhancedApi";
-import { Box, Container, Paper, Tabs, Tab, Typography } from "@mui/material";
-import Layout from "../../components/layouts/Layout";
-import Toolbar from "../../components/Toolbar";
-import Loader from "../../components/Loader";
-import SettingsTab from "./components/SettingsTab";
+import { Box, Container, Paper, Tab, Tabs, Typography } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
 import LabelsTab from "./components/LabelsTab";
-import ImportTab from "./components/ImportTab";
+import SettingsTab from "./components/SettingsTab";
+import WizardsTab from "./components/WizardsTab";
+import { useGetProjectQuery } from "../../api/enhancedApi";
+import Layout from "../../components/layouts/Layout";
+import Loader from "../../components/Loader";
+import Toolbar from "../../components/Toolbar";
 
 const ProjectPage = () => {
+  const navigate = useNavigate();
   const { projectId } = useParams();
 
   const projectQuery = useGetProjectQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
     { skip: !projectId }
   );
 
   const [currentTab, setCurrentTab] = useState(0);
+
+  const completeWizard = (group: string) => {
+    if (group === "objects") navigate(`/objects/${projectId}`);
+    if (group === "labels") setCurrentTab(1);
+  };
 
   return (
     <Layout
@@ -50,10 +57,10 @@ const ProjectPage = () => {
                 <LabelsTab project={project} />
               </Box>
               <Box hidden={currentTab !== 2}>
-                <ImportTab
+                <WizardsTab
                   project={project}
                   // show labels tab after successful import
-                  onSuccess={() => setCurrentTab(1)}
+                  onSuccess={completeWizard}
                 />
               </Box>
             </Paper>

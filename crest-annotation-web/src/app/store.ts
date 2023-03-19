@@ -1,8 +1,8 @@
 import {
-  configureStore,
-  combineReducers,
-  ThunkAction,
   Action,
+  ThunkAction,
+  combineReducers,
+  configureStore,
 } from "@reduxjs/toolkit";
 import { enhancedApi } from "../api/enhancedApi";
 import annotateReducer, {

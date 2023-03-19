@@ -9,13 +9,13 @@ import {
   Stack,
   useTheme,
 } from "@mui/material";
+import OpenIcon from "@mui/icons-material/ChevronRight";
 import ListView from "@mui/icons-material/List";
 import StarredView from "@mui/icons-material/Star";
-import OpenIcon from "@mui/icons-material/ChevronRight";
-import { Label } from "../../../api/openApi";
-import Loader from "../../../components/Loader";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
+import { Label } from "../../../api/openApi";
 import Dot from "../../../components/Dot";
+import Loader from "../../../components/Loader";
 import SidebarContainer from "../../../components/SidebarContainer";
 
 interface IProps {
@@ -101,6 +101,7 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
         query={{
           ...useGetProjectLabelsQuery(
             {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               projectId: projectId!,
               starred: view === "starred" ? true : undefined,
               grouped: view === "list",

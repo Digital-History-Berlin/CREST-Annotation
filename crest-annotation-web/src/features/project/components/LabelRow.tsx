@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Label } from "../../../api/openApi";
+import React, { KeyboardEventHandler, useEffect, useState } from "react";
 import {
   Box,
   CircularProgress,
@@ -7,9 +6,10 @@ import {
   InputBase,
   styled,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import StarredIcon from "@mui/icons-material/Star";
 import StarIcon from "@mui/icons-material/StarBorder";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Label } from "../../../api/openApi";
 import Dot from "../../../components/Dot";
 
 /// Adds rendering properties
@@ -50,13 +50,7 @@ const Row = styled(Box)(({ theme }) => ({
   },
 }));
 
-const LabelRow = ({
-  label,
-  defaultLoading,
-  autoFocus,
-  onChange,
-  onDelete,
-}: IProps) => {
+const LabelRow = ({ label, autoFocus, onChange, onDelete }: IProps) => {
   const makePatch = (label: PartialLabel) => ({
     id: label.id,
     name: label.name,
@@ -76,9 +70,9 @@ const LabelRow = ({
     }
   };
 
-  const handleKeyDown = (event: any) => {
+  const handleKeyDown: KeyboardEventHandler<HTMLInputElement> = (event) => {
     if (event.key === "Enter") {
-      event.target.blur();
+      event.currentTarget.blur();
     }
   };
 

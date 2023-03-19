@@ -1,29 +1,29 @@
-import React from "react";
+import React, { useRef, useState } from "react";
+import { alpha } from "@mui/material";
 import Konva from "konva";
-import { v4 as uuidv4 } from "uuid";
 import { Layer, Stage } from "react-konva";
+import { v4 as uuidv4 } from "uuid";
 import BackgroundImage from "./BackgroundImage";
 import LabelsPopup from "./LabelsPopup";
+import CircleTool from "./tools/Circle";
+import LineTool from "./tools/Line";
+import PolygonTool from "./tools/Polygon";
+import RectangleTool from "./tools/Rectangle";
+import { Position, Transformation } from "./tools/Shape";
+import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
-  addAnnotation,
   Annotation,
+  Shape,
+  Tool,
+  addAnnotation,
   selectActiveLabel,
   selectActiveTool,
   selectAnnotation,
   selectAnnotations,
-  Shape,
-  Tool,
   unselectAnnotation,
   updateAnnotation,
 } from "../slice";
-import { Label } from "../../../api/openApi";
-import { alpha } from "@mui/material";
-import RectangleTool from "./tools/Rectangle";
-import PolygonTool from "./tools/Polygon";
-import LineTool from "./tools/Line";
-import CircleTool from "./tools/Circle";
-import { Position, Transformation } from "./tools/Shape";
 
 interface PopupPosition {
   left?: number | string;
@@ -52,16 +52,16 @@ const shapeMap = {
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
 
-  const stage = React.useRef<Konva.Stage>(null);
+  const stage = useRef<Konva.Stage>(null);
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
   const annotations = useAppSelector(selectAnnotations);
 
   // tracks the shape that is currently drawn
-  const [activeShape, setActiveShape] = React.useState<Shape>();
-  const [labelPopup, setLabelPopup] = React.useState<PopupPosition>();
-  const [cursorPos, setCursorPos] = React.useState<Position>({ x: 0, y: 0 });
+  const [activeShape, setActiveShape] = useState<Shape>();
+  const [labelPopup, setLabelPopup] = useState<PopupPosition>();
+  const [cursorPos, setCursorPos] = useState<Position>({ x: 0, y: 0 });
 
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");

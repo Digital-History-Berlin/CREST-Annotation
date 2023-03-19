@@ -1,10 +1,10 @@
 import React from "react";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import CancelIcon from "@mui/icons-material/Cancel";
-import { Label } from "../../../api/openApi";
-import Loader from "../../../components/Loader";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
+import { Label } from "../../../api/openApi";
 import Dot from "../../../components/Dot";
+import Loader from "../../../components/Loader";
 
 interface IProps {
   projectId?: string;
@@ -22,6 +22,7 @@ const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
       query={{
         ...useGetProjectLabelsQuery(
           {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             projectId: projectId!,
             starred: true,
             grouped: false,

@@ -228,125 +228,6 @@
     }
    }
   },
-  "/labels/import/ontology": {
-   "get": {
-    "tags": [
-     "label"
-    ],
-    "summary": "Get Ontology Import",
-    "operationId": "get_ontology_import",
-    "parameters": [
-     {
-      "required": true,
-      "schema": {
-       "title": "Url",
-       "type": "string"
-      },
-      "name": "url",
-      "in": "query"
-     }
-    ],
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/Ontology"
-        }
-       }
-      }
-     },
-     "404": {
-      "description": "Not found"
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   },
-   "post": {
-    "tags": [
-     "label"
-    ],
-    "summary": "Import Ontology",
-    "operationId": "import_ontology",
-    "parameters": [
-     {
-      "required": true,
-      "schema": {
-       "title": "Url",
-       "type": "string"
-      },
-      "name": "url",
-      "in": "query"
-     },
-     {
-      "required": true,
-      "schema": {
-       "title": "Project Id",
-       "type": "string"
-      },
-      "name": "project_id",
-      "in": "query"
-     },
-     {
-      "required": false,
-      "schema": {
-       "title": "Method",
-       "type": "string",
-       "default": "None"
-      },
-      "name": "method",
-      "in": "query"
-     }
-    ],
-    "requestBody": {
-     "content": {
-      "application/json": {
-       "schema": {
-        "title": "Classes",
-        "type": "array",
-        "items": {
-         "type": "string"
-        }
-       }
-      }
-     },
-     "required": true
-    },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "404": {
-      "description": "Not found"
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
   "/objects/collect-of/{project_id}": {
    "post": {
     "tags": [
@@ -465,6 +346,49 @@
           "$ref": "#/components/schemas/Object"
          }
         }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/id/{object_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Object",
+    "operationId": "get_object",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
        }
       }
      },
@@ -864,6 +788,189 @@
      }
     }
    }
+  },
+  "/import/ontology": {
+   "get": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Get Ontology Import",
+    "operationId": "get_ontology_import",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Ontology"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Import Ontology",
+    "operationId": "import_ontology",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Method",
+       "type": "string",
+       "default": "None"
+      },
+      "name": "method",
+      "in": "query"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Classes",
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/import/iiif/3": {
+   "post": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Import Iiif3",
+    "operationId": "import_iiif3",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Commit",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "commit",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Iiif3Import"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {
@@ -923,6 +1030,93 @@
      }
     }
    },
+   "Iiif3Data": {
+    "title": "Iiif3Data",
+    "required": [
+     "canvas",
+     "page",
+     "annotation"
+    ],
+    "type": "object",
+    "properties": {
+     "canvas": {
+      "title": "Canvas",
+      "type": "string"
+     },
+     "page": {
+      "title": "Page",
+      "type": "string"
+     },
+     "annotation": {
+      "title": "Annotation",
+      "type": "string"
+     }
+    }
+   },
+   "Iiif3Image": {
+    "title": "Iiif3Image",
+    "required": [
+     "uri",
+     "object_data"
+    ],
+    "type": "object",
+    "properties": {
+     "uri": {
+      "title": "Uri",
+      "type": "string"
+     },
+     "thumbnail_uri": {
+      "title": "Thumbnail Uri",
+      "type": "string"
+     },
+     "object_data": {
+      "$ref": "#/components/schemas/Iiif3Data"
+     }
+    }
+   },
+   "Iiif3Import": {
+    "title": "Iiif3Import",
+    "required": [
+     "images",
+     "added",
+     "problems"
+    ],
+    "type": "object",
+    "properties": {
+     "title": {
+      "title": "Title",
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
+      }
+     },
+     "display": {
+      "title": "Display",
+      "type": "string"
+     },
+     "images": {
+      "title": "Images",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Iiif3Image"
+      }
+     },
+     "added": {
+      "title": "Added",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Iiif3Image"
+      }
+     },
+     "problems": {
+      "title": "Problems",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
    "Label": {
     "title": "Label",
     "required": [
@@ -974,17 +1168,31 @@
    "Object": {
     "title": "Object",
     "required": [
-     "annotation_data",
-     "id"
+     "id",
+     "uri",
+     "annotated",
+     "annotation_data"
     ],
     "type": "object",
     "properties": {
-     "annotation_data": {
-      "title": "Annotation Data",
-      "type": "string"
-     },
      "id": {
       "title": "Id",
+      "type": "string"
+     },
+     "uri": {
+      "title": "Uri",
+      "type": "string"
+     },
+     "thumbnail_uri": {
+      "title": "Thumbnail Uri",
+      "type": "string"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
+     },
+     "annotation_data": {
+      "title": "Annotation Data",
       "type": "string"
      }
     }
