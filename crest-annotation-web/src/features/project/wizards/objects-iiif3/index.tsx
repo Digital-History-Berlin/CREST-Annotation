@@ -8,7 +8,7 @@ type IProps = {
   project: Project;
 } & WizardProps;
 
-const ObjectsIiif = ({ project, onCancel, onSuccess }: IProps) => {
+const ObjectsIiif3 = ({ project, onCancel, onSuccess }: IProps) => {
   const [step, setStep] = useState<number>(0);
   // data from steps
   const [source, setSource] = useState<string>();
@@ -48,4 +48,11 @@ const ObjectsIiif = ({ project, onCancel, onSuccess }: IProps) => {
   return null;
 };
 
-export default ObjectsIiif;
+const wizard = {
+  component: ObjectsIiif3,
+  group: "objects",
+  name: "IIIF 3",
+  description: "Import images from IIIF 3.0 manifest",
+};
+
+export default wizard;

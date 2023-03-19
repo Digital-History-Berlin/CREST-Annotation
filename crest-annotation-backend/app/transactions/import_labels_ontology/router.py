@@ -9,13 +9,14 @@ from pyld import jsonld
 
 from ...dependencies.db import get_db
 from ...dependencies.logger import get_logger
-from ...dependencies.ontology import Ontology
 from ...dependencies.colors import Colors
 from ...models.labels import Label
 from ...models.projects import Project
-from ... import schemas
 
-from . import router
+from .. import import_router as router
+
+from .dependencies import Ontology
+from . import schemas
 
 
 @router.get("/ontology", response_model=schemas.Ontology)

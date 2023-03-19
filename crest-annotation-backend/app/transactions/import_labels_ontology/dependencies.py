@@ -1,8 +1,6 @@
-# TODO: rewrite using pydantic
-
 from fastapi import Depends
 
-from .logger import get_logger
+from ...dependencies.logger import get_logger
 
 
 class OntologyMetaData:

@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Button, Divider, Stack } from "@mui/material";
 import { WizardProps } from "../../components/WizardsTab";
 
-const ObjectsFileSystem = ({ onCancel }: WizardProps) => {
+const ObjectsIiif2 = ({ onCancel }: WizardProps) => {
   return (
     <>
       <Box padding={2}>Not available</Box>
@@ -18,10 +18,10 @@ const ObjectsFileSystem = ({ onCancel }: WizardProps) => {
 };
 
 const wizard = {
-  component: ObjectsFileSystem,
+  component: ObjectsIiif2,
   group: "objects",
-  name: "File System",
-  description: "Import images directly from file system",
+  name: "IIIF 2",
+  description: "Import images from IIIF 2.1 or 2.0 manifest",
 };
 
 export default wizard;

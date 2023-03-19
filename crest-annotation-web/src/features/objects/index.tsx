@@ -1,5 +1,6 @@
 import React from "react";
-import { Card, CardActionArea, CardMedia, Link } from "@mui/material";
+import { CheckCircle } from "@mui/icons-material";
+import { Card, CardActionArea, CardMedia, Link, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
 import { Object as DataObject } from "../../api/openApi";
@@ -9,6 +10,7 @@ import Toolbar from "../../components/Toolbar";
 
 const ObjectsPage = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const { projectId } = useParams();
 
@@ -23,6 +25,16 @@ const ObjectsPage = () => {
       <CardActionArea
         onClick={() => navigate(`/annotate/${projectId}/${object.id}`)}
       >
+        {object.annotated && (
+          <CheckCircle
+            color="success"
+            sx={{
+              position: "absolute",
+              left: theme.spacing(1),
+              top: theme.spacing(1),
+            }}
+          />
+        )}
         <CardMedia component="img" height="140" image={object.uri} />
       </CardActionArea>
     </Card>
