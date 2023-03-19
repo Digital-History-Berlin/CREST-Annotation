@@ -252,7 +252,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     const oldScale = stage.scaleX();
 
-    const scaleBy = 1.03;
+    const scaleBy = 1.2;
     const newScale =
       event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
