@@ -57,12 +57,12 @@ async def get_project(
 
 @router.patch("/", response_model=schemas.Project)
 async def update_project(
-    shallow: schemas.ShallowProject,
+    patch: schemas.PatchProject,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
-    projects = db.query(Project).filter_by(id=shallow.id)
-    projects.update(mapper.map_dict(shallow.dict(exclude_none=True)))
+    projects = db.query(Project).filter_by(id=patch.id)
+    projects.update(mapper.map_dict(patch.dict(exclude_none=True)))
 
     project = projects.first()
     if not project:
@@ -76,11 +76,11 @@ async def update_project(
 
 @router.post("/", response_model=schemas.Project)
 async def create_project(
-    shallow: schemas.ShallowProject,
+    create: schemas.CreateLabel,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
-    project = Project(**mapper.map_dict(shallow.dict()))
+    project = Project(**mapper.map_dict(create.dict()))
 
     db.add(project)
     db.commit()
