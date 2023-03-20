@@ -19,7 +19,7 @@ const AddProjectDialog = ({ open, onClose }: IProps) => {
 
   const createProject = async () => {
     const project = await requestCreateProject({
-      shallowProject: { name: projectName },
+      createProject: { name: projectName },
     }).unwrap();
 
     // redirect to project overview

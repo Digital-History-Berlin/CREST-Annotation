@@ -7,12 +7,23 @@ from .modifiers import create, patch, response
 
 class BaseObject(BaseModel):
     id: str
-    uri: str
-    thumbnail_uri: Optional[str]
+    object_uuid: str | None
     annotated: bool
     annotation_data: str
+    object_data: str | None
+
+
+@create("id", "object_uuid", "annotated", "annotation_data", "object_data")
+class CreateObject(BaseObject):
+    pass
 
 
 @response()
 class Object(BaseObject):
     pass
+
+
+class ImageRequest(BaseModel):
+    thumbnail: Optional[bool]
+    width: Optional[int]
+    height: Optional[int]

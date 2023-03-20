@@ -48,7 +48,7 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
         {title && <Typography variant="h4">{title}</Typography>}
         <Typography variant="body1">
           <ul>
-            <li>Total images: {data.images.length}</li>
+            <li>Total images: {data.objects.length}</li>
             <li>New images: {data.added.length}</li>
           </ul>
         </Typography>

@@ -19,11 +19,13 @@ from .dependencies import Iiif3
 from . import schemas
 
 
-def map_image(project_id, *args, object_data, **kwargs):
+def map_object(project_id: str, object: schemas.Iiif3Object) -> Object:
     return Object(
         project_id=project_id,
-        object_data=json.dumps(object_data),
-        **kwargs,
+        object_uuid=object.object_uuid,
+        object_data=object.object_data,
+        image_uri=object.image_uri,
+        thumbnail_uri=object.thumbnail_uri,
     )
 
 
@@ -54,24 +56,24 @@ async def import_iiif3(
         # try to disable validation to be able to proceed
         manifest = Manifest.construct(**manifest_json)
 
-    images = iiif.extract_images(manifest)
+    objects = iiif.extract_objects(manifest)
 
-    # compare against known images
-    query = db.query(Object.uri).filter_by(project_id=project_id)
-    known = set(image.uri for image in query)
-    added = list(image for image in images if image["uri"] not in known)
+    # compare against known objects
+    query = db.query(Object.object_uuid).filter_by(project_id=project_id)
+    known = set(obj.object_uuid for obj in query)
+    added = list(obj for obj in objects if obj.object_uuid not in known)
 
     # insert new objects
     if commit:
-        db.add_all(map(lambda image: map_image(project_id, **image), images))
+        db.add_all(map_object(project_id, obj) for obj in objects)
         db.commit()
 
     return JSONResponse(
-        {
-            "title": manifest.label,
-            "display": manifest.behavior,
-            "images": images,
-            "added": added,
-            "problems": problems,
-        }
+        schemas.Iiif3Import(
+            title=dict(manifest.label),
+            display=str(manifest.behavior),
+            objects=objects,
+            added=added,
+            problems=problems,
+        ).dict()
     )

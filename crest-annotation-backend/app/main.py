@@ -1,13 +1,16 @@
 import logging
+import http.client
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils import openapi
 
 from .routers import labels, objects, projects
-from .transactions import import_router, export_router
-from .database import Base, engine
+from .api import import_router, export_router
 from .environment import env
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 app = FastAPI()
 

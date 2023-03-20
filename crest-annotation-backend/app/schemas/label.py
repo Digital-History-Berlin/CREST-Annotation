@@ -28,4 +28,4 @@ class PatchLabel(BaseLabel):
 
 @response("project_id")
 class Label(BaseLabel):
-    children: Optional[List["Label"]]
+    children: Optional[list["Label"]]

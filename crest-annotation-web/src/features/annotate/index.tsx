@@ -28,7 +28,7 @@ import {
 import {
   enhancedApi,
   useFinishObjectMutation,
-  useGetObjectQuery,
+  useGetImageUriQuery,
 } from "../../api/enhancedApi";
 import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -60,9 +60,9 @@ const AnnotatePage = () => {
   const [rqeuestFinishObject] = useFinishObjectMutation();
 
   // TODO: move to image component
-  const { data: object } = useGetObjectQuery(
+  const { data: imageUri } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { objectId: objectId! },
+    { objectId: objectId!, imageRequest: {} },
     { skip: !objectId }
   );
 
@@ -182,9 +182,9 @@ const AnnotatePage = () => {
       />
       <Loader
         query={{
-          isLoading: !projectId || (!object && !randomError),
+          isLoading: !projectId || (!imageUri && !randomError),
           isError: randomError,
-          data: object,
+          data: imageUri,
         }}
         errorPlaceholder={
           <PlaceholderLayout
@@ -198,8 +198,8 @@ const AnnotatePage = () => {
             }
           />
         }
-        render={({ data: object }) => (
-          <Canvas projectId={projectId} imageUri={object.uri} />
+        render={({ data: imageUri }) => (
+          <Canvas projectId={projectId} imageUri={imageUri} />
         )}
       />
     </Layout>

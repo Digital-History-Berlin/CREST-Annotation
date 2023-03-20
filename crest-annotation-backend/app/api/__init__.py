@@ -17,3 +17,5 @@ export_router = APIRouter(
 
 from .import_labels_ontology import router
 from .import_objects_iiif3 import router
+
+from .import_objects_iiif3.resolver import iiif3_image_resolver as iiif3_image_resolver

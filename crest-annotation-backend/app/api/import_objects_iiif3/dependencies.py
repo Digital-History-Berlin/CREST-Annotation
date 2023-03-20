@@ -1,6 +1,10 @@
+import json
+
 from fastapi import Depends
+from iiif_prezi3 import Manifest, Canvas
 
 from ...dependencies.logger import get_logger
+from . import schemas
 
 
 class Iiif3:
@@ -32,32 +36,40 @@ class Iiif3:
             and item.body.type == "Image"
         )
 
-    def get_thumbnail(self, image):
+    def get_thumbnail(self, image: list[Canvas]):
         """
         Get the best thumbnail service
         """
 
         if image.service is not None:
-            # TODO: select appropriate service
-            return f"iiif3://{image.service[0]}"
+            return json.dumps(
+                {
+                    "resolver": "iiif3",
+                    "service": list(service.dict() for service in image.service),
+                }
+            )
 
         return None
 
-    def extract_images(self, manifest):
+    def extract_objects(self, manifest: Manifest):
         """
-        Extract images from manifest
+        Extract objects from manifest
         """
 
         return list(
-            {
-                "uri": item.body.id,
-                "thumbnail_uri": self.get_thumbnail(item.body),
-                "object_data": {
-                    "canvas": canvas.id,
-                    "page": page.id,
-                    "annotation": item.id,
-                },
-            }
+            schemas.Iiif3Object(
+                object_uuid=item.body.id,
+                image_uri=json.dumps(item.body.id),
+                thumbnail_uri=self.get_thumbnail(item.body),
+                object_data=json.dumps(
+                    {
+                        "type": "iiif3",
+                        "canvas": canvas.id,
+                        "page": page.id,
+                        "annotation": item.id,
+                    }
+                ),
+            )
             # extract canvas from manifest
             for canvas in manifest.items
             if canvas.type == "Canvas"

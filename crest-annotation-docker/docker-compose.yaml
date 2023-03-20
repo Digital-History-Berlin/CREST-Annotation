@@ -19,8 +19,8 @@ services:
       - DATABASE_URL=postgresql://${PG_USER:-crest}@db:5432
       - DATABASE_PASSWORD=${PG_PASS:-crest}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
-    ports:
-      - 8000:8000
+    expose:
+      - "8000"
     restart: unless-stopped
   web:
     build:
@@ -31,7 +31,16 @@ services:
         # image is statically build and served by nginx
         # environment variables need to be defined at build time
         - NODE_ENV=${NODE_ENV:-development}
-        - REACT_APP_BACKEND=${REACT_APP_BACKEND:-http://localhost:8000}
+        - REACT_APP_BACKEND=${REACT_APP_BACKEND:-/api}
+    expose:
+      - "80"
+    restart: unless-stopped
+  nginx:
+    image: nginx
+    volumes:
+    - ./templates:/etc/nginx/templates
     ports:
       - 80:80
-    restart: unless-stopped
+    depends_on:
+      - backend
+      - web

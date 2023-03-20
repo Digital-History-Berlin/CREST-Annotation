@@ -1,4 +1,3 @@
-from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -9,7 +8,7 @@ class BaseProject(BaseModel):
     id: str
     name: str
     source: str
-    color_table: List[str]
+    color_table: list[str]
 
 
 @create("id", "source", "color_table")

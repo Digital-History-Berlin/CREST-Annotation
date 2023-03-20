@@ -31,9 +31,6 @@ export const enhancedApi = api.enhanceEndpoints({
     finishObject: {
       invalidatesTags: ["Object"],
     },
-    collectObjects: {
-      invalidatesTags: ["Object"],
-    },
     importIiif3: {
       invalidatesTags: ["Object"],
     },
@@ -61,11 +58,10 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
   useGetObjectQuery,
-  useGetImageQuery,
+  useGetImageUriQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
   useFinishObjectMutation,

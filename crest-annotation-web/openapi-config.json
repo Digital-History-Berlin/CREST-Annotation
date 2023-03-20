@@ -9,6 +9,10 @@
     {
       "pattern": "getOntologyImport",
       "type": "mutation"
+    },
+    {
+      "pattern": "getImageUri",
+      "type": "query"
     }
   ]
 }

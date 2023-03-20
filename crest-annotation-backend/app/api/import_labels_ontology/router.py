@@ -1,4 +1,3 @@
-from typing import List
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException
@@ -62,7 +61,7 @@ async def get_ontology_import(
 async def import_ontology(
     url: str,
     project_id: str,
-    classes: List[str],
+    classes: list[str],
     method: str = "None",
     ontology: Ontology = Depends(Ontology),
     colors: Colors = Depends(Colors),
@@ -101,7 +100,7 @@ async def import_ontology(
         db.query(Label).filter_by(project_id=project_id).delete()
 
     # ensure project does not yet contain any labels
-    labels: List[Label] = db.query(Label).filter_by(project_id=project_id)
+    labels: list[Label] = db.query(Label).filter_by(project_id=project_id)
     if labels.count():
         return JSONResponse({"result": "conflict"})
 
