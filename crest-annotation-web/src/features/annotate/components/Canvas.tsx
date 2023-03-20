@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Box, alpha } from "@mui/material";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
@@ -17,6 +17,7 @@ import {
   Modifiers,
   Shape,
   Tool,
+  Transformation,
   addAnnotation,
   selectActiveAnnotation,
   selectActiveLabel,
@@ -72,6 +73,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const [activeShape, setActiveShape] = useState<Shape>();
   const [labelPopup, setLabelPopup] = useState<PopupPosition>();
   const [cursorPos, setCursorPos] = useState<Position>({ x: 0, y: 0 });
+  const [_, setImageSize] = useState<Position>();
 
   // allow to complete an annotation by selecting a label in the sidebar
   // (in case the popup has already been opened)
@@ -87,6 +89,30 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     stage.current?.scale({ x: transformation.scale, y: transformation.scale });
     stage.current?.position(transformation.translate);
   }, [transformation]);
+
+  // clamp and apply given transformation
+  const transformValid = (transformation: Transformation) => {
+    if (!stage.current || !container.current) return;
+
+    // TODO: clamp transformation
+    dispatch(updateTransformation(transformation));
+  };
+
+  const resize = useCallback(
+    (width: number, height: number) => {
+      setImageSize({ x: width, y: height });
+      // reset the current transformation
+      if (container.current)
+        dispatch(
+          updateTransformation({
+            translate: { x: 0, y: 0 },
+            // fit image into container height
+            scale: container.current?.clientHeight / height,
+          })
+        );
+    },
+    [dispatch]
+  );
 
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
@@ -234,15 +260,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       (tool === Tool.Select && event.evt instanceof TouchEvent);
 
     if (translate) {
-      dispatch(
-        updateTransformation({
-          ...transformation,
-          translate: {
-            x: transformation.translate.x + pos.x - cursorPos.x,
-            y: transformation.translate.y + pos.y - cursorPos.y,
-          },
-        })
-      );
+      transformValid({
+        ...transformation,
+        translate: {
+          x: transformation.translate.x + pos.x - cursorPos.x,
+          y: transformation.translate.y + pos.y - cursorPos.y,
+        },
+      });
       return;
     }
 
@@ -291,15 +315,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         ? transformation.scale * distance
         : transformation.scale / -distance;
 
-    dispatch(
-      updateTransformation({
-        translate: {
-          x: pos.x - transformed.x * scale,
-          y: pos.y - transformed.y * scale,
-        },
-        scale: scale,
-      })
-    );
+    transformValid({
+      translate: {
+        x: pos.x - transformed.x * scale,
+        y: pos.y - transformed.y * scale,
+      },
+      scale: scale,
+    });
   }
 
   const transform = (pos: { x: number; y: number }) => {
@@ -416,7 +438,9 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         ref={stage}
       >
         <Layer>
-          {imageUri && <BackgroundImage imageUri={imageUri} />}
+          {imageUri && (
+            <BackgroundImage imageUri={imageUri} onResize={resize} />
+          )}
           {activeShape &&
             renderShape(
               "__active__",
