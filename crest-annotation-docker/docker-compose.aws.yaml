@@ -6,5 +6,3 @@ services:
   web:
     # use ECR image instead of building from Dockerfile
     image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-web:latest
-    environment:
-      - REACT_APP_BACKEND=http://crest-LoadB-1W06SEAI71Q0S-677150e9442d1933.elb.eu-central-1.amazonaws.com:8000
