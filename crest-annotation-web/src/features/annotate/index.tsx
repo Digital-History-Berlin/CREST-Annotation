@@ -10,6 +10,7 @@ import GroupIcon from "@mui/icons-material/DashboardCustomize";
 import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
+import SettingsIcon from "@mui/icons-material/Settings";
 import SelectIcon from "@mui/icons-material/TouchApp";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
@@ -143,6 +144,12 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/project/${projectId}`)}
+        tooltip={"Settings"}
+      >
+        <SettingsIcon />
+      </ToolbarButtonWithTooltip>
       <ToolbarButtonWithTooltip
         onClick={() => navigate(`/objects/${projectId}`)}
         tooltip={"Project Overview"}
