@@ -132,6 +132,16 @@ pipelines:
   custom:
     upgrade-db:
       - step: *upgrade-db-step
+    deploy:
+      - step: *install-web-step
+      - step: *style-web-step
+      - step: *lint-web-step
+      - step: *build-web-step
+      - step: *lint-backend-step
+      - step: *build-backend-docker-step
+      - step: *build-web-docker-step
+      - step: *upgrade-db-step
+      - step: *deploy-ecs-step
   default:
     - step: *install-web-step
     - step: *style-web-step
