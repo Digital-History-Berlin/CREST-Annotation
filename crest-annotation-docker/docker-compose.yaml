@@ -19,10 +19,12 @@ services:
       - DATABASE_URL=postgresql://${PG_USER:-crest}@db:5432
       - DATABASE_PASSWORD=${PG_PASS:-crest}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
-    ports:
-      - 8000:8000
+    expose:
+      - "8000"
     restart: unless-stopped
   web:
+    depends_on:
+      - backend
     build:
       # allow access to crest-annotatio-web
       context: ../
@@ -31,7 +33,8 @@ services:
         # image is statically build and served by nginx
         # environment variables need to be defined at build time
         - NODE_ENV=${NODE_ENV:-development}
-        - REACT_APP_BACKEND=${REACT_APP_BACKEND:-http://localhost:8000}
+        - REACT_APP_BACKEND=/api
     ports:
       - 80:80
     restart: unless-stopped
+

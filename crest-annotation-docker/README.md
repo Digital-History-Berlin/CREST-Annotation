@@ -4,7 +4,7 @@ This folder provides a docker compose setup to run and deploy the application. I
 
 ## Local deployment
 
-Simply bring up all services using `docker compose up -d`. The frontend is now served to `localhost`.
+Simply bring up all services using `docker compose up -d`. The frontend is now served to `localhost` with the backend at `localhost/api`.
 
 ### Access the database
 

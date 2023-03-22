@@ -1,4 +1,3 @@
-from typing import List, Union
 from enum import auto
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,16 +16,16 @@ router = APIRouter(
 )
 
 
-def map_label(label: Label) -> schemas.Label:
-    return {
-        "id": label.id,
-        "parent_id": label.parent_id,
-        "reference": label.reference,
-        "name": label.name,
-        "starred": label.starred,
-        "count": label.count,
-        "color": label.color,
-    }
+def map_label(label: Label):
+    return schemas.Label(
+        id=label.id,
+        parent_id=label.parent_id,
+        reference=label.reference,
+        name=label.name,
+        starred=label.starred,
+        count=label.count,
+        color=label.color,
+    ).dict()
 
 
 class Sorting(StrEnum):
@@ -46,17 +45,17 @@ def order_by(sorting):
     return [mapping[sorting]]
 
 
-@router.get("/of/{project_id}", response_model=List[schemas.Label])
+@router.get("/of/{project_id}", response_model=list[schemas.Label])
 async def get_project_labels(
     project_id: str,
     sorting: Sorting = Sorting.name,
     direction: schemas.SortDirection = schemas.SortDirection.asc,
-    starred: Union[bool, None] = None,
+    starred: bool | None = None,
     grouped: bool = False,
     db: Session = Depends(get_db),
 ):
 
-    labels: List[Label] = (
+    labels: list[Label] = (
         db.query(Label)
         .filter_by(project_id=project_id)
         .order_by(*map(direction.apply, order_by(sorting)))
@@ -69,7 +68,7 @@ async def get_project_labels(
         return JSONResponse(list(map(map_label, labels)))
 
     # generate tree structure
-    roots: List[schemas.Label] = []
+    roots: list[schemas.Label] = []
     indexed = {label.id: {**map_label(label), "children": []} for label in labels}
     for label in indexed.values():
         parent_id = label.get("parent_id")

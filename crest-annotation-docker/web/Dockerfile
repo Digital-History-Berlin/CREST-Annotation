@@ -1,16 +1,15 @@
 FROM node:18-slim as build-stage
 
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
-ARG REACT_APP_BACKEND
-ENV REACT_APP_BACKEND $REACT_APP_BACKEND
-
 WORKDIR /app
 
+# install only if package.json changes
 COPY ./crest-annotation-web/package.json ./
 RUN npm install
 
-COPY ./crest-annotation-web/ /app
+ARG NODE_ENV
+ARG REACT_APP_BACKEND
+
+COPY ./crest-annotation-web/ ./
 RUN npm run build
 
 FROM nginx:1.15
@@ -21,8 +20,3 @@ COPY ./crest-annotation-docker/web/.htpasswd /etc/nginx/.htpasswd
 WORKDIR /usr/share/nginx/html/
 
 COPY --from=build-stage /app/build/ ./
-COPY ./crest-annotation-docker/web/env.sh ./
-COPY ./crest-annotation-web/.env.local ./.env
-
-# inject environment variables and run
-CMD ["/bin/bash", "-c", "./env.sh && nginx -g \"daemon off;\""]

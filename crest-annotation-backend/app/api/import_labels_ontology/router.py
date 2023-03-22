@@ -1,4 +1,3 @@
-from typing import List
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException
@@ -9,13 +8,14 @@ from pyld import jsonld
 
 from ...dependencies.db import get_db
 from ...dependencies.logger import get_logger
-from ...dependencies.ontology import Ontology
 from ...dependencies.colors import Colors
 from ...models.labels import Label
 from ...models.projects import Project
-from ... import schemas
 
-from . import router
+from .. import import_router as router
+
+from .dependencies import Ontology
+from . import schemas
 
 
 @router.get("/ontology", response_model=schemas.Ontology)
@@ -61,7 +61,7 @@ async def get_ontology_import(
 async def import_ontology(
     url: str,
     project_id: str,
-    classes: List[str],
+    classes: list[str],
     method: str = "None",
     ontology: Ontology = Depends(Ontology),
     colors: Colors = Depends(Colors),
@@ -100,7 +100,7 @@ async def import_ontology(
         db.query(Label).filter_by(project_id=project_id).delete()
 
     # ensure project does not yet contain any labels
-    labels: List[Label] = db.query(Label).filter_by(project_id=project_id)
+    labels: list[Label] = db.query(Label).filter_by(project_id=project_id)
     if labels.count():
         return JSONResponse({"result": "conflict"})
 

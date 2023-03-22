@@ -4,13 +4,13 @@ import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Line as LineShape } from "../../tools/line";
 
-const Line = ({ annotation, shapeConfig }: ShapeProps) => {
-  const line = annotation.shape as LineShape;
+const Line = ({ identifier, shape, shapeConfig }: ShapeProps) => {
+  const line = shape as LineShape;
 
   return (
     <KonvaLine
       {...shapeConfig}
-      key={annotation.id}
+      key={identifier}
       points={line.points}
       closed={line.finished}
       tension={0.5}

@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
@@ -19,14 +18,14 @@ class Mapper:
     def __init__(self, colors=Depends(Colors)):
         self._colors = colors
 
-    def map_project(self, project: Project) -> schemas.Project:
-        return {
-            "id": project.id,
-            "name": project.name,
-            "source": project.source,
+    def map_project(self, project: Project):
+        return schemas.Project(
+            id=project.id,
+            name=project.name,
+            source=project.source,
             # parse color table from JSON or use default
-            "color_table": self._colors.parse(project.color_table).colors,
-        }
+            color_table=self._colors.parse(project.color_table).colors,
+        ).dict()
 
     def map_dict(self, project_dict) -> Project:
         color_table = project_dict["color_table"]
@@ -35,9 +34,9 @@ class Mapper:
         return project_dict
 
 
-@router.get("/", response_model=List[schemas.Project])
+@router.get("/", response_model=list[schemas.Project])
 async def get_projects(mapper: Mapper = Depends(Mapper), db: Session = Depends(get_db)):
-    projects: List[Project] = db.query(Project)
+    projects: list[Project] = db.query(Project)
 
     return JSONResponse(list(map(mapper.map_project, projects)))
 
@@ -57,12 +56,12 @@ async def get_project(
 
 @router.patch("/", response_model=schemas.Project)
 async def update_project(
-    shallow: schemas.ShallowProject,
+    patch: schemas.PatchProject,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
-    projects = db.query(Project).filter_by(id=shallow.id)
-    projects.update(mapper.map_dict(shallow.dict(exclude_none=True)))
+    projects = db.query(Project).filter_by(id=patch.id)
+    projects.update(mapper.map_dict(patch.dict(exclude_none=True)))
 
     project = projects.first()
     if not project:
@@ -76,11 +75,11 @@ async def update_project(
 
 @router.post("/", response_model=schemas.Project)
 async def create_project(
-    shallow: schemas.ShallowProject,
+    create: schemas.CreateProject,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
 ):
-    project = Project(**mapper.map_dict(shallow.dict()))
+    project = Project(**mapper.map_dict(create.dict()))
 
     db.add(project)
     db.commit()

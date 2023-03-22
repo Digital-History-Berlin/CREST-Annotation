@@ -40,7 +40,7 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
           disabled={data.added.length === 0 || importQuery.isLoading}
           variant="outlined"
         >
-          Import {data.added.length} labels
+          Import {data.added.length} objects
         </Button>
       }
     >
@@ -48,8 +48,8 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
         {title && <Typography variant="h4">{title}</Typography>}
         <Typography variant="body1">
           <ul>
-            <li>Total images: {data.images.length}</li>
-            <li>New images: {data.added.length}</li>
+            <li>Total objects: {data.objects.length}</li>
+            <li>New objects: {data.added.length}</li>
           </ul>
         </Typography>
       </Stack>

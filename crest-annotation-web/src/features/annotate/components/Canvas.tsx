@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { alpha } from "@mui/material";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Box, alpha } from "@mui/material";
 import Konva from "konva";
 import { Layer, Stage } from "react-konva";
 import { v4 as uuidv4 } from "uuid";
@@ -9,20 +9,27 @@ import CircleTool from "./tools/Circle";
 import LineTool from "./tools/Line";
 import PolygonTool from "./tools/Polygon";
 import RectangleTool from "./tools/Rectangle";
-import { Position, Transformation } from "./tools/Shape";
+import { Position } from "./tools/Shape";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
   Annotation,
+  Modifiers,
   Shape,
   Tool,
+  Transformation,
   addAnnotation,
+  selectActiveAnnotation,
   selectActiveLabel,
+  selectActiveModifiers,
   selectActiveTool,
   selectAnnotation,
   selectAnnotations,
+  selectTransformation,
   unselectAnnotation,
   updateAnnotation,
+  updateShape,
+  updateTransformation,
 } from "../slice";
 
 interface PopupPosition {
@@ -52,20 +59,71 @@ const shapeMap = {
 const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const dispatch = useAppDispatch();
 
+  const container = useRef<HTMLDivElement>(null);
   const stage = useRef<Konva.Stage>(null);
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
+  const activeAnnotation = useAppSelector(selectActiveAnnotation);
+  const modifiers = useAppSelector(selectActiveModifiers);
   const annotations = useAppSelector(selectAnnotations);
+  const transformation = useAppSelector(selectTransformation);
 
   // tracks the shape that is currently drawn
   const [activeShape, setActiveShape] = useState<Shape>();
   const [labelPopup, setLabelPopup] = useState<PopupPosition>();
   const [cursorPos, setCursorPos] = useState<Position>({ x: 0, y: 0 });
+  const [_, setImageSize] = useState<Position>();
+
+  // allow to complete an annotation by selecting a label in the sidebar
+  // (in case the popup has already been opened)
+  useEffect(() => {
+    if (labelPopup && activeLabel && activeShape)
+      createAnnotation(activeLabel, activeShape);
+    // this should explicitly only trigger when the active label changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLabel]);
+
+  // update the zoom on change
+  useEffect(() => {
+    stage.current?.scale({ x: transformation.scale, y: transformation.scale });
+    stage.current?.position(transformation.translate);
+  }, [transformation]);
+
+  // clamp and apply given transformation
+  const transformValid = (transformation: Transformation) => {
+    if (!stage.current || !container.current) return;
+
+    // TODO: clamp transformation
+    dispatch(updateTransformation(transformation));
+  };
+
+  const resize = useCallback(
+    (width: number, height: number) => {
+      setImageSize({ x: width, y: height });
+      // reset the current transformation
+      if (container.current)
+        dispatch(
+          updateTransformation({
+            translate: { x: 0, y: 0 },
+            // fit image into container height
+            scale: container.current?.clientHeight / height,
+          })
+        );
+    },
+    [dispatch]
+  );
 
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
+  // change the current cursor
+  const changeCursor = (cursor: string | undefined) => {
+    const container = stage.current?.container();
+    if (container !== undefined)
+      container.style.cursor = cursor ?? defaultCursor();
+  };
 
+  // select or deselect given annotation
   const toggleAnnotationSelection = (annotation: Annotation) => {
     if (tool === Tool.Select)
       annotation.selected
@@ -73,14 +131,23 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         : dispatch(selectAnnotation(annotation));
   };
 
+  // create new annotation with given label and shape
   const createAnnotation = (label: Label, shape: Shape) => {
-    dispatch(
-      addAnnotation({
-        shape: shape,
-        label: label,
-        id: uuidv4(),
-      })
-    );
+    if (modifiers.includes(Modifiers.Group) && activeAnnotation)
+      dispatch(
+        updateAnnotation({
+          ...activeAnnotation,
+          shapes: [...(activeAnnotation.shapes || []), shape],
+        })
+      );
+    else
+      dispatch(
+        addAnnotation({
+          shapes: [shape],
+          label: label,
+          id: uuidv4(),
+        })
+      );
 
     setActiveShape(undefined);
     setLabelPopup(undefined);
@@ -142,18 +209,22 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const handleMouseDown = (
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) => {
+    const cancel =
+      // right click
+      (event.evt instanceof MouseEvent && event.evt.button === 2) ||
+      // popup open
+      labelPopup;
+
+    if (cancel) {
+      cancelAnnotation();
+      return;
+    }
+
+    const ignore = event.evt instanceof MouseEvent && event.evt.button === 1;
+    if (ignore) return;
+
     const pos = getTransformedPointerPosition(event);
     if (pos === undefined) return;
-
-    // right click - cancel
-    if (event.evt instanceof MouseEvent)
-      if (event.evt.button === 2) {
-        cancelAnnotation();
-        return;
-      }
-
-    // TODO: what should happen if the popup is open
-    if (labelPopup) return;
 
     // if no shape is currently active, try to create a new shape
     if (activeShape === undefined) {
@@ -181,10 +252,28 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // (used to display popup near cursor position)
     setCursorPos(pos);
 
+    const translate =
+      (event.evt instanceof MouseEvent && event.evt.buttons === 4) ||
+      (tool === Tool.Select &&
+        event.evt instanceof MouseEvent &&
+        event.evt.buttons) ||
+      (tool === Tool.Select && event.evt instanceof TouchEvent);
+
+    if (translate) {
+      transformValid({
+        ...transformation,
+        translate: {
+          x: transformation.translate.x + pos.x - cursorPos.x,
+          y: transformation.translate.y + pos.y - cursorPos.y,
+        },
+      });
+      return;
+    }
+
     // no drawing - skipping
     if (!activeShape || activeShape.finished) return;
 
-    const transformed = transform(pos, stage);
+    const transformed = transform(pos);
     const shape = shapeMap[tool]?.onMove?.(activeShape, transformed);
     if (shape) updateActiveShape(shape);
   };
@@ -217,77 +306,106 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     const pos = stage.getPointerPosition();
     if (pos === undefined || pos === null) return;
+    const transformed = transform(pos);
 
-    const posCorrected = transform(pos, stage);
+    // TODO: maybe configure
+    const distance = event.evt.deltaY * 0.01;
+    const scale =
+      event.evt.deltaY > 0
+        ? transformation.scale * distance
+        : transformation.scale / -distance;
 
-    const oldScale = stage.scaleX();
-
-    const scaleBy = 1.03;
-    const newScale =
-      event.evt.deltaY > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-
-    const newPos = {
-      x: pos.x - posCorrected.x * newScale,
-      y: pos.y - posCorrected.y * newScale,
-    };
-
-    stage.scale({ x: newScale, y: newScale });
-    stage.position(newPos);
+    transformValid({
+      translate: {
+        x: pos.x - transformed.x * scale,
+        y: pos.y - transformed.y * scale,
+      },
+      scale: scale,
+    });
   }
 
-  const transform = ((
-    pos: { x: number; y: number },
-    activeStage?: Konva.Stage
-  ) => {
-    if (!activeStage) {
-      if (!stage.current) return undefined;
-      activeStage = stage.current;
-    }
-
+  const transform = (pos: { x: number; y: number }) => {
     return {
-      x: (pos.x - activeStage.x()) / activeStage.scaleX(),
-      y: (pos.y - activeStage.y()) / activeStage.scaleX(),
+      x: (pos.x - transformation.translate.x) / transformation.scale,
+      y: (pos.y - transformation.translate.y) / transformation.scale,
     };
-  }) as Transformation;
+  };
 
-  const renderAnnotation = (
-    annotation: Annotation,
+  const renderShape = (
+    identifier: string,
+    shape: Shape,
     color: string,
+    selected?: boolean,
+    onUpdate?: (shape: Shape) => void,
     onClick?: () => void
   ) => {
-    const annotationTool = annotation.shape?.tool;
+    const annotationTool = shape?.tool;
     if (annotationTool === undefined) return;
 
     const Component = shapeMap[annotationTool]?.component;
     if (!Component) return undefined;
 
+    // properties passed to shape
+    const shapeConfig = {
+      stroke: alpha(color, 0.8),
+      strokeWidth: (selected ? 4 : 2) / transformation.scale,
+      fill: alpha(color, 0.3),
+      onClick: onClick,
+      listening: tool !== Tool.Edit,
+    };
+
+    // properties passed to editing points
+    const editingPointConfig = {
+      radius: 5 / transformation.scale,
+    };
+
     return (
       <Component
-        annotation={annotation}
+        identifier={identifier}
+        shape={shape}
         color={color}
         editing={tool === Tool.Edit}
-        onRequestCursor={(cursor) => {
-          const container = stage.current?.container();
-          if (container !== undefined)
-            container.style.cursor = cursor ?? defaultCursor();
-        }}
-        onUpdate={(annotation) => {
-          dispatch(updateAnnotation(annotation));
-        }}
-        shapeConfig={{
-          stroke: alpha(color, 0.8),
-          strokeWidth: annotation.selected ? 4 : 2,
-          fill: alpha(color, 0.3),
-          onClick: onClick,
-          listening: tool !== Tool.Edit,
-        }}
+        shapeConfig={shapeConfig}
+        editingPointConfig={editingPointConfig}
+        onRequestCursor={changeCursor}
+        onUpdate={onUpdate}
         getTransformedPointerPosition={getTransformedPointerPosition}
       />
     );
   };
 
+  const renderAnnotation = (annotation: Annotation) => {
+    if (annotation.hidden || !annotation.shapes?.length) return;
+
+    return annotation.shapes.map((shape, index) =>
+      renderShape(
+        `${annotation.id}.${index}`,
+        shape,
+        annotation.label?.color ?? "#f00",
+        annotation.selected,
+        (shape) => {
+          dispatch(
+            updateShape({
+              annotation,
+              shape,
+              index,
+            })
+          );
+        },
+        () => toggleAnnotationSelection(annotation)
+      )
+    );
+  };
+
   return (
-    <div style={{ position: "relative", display: "flex", overflow: "hidden" }}>
+    <Box
+      position="relative"
+      display="flex"
+      overflow="hidden"
+      flex="1 1"
+      ref={container}
+      onKeyDown={handleKeyDown}
+    >
       <div
         style={{
           ...labelPopup,
@@ -305,46 +423,34 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           onCancel={cancelAnnotation}
         />
       </div>
-      <div tabIndex={0} onKeyDown={handleKeyDown}>
-        <Stage
-          style={{ cursor: defaultCursor() }}
-          width={window.innerWidth}
-          height={window.innerHeight}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onTouchStart={handleMouseDown}
-          onTouchMove={handleMouseMove}
-          onTouchEnd={handleMouseUp}
-          onWheel={handleMouseWheel}
-          onContextMenu={(e) => e.evt.preventDefault()}
-          draggable={tool === Tool.Select}
-          ref={stage}
-        >
-          <Layer>
-            {imageUri && <BackgroundImage imageUri={imageUri} />}
-            {activeShape &&
-              renderAnnotation(
-                {
-                  id: "__active__",
-                  shape: activeShape,
-                },
-                activeLabel?.color ?? annotationColor
-              )}
-            {annotations.map(
-              (annotation) =>
-                annotation.shape &&
-                !annotation.hidden &&
-                renderAnnotation(
-                  annotation,
-                  annotation.label?.color ?? "#f00",
-                  () => toggleAnnotationSelection(annotation)
-                )
+      <Stage
+        style={{ cursor: defaultCursor(), position: "absolute" }}
+        width={container.current?.clientWidth}
+        height={container.current?.clientHeight}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchMove={handleMouseMove}
+        onTouchEnd={handleMouseUp}
+        onWheel={handleMouseWheel}
+        onContextMenu={(e) => e.evt.preventDefault()}
+        ref={stage}
+      >
+        <Layer>
+          {imageUri && (
+            <BackgroundImage imageUri={imageUri} onResize={resize} />
+          )}
+          {activeShape &&
+            renderShape(
+              "__active__",
+              activeShape,
+              activeLabel?.color ?? annotationColor
             )}
-          </Layer>
-        </Stage>
-      </div>
-    </div>
+          {annotations.map(renderAnnotation)}
+        </Layer>
+      </Stage>
+    </Box>
   );
 };
 

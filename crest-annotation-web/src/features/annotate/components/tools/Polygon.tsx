@@ -2,42 +2,39 @@ import React from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
 import { Circle, Group, Line } from "react-konva";
+import Anchor from "./Anchor";
 import { Position, ShapeProps, ShapeTool } from "./Shape";
 import { Shape, Tool } from "../../slice";
 import { Polygon as PolygonShape } from "../../tools/polygon";
 
 const Polygon = ({
-  annotation,
+  identifier,
+  shape,
   color,
   editing,
   shapeConfig,
+  editingPointConfig,
   onRequestCursor,
   onUpdate,
 }: ShapeProps) => {
-  const polygon = annotation.shape as PolygonShape;
+  const polygon = shape as PolygonShape;
 
   const onDragPolygonPoint = (
     e: Konva.KonvaEventObject<DragEvent>,
     index: number
   ) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
-
     const newPoints = [...polygon.points];
     newPoints[index] = e.target.x();
     newPoints[index + 1] = e.target.y();
 
     onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        points: newPoints,
-      },
+      ...shape,
+      points: newPoints,
     });
   };
 
   return (
-    <Group key={annotation.id}>
+    <Group key={identifier}>
       <Line
         {...shapeConfig}
         points={polygon.points.concat(polygon.preview)}
@@ -50,7 +47,7 @@ const Polygon = ({
         <Circle
           x={polygon.points[0]}
           y={polygon.points[1]}
-          radius={5}
+          {...editingPointConfig}
           opacity={0}
           onMouseEnter={() => onRequestCursor?.("crosshair")}
           onMouseLeave={() => onRequestCursor?.(undefined)}
@@ -60,16 +57,15 @@ const Polygon = ({
         polygon.points.map(
           (point, index) =>
             index % 2 === 0 && (
-              <Circle
+              <Anchor
                 key={index}
+                {...editingPointConfig}
                 x={polygon.points[index]}
                 y={polygon.points[index + 1]}
-                radius={5}
-                fill={alpha(color, 0.8)}
-                draggable
-                onDragMove={(e) => {
-                  onDragPolygonPoint(e, index);
-                }}
+                fill={color}
+                onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
+                  onDragPolygonPoint(e, index)
+                }
               />
             )
         )}

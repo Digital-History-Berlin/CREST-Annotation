@@ -1,6 +1,7 @@
 import React from "react";
-import { Card, CardActionArea, CardMedia, Link } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link } from "@mui/material";
+import { useParams } from "react-router-dom";
+import ObjectCard from "./components/ObjectCard";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
 import { Object as DataObject } from "../../api/openApi";
 import CardLayout from "../../components/layouts/CardLayout";
@@ -8,8 +9,6 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
 
 const ObjectsPage = () => {
-  const navigate = useNavigate();
-
   const { projectId } = useParams();
 
   const { data: project } = useGetProjectQuery(
@@ -19,13 +18,7 @@ const ObjectsPage = () => {
   );
 
   const renderCard = (object: DataObject) => (
-    <Card>
-      <CardActionArea
-        onClick={() => navigate(`/annotate/${projectId}/${object.id}`)}
-      >
-        <CardMedia component="img" height="140" image={object.uri} />
-      </CardActionArea>
-    </Card>
+    <ObjectCard projectId={projectId} object={object} />
   );
 
   return (

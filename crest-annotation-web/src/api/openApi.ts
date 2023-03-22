@@ -35,15 +35,6 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    collectObjects: build.mutation<
-      CollectObjectsApiResponse,
-      CollectObjectsApiArg
-    >({
-      query: (queryArg) => ({
-        url: `/objects/collect-of/${queryArg.projectId}`,
-        method: "POST",
-      }),
-    }),
     getRandomObject: build.query<
       GetRandomObjectApiResponse,
       GetRandomObjectApiArg
@@ -58,8 +49,12 @@ const injectedRtkApi = api.injectEndpoints({
     getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
       query: (queryArg) => ({ url: `/objects/id/${queryArg.objectId}` }),
     }),
-    getImage: build.query<GetImageApiResponse, GetImageApiArg>({
-      query: (queryArg) => ({ url: `/objects/image/${queryArg.objectId}` }),
+    getImageUri: build.query<GetImageUriApiResponse, GetImageUriApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/uri/${queryArg.objectId}`,
+        method: "POST",
+        body: queryArg.imageRequest,
+      }),
     }),
     getAnnotations: build.query<
       GetAnnotationsApiResponse,
@@ -95,7 +90,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/projects/`,
         method: "POST",
-        body: queryArg.shallowProject,
+        body: queryArg.createProject,
       }),
     }),
     updateProject: build.mutation<
@@ -105,7 +100,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/projects/`,
         method: "PATCH",
-        body: queryArg.shallowProject,
+        body: queryArg.patchProject,
       }),
     }),
     getProject: build.query<GetProjectApiResponse, GetProjectApiArg>({
@@ -183,11 +178,6 @@ export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
 export type DeleteLabelApiArg = {
   labelId: string;
 };
-export type CollectObjectsApiResponse =
-  /** status 200 Successful Response */ any;
-export type CollectObjectsApiArg = {
-  projectId: string;
-};
 export type GetRandomObjectApiResponse =
   /** status 200 Successful Response */ Object;
 export type GetRandomObjectApiArg = {
@@ -202,9 +192,10 @@ export type GetObjectApiResponse = /** status 200 Successful Response */ any;
 export type GetObjectApiArg = {
   objectId: string;
 };
-export type GetImageApiResponse = /** status 200 Successful Response */ any;
-export type GetImageApiArg = {
+export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
+export type GetImageUriApiArg = {
   objectId: string;
+  imageRequest: ImageRequest;
 };
 export type GetAnnotationsApiResponse =
   /** status 200 Successful Response */ any;
@@ -227,12 +218,12 @@ export type GetProjectsApiArg = void;
 export type CreateProjectApiResponse =
   /** status 200 Successful Response */ Project;
 export type CreateProjectApiArg = {
-  shallowProject: ShallowProject;
+  createProject: CreateProject;
 };
 export type UpdateProjectApiResponse =
   /** status 200 Successful Response */ Project;
 export type UpdateProjectApiArg = {
-  shallowProject: ShallowProject;
+  patchProject: PatchProject;
 };
 export type GetProjectApiResponse =
   /** status 200 Successful Response */ Project;
@@ -306,20 +297,31 @@ export type PatchLabel = {
 };
 export type Object = {
   id: string;
-  uri: string;
-  thumbnail_uri?: string;
+  object_uuid?: string;
   annotated: boolean;
   annotation_data: string;
+  object_data?: string;
+};
+export type ImageRequest = {
+  thumbnail?: boolean;
+  width?: number;
+  height?: number;
 };
 export type Project = {
-  name: string;
   id: string;
-  source?: string;
+  name: string;
+  source: string;
   color_table: string[];
 };
-export type ShallowProject = {
-  name: string;
+export type CreateProject = {
   id?: string;
+  name: string;
+  source?: string;
+  color_table?: string[];
+};
+export type PatchProject = {
+  id: string;
+  name?: string;
   source?: string;
   color_table?: string[];
 };
@@ -340,23 +342,19 @@ export type Ontology = {
   labels: OntologyLabel[];
   problems: string[];
 };
-export type Iiif3Data = {
-  canvas: string;
-  page: string;
-  annotation: string;
-};
-export type Iiif3Image = {
-  uri: string;
+export type Iiif3Object = {
+  object_uuid: string;
+  image_uri: string;
   thumbnail_uri?: string;
-  object_data: Iiif3Data;
+  object_data: string;
 };
 export type Iiif3Import = {
   title?: {
-    [key: string]: string;
+    [key: string]: string[];
   };
   display?: string;
-  images: Iiif3Image[];
-  added: Iiif3Image[];
+  objects: Iiif3Object[];
+  added: Iiif3Object[];
   problems: string[];
 };
 export const {
@@ -364,11 +362,10 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useCollectObjectsMutation,
   useGetRandomObjectQuery,
   useGetObjectsQuery,
   useGetObjectQuery,
-  useGetImageQuery,
+  useGetImageUriQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
   useFinishObjectMutation,

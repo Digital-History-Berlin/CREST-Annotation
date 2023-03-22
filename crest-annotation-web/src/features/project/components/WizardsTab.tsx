@@ -3,28 +3,15 @@ import { KeyboardArrowRight } from "@mui/icons-material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { Project } from "../../../api/openApi";
 import LabelsOntology from "../wizards/labels-ontology";
-import ObjectsFileSystem from "../wizards/objects-filesystem";
-import ObjectsIiif from "../wizards/objects-iiif";
+//import ObjectsFileSystem from "../wizards/objects-filesystem";
+import ObjectsIiif2 from "../wizards/objects-iiif2";
+import ObjectsIiif3 from "../wizards/objects-iiif3";
 
 const wizards = {
-  "labels-ontology": {
-    component: LabelsOntology,
-    group: "labels",
-    name: "Ontology",
-    description: "Import labels from ontology",
-  },
-  "objects-filesystem": {
-    component: ObjectsFileSystem,
-    group: "objects",
-    name: "File System",
-    description: "Import images directly from file system",
-  },
-  "objects-iiif": {
-    component: ObjectsIiif,
-    group: "objects",
-    name: "IIIF",
-    description: "Import images from IIIF manifest",
-  },
+  "labels-ontology": LabelsOntology,
+  //"objects-filesystem": ObjectsFileSystem,
+  "objects-iiif3": ObjectsIiif3,
+  "objects-iiif2": ObjectsIiif2,
 } as const;
 
 type Wizard = keyof typeof wizards;

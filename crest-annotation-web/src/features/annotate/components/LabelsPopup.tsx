@@ -17,7 +17,7 @@ const defaultProps = {};
 const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
   return (
     <Loader
-      emptyPlaceholder="This project contains no labels"
+      emptyPlaceholder="This project contains no starred labels"
       disabledPlaceholder={"No project selected"}
       query={{
         ...useGetProjectLabelsQuery(

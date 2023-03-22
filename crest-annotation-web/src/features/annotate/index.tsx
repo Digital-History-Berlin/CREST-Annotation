@@ -6,6 +6,7 @@ import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
 import EditIcon from "@mui/icons-material/CropRotate";
+import GroupIcon from "@mui/icons-material/DashboardCustomize";
 import PenIcon from "@mui/icons-material/Edit";
 import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
@@ -14,17 +15,20 @@ import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
 import {
+  Modifiers,
   Tool,
   selectActiveLabel,
+  selectActiveModifiers,
   selectActiveTool,
   setActiveLabel,
   setActiveTool,
   setObjectId,
+  toggleModifier,
 } from "./slice";
 import {
   enhancedApi,
   useFinishObjectMutation,
-  useGetObjectQuery,
+  useGetImageUriQuery,
 } from "../../api/enhancedApi";
 import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -36,6 +40,7 @@ import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
   ToolbarButton,
+  ToolbarDivider,
   ToolbarToggleButton,
 } from "../../components/ToolbarButton";
 
@@ -48,15 +53,16 @@ const AnnotatePage = () => {
 
   const activeTool = useAppSelector(selectActiveTool);
   const activeLabel = useAppSelector(selectActiveLabel);
+  const activeModifiers = useAppSelector(selectActiveModifiers);
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useLazyGetRandomObjectQuery();
   const [rqeuestFinishObject] = useFinishObjectMutation();
 
   // TODO: move to image component
-  const { data: object } = useGetObjectQuery(
+  const { data: imageUri } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { objectId: objectId! },
+    { objectId: objectId!, imageRequest: {} },
     { skip: !objectId }
   );
 
@@ -70,7 +76,7 @@ const AnnotatePage = () => {
 
   const toggleLabelSelection = (label: Label) =>
     activeLabel?.id === label.id
-      ? dispatch(setActiveLabel(null))
+      ? dispatch(setActiveLabel(undefined))
       : dispatch(setActiveLabel(label));
 
   useEffect(() => {
@@ -117,6 +123,19 @@ const AnnotatePage = () => {
           </ToolbarToggleButton>
         );
       })}
+      <ToolbarDivider />
+      {[{ modifier: Modifiers.Group, icon: GroupIcon }].map((button) => {
+        return (
+          <ToolbarToggleButton
+            key={button.modifier}
+            value={button.modifier}
+            onClick={() => dispatch(toggleModifier(button.modifier))}
+            selected={activeModifiers.includes(button.modifier)}
+          >
+            {<button.icon />}
+          </ToolbarToggleButton>
+        );
+      })}
     </Stack>
   );
 
@@ -133,7 +152,7 @@ const AnnotatePage = () => {
 
   return (
     <Layout
-      scrollable={true}
+      sx={{ display: "flex" }}
       header={<Toolbar tools={renderTools()} actions={renderActions()} />}
       left={
         <Stack
@@ -163,9 +182,9 @@ const AnnotatePage = () => {
       />
       <Loader
         query={{
-          isLoading: !projectId || (!object && !randomError),
+          isLoading: !projectId || (!imageUri && !randomError),
           isError: randomError,
-          data: object,
+          data: imageUri,
         }}
         errorPlaceholder={
           <PlaceholderLayout
@@ -179,8 +198,8 @@ const AnnotatePage = () => {
             }
           />
         }
-        render={({ data: object }) => (
-          <Canvas projectId={projectId} imageUri={object.uri} />
+        render={({ data: imageUri }) => (
+          <Canvas projectId={projectId} imageUri={imageUri} />
         )}
       />
     </Layout>
