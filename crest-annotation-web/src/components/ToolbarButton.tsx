@@ -1,4 +1,15 @@
-import { Button, Divider, ToggleButton, styled } from "@mui/material";
+import { Button, Divider, ToggleButton, Tooltip, styled } from "@mui/material";
+
+type ToolbarButtonProps = {
+  tooltip: string;
+  children: React.ReactNode;
+  onClick: () => void;
+};
+
+type ToolbarToggleButtonProps = ToolbarButtonProps & {
+  value: number;
+  selected: boolean;
+};
 
 /**
  * Button optimized to be used inside the toolbar
@@ -18,6 +29,16 @@ export const ToolbarButton = styled(Button)(({ theme }) => ({
     },
     "&.Mui-disabled": {
       color: theme.palette.primary.light,
+    },
+    "& .MuiTooltip-tooltip": {
+      backgroundColor: theme.palette.common.white,
+      color: theme.palette.text.primary,
+      fontSize: theme.typography.pxToRem(12),
+      fontWeight: theme.typography.fontWeightRegular,
+      boxShadow: theme.shadows[1],
+    },
+    "& .MuiTooltip-arrow": {
+      color: theme.palette.common.white,
     },
   },
 }));
@@ -51,3 +72,31 @@ export const ToolbarDivider = styled(Divider)(({ theme }) => ({
     width: "1px",
   },
 }));
+
+export const ToolbarButtonWithTooltip = ({
+  tooltip,
+  children,
+  ...props
+}: ToolbarButtonProps) => {
+  return (
+    <Tooltip title={tooltip} arrow placement={"bottom"}>
+      <ToolbarButton {...props}>{children}</ToolbarButton>
+    </Tooltip>
+  );
+};
+
+export const ToolbarToggleButtonWithTooltip = ({
+  tooltip,
+  children,
+  value,
+  selected,
+  ...props
+}: ToolbarToggleButtonProps) => {
+  return (
+    <Tooltip title={tooltip} arrow placement={"bottom"}>
+      <ToolbarToggleButton value={value} selected={selected} {...props}>
+        {children}
+      </ToolbarToggleButton>
+    </Tooltip>
+  );
+};

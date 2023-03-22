@@ -39,9 +39,9 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
-  ToolbarButton,
+  ToolbarButtonWithTooltip,
   ToolbarDivider,
-  ToolbarToggleButton,
+  ToolbarToggleButtonWithTooltip,
 } from "../../components/ToolbarButton";
 
 const AnnotatePage = () => {
@@ -105,35 +105,37 @@ const AnnotatePage = () => {
   const renderTools = () => (
     <Stack direction="row">
       {[
-        { tool: Tool.Select, icon: SelectIcon },
-        { tool: Tool.Pen, icon: PenIcon },
-        { tool: Tool.Rectangle, icon: RectangleIcon },
-        { tool: Tool.Circle, icon: CircleIcon },
-        { tool: Tool.Polygon, icon: PolygonIcon },
-        { tool: Tool.Edit, icon: EditIcon },
+        { tool: Tool.Select, icon: SelectIcon, tooltip: "Select" },
+        { tool: Tool.Pen, icon: PenIcon, tooltip: "Pen" },
+        { tool: Tool.Rectangle, icon: RectangleIcon, tooltip: "Rectangle" },
+        { tool: Tool.Circle, icon: CircleIcon, tooltip: "Circle" },
+        { tool: Tool.Polygon, icon: PolygonIcon, tooltip: "Polygon" },
+        { tool: Tool.Edit, icon: EditIcon, tooltip: "Edit" },
       ].map((button) => {
         return (
-          <ToolbarToggleButton
+          <ToolbarToggleButtonWithTooltip
             key={button.tool}
             value={button.tool}
             onClick={() => dispatch(setActiveTool(button.tool))}
             selected={activeTool === button.tool}
+            tooltip={button.tooltip}
           >
             {<button.icon />}
-          </ToolbarToggleButton>
+          </ToolbarToggleButtonWithTooltip>
         );
       })}
       <ToolbarDivider />
       {[{ modifier: Modifiers.Group, icon: GroupIcon }].map((button) => {
         return (
-          <ToolbarToggleButton
+          <ToolbarToggleButtonWithTooltip
             key={button.modifier}
             value={button.modifier}
             onClick={() => dispatch(toggleModifier(button.modifier))}
             selected={activeModifiers.includes(button.modifier)}
+            tooltip={"Group Annotations"}
           >
             {<button.icon />}
-          </ToolbarToggleButton>
+          </ToolbarToggleButtonWithTooltip>
         );
       })}
     </Stack>
@@ -141,12 +143,18 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
-      <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/objects/${projectId}`)}
+        tooltip={"Project Overview"}
+      >
         <ObjectsIcon />
-      </ToolbarButton>
-      <ToolbarButton onClick={() => finishObject()}>
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => finishObject()}
+        tooltip={"Finish Image"}
+      >
         <FinishedIcon />
-      </ToolbarButton>
+      </ToolbarButtonWithTooltip>
     </Stack>
   );
 
