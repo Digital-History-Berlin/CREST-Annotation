@@ -30,16 +30,6 @@ export const ToolbarButton = styled(Button)(({ theme }) => ({
     "&.Mui-disabled": {
       color: theme.palette.primary.light,
     },
-    "& .MuiTooltip-tooltip": {
-      backgroundColor: theme.palette.common.white,
-      color: theme.palette.text.primary,
-      fontSize: theme.typography.pxToRem(12),
-      fontWeight: theme.typography.fontWeightRegular,
-      boxShadow: theme.shadows[1],
-    },
-    "& .MuiTooltip-arrow": {
-      color: theme.palette.common.white,
-    },
   },
 }));
 
