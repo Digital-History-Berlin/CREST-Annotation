@@ -40,7 +40,7 @@ _The images must be build and pushed from the `default` context._
       docker compose build backend
       docker compose build web
 
-- Tag the images with the corresponding repository (only neccessary once)
+- Tag the images with the corresponding repository
 
       docker tag crest-annotation-docker-backend <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
       docker tag crest-annotation-docker-web <aws_account_id>.dkr.ecr.eu-central-1.amazonaws.com/crest-web

@@ -1,9 +1,17 @@
 version: "3.9"
 services:
-  backend:
+  backend:    
+    x-aws-policies:
+      - "arn:aws:iam::967446507766:policy/ECR_FullAccess"
+      - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+      - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
     # use ECR image instead of building from Dockerfile
     image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-backend:latest
   web:
+    x-aws-policies:
+      - "arn:aws:iam::967446507766:policy/ECR_FullAccess"
+      - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+      - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
     # use ECR image instead of building from Dockerfile
     image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-web:latest
     environment:

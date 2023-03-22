@@ -79,12 +79,7 @@ definitions:
         services:
           - docker
         script:
-          # authorize docker against AWS
-          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-
-          - docker build -f crest-annotation-docker/backend/Dockerfile -t backend .
-          - docker tag backend $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
-          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-backend
+          - ./ecr.sh backend
 
     - step: &build-web-docker-step
         name: Build and publish web docker image
@@ -98,12 +93,7 @@ definitions:
         services:
           - docker
         script:
-          # authorize docker against AWS
-          - aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
-
-          - docker build -f crest-annotation-docker/web/Dockerfile -t web .
-          - docker tag web $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
-          - docker push $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-web
+          - ./ecr.sh web
 
     - step: &upgrade-db-step
         name: Upgrade database
@@ -131,14 +121,17 @@ definitions:
         script:
           # TODO: actual deployment using docker compose or aws ecs cli
           # this only reloads the ECR images into the ECS services
-          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-BackendService-inTR25q2bkqK --cluster crest-annotation-docker
-          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-WebService-n9j7O4rO68Ck --cluster crest-annotation-docker
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-BackendService-G2xwawkYP7qG --cluster crest-annotation-docker
+          - aws ecs update-service --force-new-deployment --service crest-annotation-docker-WebService-pgwfJJXmxYlN --cluster crest-annotation-docker
 
   services:
     docker:
       memory: 3072
 
 pipelines:
+  custom:
+    upgrade-db:
+      - step: *upgrade-db-step
   default:
     - step: *install-web-step
     - step: *style-web-step

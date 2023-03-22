@@ -1,4 +1,5 @@
 import React, { CSSProperties, ReactNode } from "react";
+import { Security } from "@mui/icons-material";
 import {
   Box,
   Toolbar as MuiToolbar,
@@ -36,8 +37,12 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
     >
       <MuiToolbar sx={sx}>
         <Box flex="1 0 0" display="flex" justifyContent="flex-start">
-          <ToolbarButton onClick={() => navigate("/")}>
-            <Typography variant="h5" noWrap>
+          <ToolbarButton
+            onClick={() => navigate("/")}
+            sx={{ columnGap: theme.spacing(1) }}
+          >
+            <Security />
+            <Typography fontFamily="Times New Roman" variant="h5" noWrap>
               CREST
             </Typography>
           </ToolbarButton>
