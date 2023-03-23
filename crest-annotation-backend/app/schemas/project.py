@@ -7,7 +7,7 @@ from .modifiers import create, patch, response
 class BaseProject(BaseModel):
     id: str
     name: str
-    source: str
+    source: str | None
     color_table: list[str]
 
 

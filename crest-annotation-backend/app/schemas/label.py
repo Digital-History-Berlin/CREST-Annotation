@@ -1,4 +1,3 @@
-from typing import Optional, List
 from pydantic import BaseModel
 
 
@@ -7,9 +6,9 @@ from .modifiers import create, patch, response
 
 class BaseLabel(BaseModel):
     id: str
-    project_id: Optional[str]
-    parent_id: Optional[str]
-    reference: Optional[str]
+    project_id: str | None
+    parent_id: str | None
+    reference: str | None
     name: str
     starred: bool
     count: int
@@ -28,4 +27,4 @@ class PatchLabel(BaseLabel):
 
 @response("project_id")
 class Label(BaseLabel):
-    children: Optional[list["Label"]]
+    children: list["Label"] | None

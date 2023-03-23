@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -24,6 +23,6 @@ class Object(BaseObject):
 
 
 class ImageRequest(BaseModel):
-    thumbnail: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    thumbnail: bool | None
+    width: int | None
+    height: int | None

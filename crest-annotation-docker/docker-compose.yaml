@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   db:
+    container_name: crest-db
     image: postgres
     environment:
       POSTGRES_USER: ${PG_USER:-crest}
@@ -9,6 +10,7 @@ services:
       - 5432:5432
     restart: unless-stopped
   backend:
+    container_name: crest-backend
     depends_on:
       - db
     build:
@@ -23,6 +25,9 @@ services:
       - "8000"
     restart: unless-stopped
   web:
+    container_name: crest-web
+    depends_on:
+      - backend
     build:
       # allow access to crest-annotatio-web
       context: ../
@@ -31,16 +36,12 @@ services:
         # image is statically build and served by nginx
         # environment variables need to be defined at build time
         - NODE_ENV=${NODE_ENV:-development}
-        - REACT_APP_BACKEND=${REACT_APP_BACKEND:-/api}
-    expose:
-      - "80"
-    restart: unless-stopped
-  nginx:
-    image: nginx
-    volumes:
-    - ./templates:/etc/nginx/templates
+        - REACT_APP_BACKEND=/api
+    environment:
+      # nginx image will use runtime environment variables
+      # to update the nginx.conf.template
+      - BACKEND_DNS=${BACKEND:-backend}
     ports:
       - 80:80
-    depends_on:
-      - backend
-      - web
+    restart: unless-stopped
+
