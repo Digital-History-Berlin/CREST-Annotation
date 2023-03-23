@@ -27,6 +27,7 @@ import {
   selectAnnotations,
   selectTransformation,
   unselectAnnotation,
+  updateActiveAnnotation,
   updateAnnotation,
   updateShape,
   updateTransformation,
@@ -133,14 +134,21 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   // create new annotation with given label and shape
   const createAnnotation = (label: Label, shape: Shape) => {
-    if (modifiers.includes(Modifiers.Group) && activeAnnotation)
+    console.log(activeAnnotation, "activeAnnotation");
+    if (modifiers.includes(Modifiers.Group) && activeAnnotation) {
       dispatch(
         updateAnnotation({
           ...activeAnnotation,
           shapes: [...(activeAnnotation.shapes || []), shape],
         })
       );
-    else
+      dispatch(
+        updateActiveAnnotation({
+          ...activeAnnotation,
+          shapes: [...(activeAnnotation.shapes || []), shape],
+        })
+      );
+    } else
       dispatch(
         addAnnotation({
           shapes: [shape],

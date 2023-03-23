@@ -145,6 +145,9 @@ export const slice = createSlice({
     updateAnnotation: (state, action: PayloadAction<Annotation>) => {
       state.annotations = replaceAnnotation(state, action.payload);
     },
+    updateActiveAnnotation: (state, action: PayloadAction<Annotation>) => {
+      state.activeAnnotation = action.payload;
+    },
     updateShape: (
       state,
       {
@@ -247,6 +250,7 @@ export const {
   unlockAnnotation,
   hideAnnotation,
   showAnnotation,
+  updateActiveAnnotation,
   setModifiers,
   setModifier,
   toggleModifier,
