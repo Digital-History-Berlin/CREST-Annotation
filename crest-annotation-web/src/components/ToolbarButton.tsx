@@ -12,8 +12,6 @@ type ToolbarButtonProps = { tooltip: string } & ButtonProps;
 
 type ToolbarToggleButtonProps = {
   tooltip: string;
-  value: number;
-  selected: boolean;
 } & ToggleButtonProps;
 
 /**
@@ -83,15 +81,11 @@ export const ToolbarButtonWithTooltip = ({
 export const ToolbarToggleButtonWithTooltip = ({
   tooltip,
   children,
-  value,
-  selected,
   ...props
 }: ToolbarToggleButtonProps) => {
   return (
     <Tooltip title={tooltip} arrow placement={"bottom"}>
-      <ToolbarToggleButton value={value} selected={selected} {...props}>
-        {children}
-      </ToolbarToggleButton>
+      <ToolbarToggleButton {...props}>{children}</ToolbarToggleButton>
     </Tooltip>
   );
 };
