@@ -134,20 +134,11 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   // create new annotation with given label and shape
   const createAnnotation = (label: Label, shape: Shape) => {
-    console.log(activeAnnotation, "activeAnnotation");
     if (modifiers.includes(Modifiers.Group) && activeAnnotation) {
-      dispatch(
-        updateAnnotation({
-          ...activeAnnotation,
-          shapes: [...(activeAnnotation.shapes || []), shape],
-        })
-      );
-      dispatch(
-        updateActiveAnnotation({
-          ...activeAnnotation,
-          shapes: [...(activeAnnotation.shapes || []), shape],
-        })
-      );
+      const newShapes = [...(activeAnnotation.shapes || []), shape];
+      const newAnnotation = { ...activeAnnotation, shapes: newShapes };
+      dispatch(updateAnnotation(newAnnotation));
+      dispatch(updateActiveAnnotation(newAnnotation));
     } else
       dispatch(
         addAnnotation({
