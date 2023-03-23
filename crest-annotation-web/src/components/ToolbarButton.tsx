@@ -1,15 +1,20 @@
-import { Button, Divider, ToggleButton, Tooltip, styled } from "@mui/material";
+import {
+  Button,
+  ButtonProps,
+  Divider,
+  ToggleButton,
+  ToggleButtonProps,
+  Tooltip,
+  styled,
+} from "@mui/material";
 
-type ToolbarButtonProps = {
+type ToolbarButtonProps = { tooltip: string } & ButtonProps;
+
+type ToolbarToggleButtonProps = {
   tooltip: string;
-  children: React.ReactNode;
-  onClick: () => void;
-};
-
-type ToolbarToggleButtonProps = ToolbarButtonProps & {
   value: number;
   selected: boolean;
-};
+} & ToggleButtonProps;
 
 /**
  * Button optimized to be used inside the toolbar
