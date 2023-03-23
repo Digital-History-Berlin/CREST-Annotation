@@ -1,11 +1,10 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
 class OntologyLabel(BaseModel):
     id: str
     name: str
-    children: Optional[list["OntologyLabel"]]
+    children: list["OntologyLabel"] | None
 
 
 class OntologyDescription(BaseModel):
@@ -14,9 +13,9 @@ class OntologyDescription(BaseModel):
 
 
 class Ontology(BaseModel):
-    creators: Optional[list[str]]
-    titles: Optional[list[str]]
-    licenses: Optional[list[str]]
-    descriptions: Optional[list[OntologyDescription]]
+    creators: list[str] | None
+    titles: list[str] | None
+    licenses: list[str] | None
+    descriptions: list[OntologyDescription] | None
     labels: list[OntologyLabel]
     problems: list[str]

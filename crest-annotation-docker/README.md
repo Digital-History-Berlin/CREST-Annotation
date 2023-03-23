@@ -63,5 +63,5 @@ _NOTE_: Currently the CI deployment will update the backend and web images on EC
 Deployment to AWS ECS can be done manually following https://docs.docker.com/cloud/ecs-integration/.
 
 - Switch to the `crest-ecs` context with `docker context use crest-ecs`.
-- Deploy the changes using the AWS specific overrides with `docker compose -f docker-compose.yaml -f docker-compose.aws.yaml up`. Since this is a rolling release, it will take some time for the changes to take effect, during which the previous versions of the services are still served. You can check the deployment status for each _service_ in ECS under the _Deployment_ tab.
+- Deploy the changes using the AWS specific overrides with `docker compose -f docker-compose.yaml -f docker-compose.aws.yaml up`. Since this is a rolling release, it will take some time for the changes to take effect, during which the previous versions of the services are still served. You can check the deployment status for each _service_ in ECS under the _Deployment_ tab. Currently the web service is updated _after_ the backend service update is complete. This can lead to a short period of time, where the frontend is unable to access the backend, because it is uses an outdated ip address.
 - Switch back to the `default` context with `docker context use default`.

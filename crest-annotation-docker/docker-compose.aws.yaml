@@ -5,7 +5,7 @@ services:
       - "arn:aws:iam::967446507766:policy/ECR_FullAccess"
       - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
       - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-    # use ECR image instead of building from Dockerfile
+      # use ECR image instead of building from Dockerfile
     image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-backend:latest
   web:
     x-aws-policies:
@@ -14,3 +14,6 @@ services:
       - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
     # use ECR image instead of building from Dockerfile
     image: 967446507766.dkr.ecr.eu-central-1.amazonaws.com/crest-web:latest
+    environment:
+        # use the AWS DNS resolver (seems to be more robust)
+        - BACKEND_DNS=backend.crest-annotation-docker.local

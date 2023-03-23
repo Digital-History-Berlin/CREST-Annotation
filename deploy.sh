@@ -4,12 +4,14 @@
 #
 # Usage: AWS_ACCOUNT_ID=<account> ./ecr.sh [web|backend]
 #
+set -e
 
 GIT_SHA=$(git rev-parse HEAD)
 
 aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com
 
-docker build -f crest-annotation-docker/$1/Dockerfile \
+# using build cache seems to cause trouble (use --no-cache)
+docker build -f crest-annotation-docker/$1/Dockerfile --no-cache \
     -t $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-$1:latest \
     -t $AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/crest-$1:$GIT_SHA \
     -t $1 \

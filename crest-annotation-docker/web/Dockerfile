@@ -12,9 +12,9 @@ ARG REACT_APP_BACKEND
 COPY ./crest-annotation-web/ ./
 RUN npm run build
 
-FROM nginx:1.15
+FROM nginx:1.19
 
-COPY ./crest-annotation-docker/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./crest-annotation-docker/web/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY ./crest-annotation-docker/web/.htpasswd /etc/nginx/.htpasswd
 
 WORKDIR /usr/share/nginx/html/
