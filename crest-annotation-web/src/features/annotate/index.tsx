@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import CircleIcon from "@mui/icons-material/CircleTwoTone";
-import EditIcon from "@mui/icons-material/CropRotate";
-import GroupIcon from "@mui/icons-material/DashboardCustomize";
-import PenIcon from "@mui/icons-material/Edit";
-import PolygonIcon from "@mui/icons-material/PolylineOutlined";
 import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
 import SettingsIcon from "@mui/icons-material/Settings";
-import SelectIcon from "@mui/icons-material/TouchApp";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
@@ -103,16 +99,41 @@ const AnnotatePage = () => {
     if (projectId) navigateRandom(projectId);
   };
 
+  const toolIcons = {
+    [Tool.Select]: () => (
+      <Icon
+        icon="material-symbols:drag-pan-rounded"
+        style={{ fontSize: "27px" }}
+      />
+    ),
+    [Tool.Pen]: () => (
+      <Icon icon="majesticons:edit-pen-4-line" style={{ fontSize: "27px" }} />
+    ),
+    [Tool.Rectangle]: RectangleIcon,
+    [Tool.Circle]: CircleIcon,
+    [Tool.Polygon]: () => (
+      <Icon icon="mdi:vector-polygon" style={{ fontSize: "27px" }} />
+    ),
+    [Tool.Edit]: () => (
+      <Icon icon="mdi:vector-polyline-edit" style={{ fontSize: "27px" }} />
+    ),
+  };
+
   const renderTools = () => (
     <Stack direction="row">
       {[
-        { tool: Tool.Select, icon: SelectIcon, tooltip: "Select" },
-        { tool: Tool.Pen, icon: PenIcon, tooltip: "Pen" },
-        { tool: Tool.Rectangle, icon: RectangleIcon, tooltip: "Rectangle" },
-        { tool: Tool.Circle, icon: CircleIcon, tooltip: "Circle" },
-        { tool: Tool.Polygon, icon: PolygonIcon, tooltip: "Polygon" },
-        { tool: Tool.Edit, icon: EditIcon, tooltip: "Edit" },
+        { tool: Tool.Select, tooltip: "Select" },
+        { tool: Tool.Pen, tooltip: "Pen" },
+        { tool: Tool.Rectangle, tooltip: "Rectangle" },
+        { tool: Tool.Circle, tooltip: "Circle" },
+        { tool: Tool.Polygon, tooltip: "Polygon" },
+        {
+          tool: Tool.Edit,
+          icon: <Icon icon="mdi:vector-polyline-edit" />,
+          tooltip: "Edit",
+        },
       ].map((button) => {
+        const Icon = toolIcons[button.tool];
         return (
           <ToolbarToggleButtonWithTooltip
             key={button.tool}
@@ -121,12 +142,17 @@ const AnnotatePage = () => {
             selected={activeTool === button.tool}
             tooltip={button.tooltip}
           >
-            {<button.icon />}
+            <Icon />
           </ToolbarToggleButtonWithTooltip>
         );
       })}
       <ToolbarDivider />
-      {[{ modifier: Modifiers.Group, icon: GroupIcon }].map((button) => {
+      {[
+        {
+          modifier: Modifiers.Group,
+          icon: <Icon icon="mdi:vector-link" style={{ fontSize: "25px" }} />,
+        },
+      ].map((button) => {
         return (
           <ToolbarToggleButtonWithTooltip
             key={button.modifier}
@@ -135,7 +161,7 @@ const AnnotatePage = () => {
             selected={activeModifiers.includes(button.modifier)}
             tooltip={"Group Annotations"}
           >
-            {<button.icon />}
+            {button.icon}
           </ToolbarToggleButtonWithTooltip>
         );
       })}
