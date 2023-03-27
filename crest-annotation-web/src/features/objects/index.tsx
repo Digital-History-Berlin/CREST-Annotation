@@ -59,12 +59,12 @@ const ObjectsPage = () => {
         }
         placeholder={
           <PlaceholderLayout
-            title="This project contains no objects."
+            title="This project contains no images."
             description={
               <>
                 Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                scan the project source for new objects and start annotating!
+                scan the project source for new images and start annotating!
               </>
             }
           />

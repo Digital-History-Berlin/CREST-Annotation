@@ -68,6 +68,7 @@ const AnnotatePage = () => {
 
   const navigateRandom = async (id: string) => {
     const random = await getRandom({ projectId: id }).unwrap();
+    console.log("random", random);
     navigate(`/annotate/${id}/${random.id}`);
   };
 
@@ -90,6 +91,8 @@ const AnnotatePage = () => {
   };
 
   const finishObject = async () => {
+    console.log(objectId);
+    console.log(projectId);
     if (!objectId) return;
 
     await rqeuestFinishObject({
@@ -122,7 +125,7 @@ const AnnotatePage = () => {
   const renderTools = () => (
     <Stack direction="row">
       {[
-        { tool: Tool.Select, tooltip: "Select" },
+        { tool: Tool.Select, tooltip: "Pan and Select" },
         { tool: Tool.Pen, tooltip: "Pen" },
         { tool: Tool.Rectangle, tooltip: "Rectangle" },
         { tool: Tool.Circle, tooltip: "Circle" },
@@ -229,12 +232,12 @@ const AnnotatePage = () => {
         }}
         errorPlaceholder={
           <PlaceholderLayout
-            title="This project contains no objects."
+            title="You have finished annotating this project."
             description={
               <>
-                Go to the{" "}
+                There are currently no images left to be annotated. Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                scan the project source for new objects and start annotating!
+                scan the project source for additional ones.
               </>
             }
           />
