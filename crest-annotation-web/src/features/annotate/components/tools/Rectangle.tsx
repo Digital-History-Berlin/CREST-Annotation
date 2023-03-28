@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { alpha } from "@mui/material";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Group, Rect as KonvaRectangle } from "react-konva";
@@ -115,7 +114,6 @@ const Rectangle = ({
         y={preview.y}
         width={preview.width}
         height={preview.height}
-        stroke={alpha(color, 0.8)}
         onClick={onClick}
       />
       {editable && (

@@ -33,6 +33,7 @@ const Shape = ({
   color,
   selected,
   editable,
+  transparent,
   transformation,
   ...props
 }: IProps) => {
@@ -44,9 +45,9 @@ const Shape = ({
 
   // properties passed to shape
   const shapeConfig = {
-    stroke: alpha(color, 0.8),
-    strokeWidth: (selected ? 4 : 2) / transformation.scale,
-    fill: alpha(color, 0.3),
+    stroke: alpha(color, transparent ? 0.2 : 0.8),
+    strokeWidth: (selected ? 2 : 1) / transformation.scale,
+    fill: alpha(color, transparent ? 0.1 : 0.3),
     listening: editable,
   };
 

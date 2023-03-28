@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { alpha } from "@mui/material";
 import Konva from "konva";
 import { Group, Circle as KonvaCircle } from "react-konva";
 import Anchor from "./Anchor";
@@ -52,7 +51,6 @@ const Circle = ({
         x={preview.x}
         y={preview.y}
         radius={preview.radius}
-        stroke={alpha(color, 0.8)}
         onClick={onClick}
       />
       {editable && (

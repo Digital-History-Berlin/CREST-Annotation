@@ -10,7 +10,13 @@ import {
   updateShape,
 } from "../slice/annotations";
 import { selectTransformation } from "../slice/canvas";
-import { Tool, selectActiveTool } from "../slice/tools";
+import {
+  Modifiers,
+  Tool,
+  selectActiveModifiers,
+  selectActiveTool,
+  selectGroupAnnotationId,
+} from "../slice/tools";
 
 interface IProps {
   onRequestCursor?: (cursor: string | undefined) => void;
@@ -21,7 +27,10 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
 
   const annotations = useAppSelector(selectAnnotations);
   const transformation = useAppSelector(selectTransformation);
+  const modifiers = useAppSelector(selectActiveModifiers);
   const tool = useAppSelector(selectActiveTool);
+
+  const groupAnnotationId = useAppSelector(selectGroupAnnotationId);
 
   const renderAnnotation = (annotation: Annotation) => {
     if (annotation.hidden || !annotation.shapes?.length) return;
@@ -41,6 +50,10 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
         );
       };
 
+      const transparent =
+        modifiers.includes(Modifiers.Group) &&
+        annotation.id !== groupAnnotationId;
+
       return (
         <ShapeComponent
           identifier={`${annotation.id}.${index}`}
@@ -49,6 +62,7 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
           transformation={transformation}
           selected={annotation.selected === true}
           editable={tool === Tool.Edit}
+          transparent={transparent}
           onClick={toggle}
           onUpdate={update}
           onRequestCursor={onRequestCursor}

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { alpha } from "@mui/material";
 import Konva from "konva";
 import { Group, Line } from "react-konva";
 import Anchor from "./Anchor";
@@ -42,7 +41,6 @@ const Polygon = ({
         {...shapeConfig}
         points={preview.points.concat(preview.preview)}
         closed={preview.finished}
-        stroke={alpha(color, 0.8)}
         tension={0}
         lineCap="round"
         onClick={onClick}

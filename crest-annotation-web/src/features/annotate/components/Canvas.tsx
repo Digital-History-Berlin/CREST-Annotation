@@ -18,10 +18,10 @@ import { selectTransformation, updateTransformation } from "../slice/canvas";
 import {
   Modifiers,
   Tool,
-  selectActiveAnnotationId,
   selectActiveLabelId,
   selectActiveModifiers,
   selectActiveTool,
+  selectGroupAnnotationId,
 } from "../slice/tools";
 
 interface PopupPosition {
@@ -47,9 +47,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   const tool = useAppSelector(selectActiveTool);
   const activeLabelId = useAppSelector(selectActiveLabelId);
-  const activeAnnotationId = useAppSelector(selectActiveAnnotationId);
   const modifiers = useAppSelector(selectActiveModifiers);
   const transformation = useAppSelector(selectTransformation);
+
+  const groupAnnotationId = useAppSelector(selectGroupAnnotationId);
 
   const [activeLabel, setActiveLabel] = useState<Label>();
   const [activeShape, setActiveShape] = useState<Shape>();
@@ -157,10 +158,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       return;
     }
 
-    if (modifiers.includes(Modifiers.Group) && activeAnnotationId) {
+    if (modifiers.includes(Modifiers.Group) && groupAnnotationId) {
       setActiveShape(undefined);
       // group tool is active, add shape to existing annotation
-      dispatch(addShape({ id: activeAnnotationId, shape }));
+      dispatch(addShape({ id: groupAnnotationId, shape }));
       return;
     }
 

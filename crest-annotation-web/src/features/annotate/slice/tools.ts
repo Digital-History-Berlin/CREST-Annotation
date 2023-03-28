@@ -1,5 +1,5 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Annotation, addAnnotation, deleteAnnotation } from "./annotations";
+import { AnyAction, PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { addAnnotation } from "./annotations";
 import { Label } from "../../../api/openApi";
 import { RootState } from "../../../app/store";
 
@@ -20,7 +20,8 @@ export interface ToolsSlice {
   activeTool: Tool;
   activeModifiers: Modifiers[];
   activeLabelId?: string;
-  activeAnnotationId?: string;
+  // modifier specific data
+  groupAnnotationId?: string;
 }
 
 const initialState: ToolsSlice = {
@@ -29,6 +30,12 @@ const initialState: ToolsSlice = {
 };
 
 const except = <T>(items: T[], item: T) => items.filter((i) => i !== item);
+
+// actions that change the modifiers
+const isModifierMutation = (action: AnyAction) =>
+  ["tools/setModifiers", "tools/setModifier", "tools/toggleModifier"].includes(
+    action.type
+  );
 
 export const slice = createSlice({
   name: "tools",
@@ -41,12 +48,6 @@ export const slice = createSlice({
       state.activeLabelId = action.payload?.id;
       // disable group tool if it was active (label must stay same)
       state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
-    },
-    setActiveAnnotation: (
-      state,
-      action: PayloadAction<Annotation | undefined>
-    ) => {
-      state.activeAnnotationId = action.payload?.id;
     },
     setModifiers: (state, action: PayloadAction<Modifiers[]>) => {
       state.activeModifiers = action.payload;
@@ -71,14 +72,26 @@ export const slice = createSlice({
     },
   },
   extraReducers(builder) {
-    builder.addCase(addAnnotation, (state, action) => {
-      // added annotation becomes active
-      state.activeAnnotationId = action.payload.id;
+    builder.addCase(setActiveLabel, (state) => {
+      if (state.groupAnnotationId) {
+        // deactivate group modifier on label change (if already in progress)
+        state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
+        state.groupAnnotationId = undefined;
+      }
     });
-    builder.addCase(deleteAnnotation, (state, action) => {
-      // check if active annotation was deleted
-      if (state.activeAnnotationId === action.payload.id)
-        state.activeAnnotationId = undefined;
+    builder.addCase(addAnnotation, (state, action) => {
+      if (
+        state.activeModifiers.includes(Modifiers.Group) &&
+        !state.groupAnnotationId
+      )
+        // use new annotation for group
+        state.groupAnnotationId = action.payload.id;
+    });
+    builder.addMatcher(isModifierMutation, (state) => {
+      if (!state.activeModifiers.includes(Modifiers.Group))
+        // clear active group on deactivate
+        // TODO: not called by extra reducers
+        state.groupAnnotationId = undefined;
     });
   },
 });
@@ -94,9 +107,11 @@ export const {
 export const selectActiveTool = (state: RootState) => state.tools.activeTool;
 export const selectActiveLabelId = (state: RootState) =>
   state.tools.activeLabelId;
-export const selectActiveAnnotationId = (state: RootState) =>
-  state.tools.activeAnnotationId;
 export const selectActiveModifiers = (state: RootState) =>
   state.tools.activeModifiers;
+
+// modifier specific data
+export const selectGroupAnnotationId = (state: RootState) =>
+  state.tools.groupAnnotationId;
 
 export default slice.reducer;

@@ -44,19 +44,6 @@ const initialState: AnnotationsSlice = {
   projectId: null,
 };
 
-// actions that will trigger the annotations middleware,
-// which will update the annotations on the server side
-const pushActions = [
-  "annotations/addAnnotation",
-  "annotations/addShape",
-  "annotations/updateShape",
-  "annotations/deleteAnnotation",
-  "annotations/lockAnnotation",
-  "annotations/unlockAnnotation",
-  "annotations/hideAnnotation",
-  "annotations/showAnnotation",
-];
-
 const replaceAnnotation = (
   state: AnnotationsSlice,
   id: string,
@@ -66,9 +53,21 @@ const replaceAnnotation = (
     annotation.id === id ? { ...annotation, ...patch } : annotation
   );
 
+// actions that will trigger the annotations middleware,
+// which will update the annotations on the server side
 const isServerMutation = (action: AnyAction) =>
-  pushActions.includes(action.type);
+  [
+    "annotations/addAnnotation",
+    "annotations/addShape",
+    "annotations/updateShape",
+    "annotations/deleteAnnotation",
+    "annotations/lockAnnotation",
+    "annotations/unlockAnnotation",
+    "annotations/hideAnnotation",
+    "annotations/showAnnotation",
+  ].includes(action.type);
 
+// actions that change the object or project
 const isObjectChange = (action: AnyAction) =>
   ["annotations/setObjectId"].includes(action.type);
 

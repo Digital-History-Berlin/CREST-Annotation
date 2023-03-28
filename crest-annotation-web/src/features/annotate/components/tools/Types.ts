@@ -20,6 +20,7 @@ export type ShapeProps = {
   color: string;
   editable?: boolean;
   selected?: boolean;
+  transparent?: boolean;
 
   // properties passed to Konva components
   shapeConfig?: ShapeConfig;
