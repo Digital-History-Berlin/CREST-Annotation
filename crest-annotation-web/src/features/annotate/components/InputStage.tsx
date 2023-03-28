@@ -36,6 +36,8 @@ const InputStage = ({
   const [dragStart, setDragStart] = useState<Positions>();
   const [dragOverload, setDragOverload] = useState<GestureOverload>();
   const [clickButtons, setClickButtons] = useState(0);
+  // state during pan gesture
+  const [panStart, setPanStart] = useState<Position>();
 
   // map mouse buttons flags to enum
   const mapOverload = (flags: number): GestureOverload => {
@@ -88,9 +90,12 @@ const InputStage = ({
   };
 
   const handleMouseDown = (event: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!dragOverload)
+    if (!dragOverload) {
       // store start position (actual gesture is yet unclear)
       setDragStart(getPointerPositions(event));
+      setPanStart(transformation.translate);
+    }
+
     // add button to current gesture
     setClickButtons(clickButtons | mapButton(event.evt.button));
   };
@@ -107,9 +112,24 @@ const InputStage = ({
         ...positions,
       });
 
+    // check for pan overload
+    const overload = mapOverload(clickButtons);
+    if (overload === GestureOverload.Secondary) {
+      if (panStart && dragStart)
+        dispatch(
+          updateTransformation({
+            ...transformation,
+            translate: {
+              x: panStart.x + positions.absolute.x - dragStart.absolute.x,
+              y: panStart.y + positions.absolute.y - dragStart.absolute.y,
+            },
+          })
+        );
+      return;
+    }
+
     // check if drag was started
     if (!dragOverload && dragStart) {
-      const overload = mapOverload(clickButtons);
       onGestureDragStart({ overload, transformation, ...dragStart });
       setDragOverload(overload);
     }
@@ -228,6 +248,7 @@ const InputStage = ({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

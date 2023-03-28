@@ -206,25 +206,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
     const shape = shapeMap[tool]?.onGestureDragMove?.(activeShape, event);
     if (shape) updateActiveShape(shape);
-    /*
-    const translate =
-      (event.evt instanceof MouseEvent && event.evt.buttons === 4) ||
-      (tool === Tool.Select &&
-        event.evt instanceof MouseEvent &&
-        event.evt.buttons) ||
-      (tool === Tool.Select && event.evt instanceof TouchEvent);
-
-    if (translate) {
-      transformValid({
-        ...transformation,
-        translate: {
-          x: transformation.translate.x + pos.x - cursorPos.x,
-          y: transformation.translate.y + pos.y - cursorPos.y,
-        },
-      });
-      return;
-    }
-*/
   };
 
   const handleDragEnd = (event: GestureEvent) => {
