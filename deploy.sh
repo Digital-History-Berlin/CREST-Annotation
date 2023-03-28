@@ -2,7 +2,7 @@
 #
 # Helper script to build and push docker image to ECR
 #
-# Usage: AWS_ACCOUNT_ID=<account> ./ecr.sh [web|backend]
+# Usage: AWS_ACCOUNT_ID=<account> ./deploy.sh [web|backend]
 #
 set -e
 

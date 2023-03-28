@@ -4,7 +4,8 @@ WORKDIR /app
 
 # install only if package.json changes
 COPY ./crest-annotation-web/package.json ./
-RUN npm install
+COPY ./crest-annotation-web/package-lock.json ./
+RUN npm ci
 
 ARG NODE_ENV
 ARG REACT_APP_BACKEND

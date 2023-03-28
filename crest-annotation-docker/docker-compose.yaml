@@ -8,6 +8,8 @@ services:
       POSTGRES_PASSWORD: ${PG_PASS:-crest}
     ports:
       - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
   backend:
     container_name: crest-backend
@@ -47,4 +49,5 @@ services:
     ports:
       - 80:80
     restart: unless-stopped
-
+volumes:
+  pgdata:
