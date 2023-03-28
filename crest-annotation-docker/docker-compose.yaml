@@ -18,6 +18,10 @@ services:
       context: ../
       dockerfile: ./crest-annotation-docker/backend/Dockerfile
     environment:
+      # production environment
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=
+      # database from this compose
       - DATABASE_URL=postgresql://${PG_USER:-crest}@db:5432
       - DATABASE_PASSWORD=${PG_PASS:-crest}
       - CORS_ORIGINS=${CORS_ORIGINS:-*}
@@ -35,7 +39,6 @@ services:
       args:
         # image is statically build and served by nginx
         # environment variables need to be defined at build time
-        - NODE_ENV=${NODE_ENV:-development}
         - REACT_APP_BACKEND=/api
     environment:
       # nginx image will use runtime environment variables

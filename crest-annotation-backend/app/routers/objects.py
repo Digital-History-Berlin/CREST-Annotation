@@ -90,6 +90,8 @@ async def get_annotations(object_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
+    print(data_object.id, data_object.annotation_data)
+
     return JSONResponse(data_object.annotation_data)
 
 
@@ -101,8 +103,11 @@ async def store_annotations(
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
+    data_object.annotated = False
     data_object.annotation_data = annotation_data
     db.commit()
+
+    print(data_object.id, data_object.annotation_data)
 
     return Response()
 

@@ -1,71 +1,64 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
-import { Circle, Group, Line } from "react-konva";
+import { Group, Line } from "react-konva";
 import Anchor from "./Anchor";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
-import { Shape, Tool } from "../../slice";
+import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { Shape } from "../../slice/annotations";
+import { Tool } from "../../slice/tools";
 import { Polygon as PolygonShape } from "../../tools/polygon";
+import { GestureOverload } from "../types/Events";
 
 const Polygon = ({
   identifier,
   shape,
   color,
-  editing,
+  editable,
   shapeConfig,
   editingPointConfig,
-  onRequestCursor,
   onUpdate,
+  onClick,
 }: ShapeProps) => {
-  const polygon = shape as PolygonShape;
+  // use internal state for editing to avoid re-renders
+  const [preview, setPreview] = useState(shape as PolygonShape);
+  useEffect(() => setPreview(shape as PolygonShape), [shape]);
 
-  const onDragPolygonPoint = (
-    e: Konva.KonvaEventObject<DragEvent>,
-    index: number
-  ) => {
-    const newPoints = [...polygon.points];
-    newPoints[index] = e.target.x();
-    newPoints[index + 1] = e.target.y();
+  const dragMove = (e: Konva.KonvaEventObject<DragEvent>, index: number) => {
+    const points = [...preview.points];
+    points[index] = e.target.x();
+    points[index + 1] = e.target.y();
 
-    onUpdate?.({
-      ...shape,
-      points: newPoints,
+    setPreview({
+      ...preview,
+      points,
     });
   };
+
+  const dragEnd = () => onUpdate?.(preview as Shape);
 
   return (
     <Group key={identifier}>
       <Line
         {...shapeConfig}
-        points={polygon.points.concat(polygon.preview)}
-        closed={polygon.finished}
+        points={preview.points.concat(preview.preview)}
+        closed={preview.finished}
         stroke={alpha(color, 0.8)}
         tension={0}
         lineCap="round"
+        onClick={onClick}
       />
-      {!polygon.finished && (
-        <Circle
-          x={polygon.points[0]}
-          y={polygon.points[1]}
-          {...editingPointConfig}
-          opacity={0}
-          onMouseEnter={() => onRequestCursor?.("crosshair")}
-          onMouseLeave={() => onRequestCursor?.(undefined)}
-        />
-      )}
-      {editing &&
-        polygon.points.map(
+      {editable &&
+        preview.points.map(
           (point, index) =>
             index % 2 === 0 && (
               <Anchor
                 key={index}
                 {...editingPointConfig}
-                x={polygon.points[index]}
-                y={polygon.points[index + 1]}
+                x={preview.points[index]}
+                y={preview.points[index + 1]}
                 fill={color}
-                onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
-                  onDragPolygonPoint(e, index)
-                }
+                onDragMove={(e) => dragMove(e, index)}
+                onDragEnd={dragEnd}
               />
             )
         )}
@@ -73,75 +66,74 @@ const Polygon = ({
   );
 };
 
-const onCreate = ({ x, y }: Position) => ({
-  points: [x, y],
-  preview: [x, y],
-  finished: false,
-  tool: Tool.Polygon,
-});
-
-const onDown = (shape: Shape, { x, y }: Position) => {
-  const polygon = shape as PolygonShape;
-  const count = polygon.points.length;
-
-  const first = { x: polygon.points[0], y: polygon.points[1] };
-  const last = {
-    x: polygon.points[count - 2],
-    y: polygon.points[count - 1],
-  };
-
-  // finish drawing polygon
-  // - if area around starting point is clicked
-  // - if area around current point is clicked (double click)
-  if (
-    (Math.abs(x - last.x) <= 5 && Math.abs(y - last.y) <= 5) ||
-    (Math.abs(x - first.x) <= 5 && Math.abs(y - first.y) <= 5)
-  ) {
-    // add last point, which is the same as the first point
-    return {
-      ...shape,
-      points: [...polygon.points, polygon.points[0], polygon.points[1]],
-      preview: [],
-      finished: true,
-    };
-    // otherwise add new point
-  } else {
-    return {
-      ...shape,
-      points: [...polygon.points, x, y],
-    };
-  }
-};
-
-const onMove = (shape: Shape, { x, y }: Position) => ({
-  ...shape,
-  preview: [x, y],
-});
-
-const onKeyDown = (
-  shape: Shape,
-  event: React.KeyboardEvent<HTMLDivElement>
+const onPrimaryClick: ShapeEventHandler = (
+  shape,
+  { transformation, transformed: { x, y } }
 ) => {
+  // start new shape
+  if (!shape)
+    return {
+      points: [x, y],
+      preview: [x, y],
+      finished: false,
+      tool: Tool.Polygon,
+    };
+
+  if (shape.finished) return;
+
   const polygon = shape as PolygonShape;
 
-  if (event.code === "KeyK" && event.ctrlKey) {
+  // finish on click near start
+  const dx = polygon.points[0] - x;
+  const dy = polygon.points[1] - y;
+  const threshold = 5 / transformation.scale;
+  if (dx * dx + dy * dy < threshold * threshold)
     return {
       ...shape,
-      points: [...polygon.points, polygon.points[0], polygon.points[1]],
       finished: true,
       preview: [],
     };
-  }
 
-  return undefined;
+  // append new point
+  return {
+    ...shape,
+    points: [...polygon.points, x, y],
+  };
 };
 
-const PolygonTool = {
+const onSecondaryClick: ShapeEventHandler = (shape) => {
+  if (!shape || shape.finished) return;
+
+  return {
+    ...shape,
+    finished: true,
+    preview: [],
+  };
+};
+
+const onGestureClick: ShapeEventHandler = (shape, event) => {
+  switch (event.overload) {
+    case GestureOverload.Primary:
+      return onPrimaryClick(shape, event);
+    case GestureOverload.Secondary:
+      return onSecondaryClick(shape, event);
+  }
+};
+
+const onGestureMove: ShapeEventHandler = (shape, { transformed: { x, y } }) => {
+  if (!shape || shape.finished) return;
+
+  return {
+    ...shape,
+    preview: [x, y],
+  };
+};
+
+const PolygonTool: ShapeTool = {
   component: Polygon,
-  onCreate,
-  onDown,
-  onMove,
-  onKeyDown,
-} as ShapeTool;
+  onGestureClick,
+  onGestureDragMove: onGestureMove,
+  onGestureMove,
+};
 
 export default PolygonTool;

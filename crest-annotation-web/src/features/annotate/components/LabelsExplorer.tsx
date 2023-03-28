@@ -20,7 +20,7 @@ import SidebarContainer from "../../../components/SidebarContainer";
 
 interface IProps {
   projectId?: string;
-  selected?: Label;
+  selected?: string;
   onSelect?: (label: Label) => void;
 }
 
@@ -126,7 +126,7 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
                 >
                   <ListItemButton
                     disableGutters
-                    selected={selected?.id === label.id}
+                    selected={selected === label.id}
                     onClick={onSelect && (() => onSelect(label))}
                   >
                     <Dot color={label.color} />
@@ -135,7 +135,7 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
                       primaryTypographyProps={{
                         fontWeight:
                           // make sure user knows about active label
-                          selected?.id === label.id ? "bold" : "normal",
+                          selected === label.id ? "bold" : "normal",
                       }}
                     />
                   </ListItemButton>

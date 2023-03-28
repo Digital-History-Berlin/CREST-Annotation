@@ -1,10 +1,11 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
-import { Shape, Tool } from "../../slice";
+import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { Tool } from "../../slice/tools";
 import { Line as LineShape } from "../../tools/line";
+import { GestureOverload } from "../types/Events";
 
-const Line = ({ identifier, shape, shapeConfig }: ShapeProps) => {
+const Line = ({ identifier, shape, shapeConfig, onClick }: ShapeProps) => {
   const line = shape as LineShape;
 
   return (
@@ -16,17 +17,30 @@ const Line = ({ identifier, shape, shapeConfig }: ShapeProps) => {
       tension={0.5}
       lineCap="round"
       globalCompositeOperation="source-over"
+      onClick={onClick}
     />
   );
 };
 
-const onCreate = ({ x, y }: Position) => ({
-  points: [x, y],
-  tool: Tool.Pen,
-  finished: false,
-});
+const onGestureDragStart: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || shape) return;
 
-const onMove = (shape: Shape, { x, y }: Position) => {
+  return {
+    points: [x, y],
+    tool: Tool.Pen,
+    finished: false,
+  };
+};
+
+const onGestureDragMove: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+
   const line = shape as LineShape;
 
   return {
@@ -35,16 +49,20 @@ const onMove = (shape: Shape, { x, y }: Position) => {
   };
 };
 
-const onUp = (shape: Shape) => ({
-  ...shape,
-  finished: true,
-});
+const onGestureDragEnd: ShapeEventHandler = (shape) => {
+  if (!shape || shape.finished) return;
 
-const LineTool = {
+  return {
+    ...shape,
+    finished: true,
+  };
+};
+
+const LineTool: ShapeTool = {
   component: Line,
-  onCreate,
-  onMove,
-  onUp,
-} as ShapeTool;
+  onGestureDragStart,
+  onGestureDragMove,
+  onGestureDragEnd,
+};
 
 export default LineTool;

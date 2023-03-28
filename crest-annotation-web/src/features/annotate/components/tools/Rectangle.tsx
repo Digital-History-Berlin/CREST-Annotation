@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { alpha } from "@mui/material";
 import Konva from "konva";
+import { KonvaEventObject } from "konva/lib/Node";
 import { Group, Rect as KonvaRectangle } from "react-konva";
 import Anchor from "./Anchor";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
-import { Shape, Tool } from "../../slice";
+import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { Shape } from "../../slice/annotations";
+import { Tool } from "../../slice/tools";
 import { Rectangle as RectangleShape } from "../../tools/rectangle";
+import { GestureOverload } from "../types/Events";
 
 enum Edges {
   Left = 0,
@@ -23,14 +26,15 @@ const Rectangle = ({
   color,
   shapeConfig,
   editingPointConfig,
-  editing,
-  getTransformedPointerPosition,
+  editable,
   onUpdate,
+  onClick,
 }: ShapeProps) => {
-  const rectangle = shape as RectangleShape;
+  // use internal state for editing to avoid re-renders
+  const [preview, setPreview] = useState(shape as RectangleShape);
+  useEffect(() => setPreview(shape as RectangleShape), [shape]);
 
   const editingPoints = [
-    [Edges.Center, Edges.Center],
     [Edges.Left, Edges.Bottom],
     [Edges.Left, Edges.Center],
     [Edges.Left, Edges.Top],
@@ -42,40 +46,29 @@ const Rectangle = ({
   ] as EditPoint[];
 
   // convert coordinate to position
-  const xCoord = (edge: Edges) => rectangle.x + rectangle.width * edge;
+  const xCoord = (edge: Edges) => preview.x + preview.width * edge;
   // convert coordinate to position
-  const yCoord = (edge: Edges) => rectangle.y + rectangle.height * edge;
+  const yCoord = (edge: Edges) => preview.y + preview.height * edge;
 
-  const onDragEditPoint = (
+  const dragMovePoint = (
     e: Konva.KonvaEventObject<DragEvent>,
     editPoint: EditPoint
   ) => {
-    const pos = getTransformedPointerPosition(e);
-    if (pos === undefined) return;
-
-    // move on center point
-    if (editPoint[0] === Edges.Center && editPoint[1] === Edges.Center) {
-      onUpdate?.({
-        ...shape,
-        x: pos.x - rectangle.width / 2,
-        y: pos.y - rectangle.height / 2,
-      });
-      return;
-    }
-
-    const patch = { ...rectangle };
+    const pos = { x: e.target.x(), y: e.target.y() };
+    const patch = { ...preview };
 
     // change width
     switch (editPoint[0]) {
       case Edges.Left:
         patch.x = pos.x;
-        patch.width = rectangle.x + rectangle.width - pos.x;
+        patch.width = preview.x + preview.width - pos.x;
         break;
       case Edges.Center:
-        e.target.x(rectangle.x + rectangle.width / 2);
+        // lock movement along x axis
+        e.target.x(preview.x + preview.width / 2);
         break;
       case Edges.Right:
-        patch.width = pos.x - rectangle.x;
+        patch.width = pos.x - preview.x;
         break;
     }
 
@@ -83,56 +76,98 @@ const Rectangle = ({
     switch (editPoint[1]) {
       case Edges.Top:
         patch.y = pos.y;
-        patch.height = rectangle.y + rectangle.height - pos.y;
+        patch.height = preview.y + preview.height - pos.y;
         break;
       case Edges.Center:
-        e.target.y(rectangle.y + rectangle.height / 2);
+        // lock movement along y axis
+        e.target.y(preview.y + preview.height / 2);
         break;
       case Edges.Right:
-        patch.height = pos.y - rectangle.y;
+        patch.height = pos.y - preview.y;
         break;
     }
 
-    onUpdate?.(patch as Shape);
+    setPreview(patch);
   };
+
+  const dragMoveCenter = (e: KonvaEventObject<DragEvent>) =>
+    setPreview({
+      ...preview,
+      x: e.target.x() - preview.width / 2,
+      y: e.target.y() - preview.height / 2,
+    });
+
+  const dragEnd = () =>
+    onUpdate?.({
+      ...preview,
+      // normalize rectangle
+      x: Math.min(preview.x, preview.x + preview.width),
+      y: Math.min(preview.y, preview.y + preview.height),
+      width: Math.abs(preview.width),
+      height: Math.abs(preview.height),
+    } as Shape);
 
   return (
     <Group key={identifier}>
       <KonvaRectangle
         {...shapeConfig}
-        x={rectangle.x}
-        y={rectangle.y}
-        width={rectangle.width}
-        height={rectangle.height}
+        x={preview.x}
+        y={preview.y}
+        width={preview.width}
+        height={preview.height}
         stroke={alpha(color, 0.8)}
+        onClick={onClick}
       />
-      {editing &&
-        editingPoints.map((editPoint, index) => (
+      {editable && (
+        <>
           <Anchor
-            key={index}
             {...editingPointConfig}
-            x={xCoord(editPoint[0])}
-            y={yCoord(editPoint[1])}
+            x={preview.x + preview.width / 2}
+            y={preview.y + preview.height / 2}
             fill={color}
-            onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
-              onDragEditPoint(e, editPoint)
-            }
+            onDragMove={dragMoveCenter}
+            onDragEnd={dragEnd}
           />
-        ))}
+          {editingPoints.map((editPoint, index) => (
+            <Anchor
+              key={index}
+              {...editingPointConfig}
+              x={xCoord(editPoint[0])}
+              y={yCoord(editPoint[1])}
+              fill={color}
+              onDragMove={(e) => dragMovePoint(e, editPoint)}
+              onDragEnd={dragEnd}
+            />
+          ))}
+        </>
+      )}
     </Group>
   );
 };
 
-const onCreate = ({ x, y }: Position) => ({
-  x: x,
-  y: y,
-  width: 0,
-  height: 0,
-  tool: Tool.Rectangle,
-});
+const onGestureDragStart: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || shape) return;
 
-const onMove = (shape: Shape, { x, y }: Position) => {
+  return {
+    x: x,
+    y: y,
+    width: 0,
+    height: 0,
+    tool: Tool.Rectangle,
+  };
+};
+
+const onGestureDragMove: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+
   const rectangle = shape as RectangleShape;
+
   return {
     ...shape,
     width: x - rectangle.x,
@@ -140,16 +175,20 @@ const onMove = (shape: Shape, { x, y }: Position) => {
   };
 };
 
-const onUp = (shape: Shape) => ({
-  ...shape,
-  finished: true,
-});
+const onGestureDragEnd: ShapeEventHandler = (shape) => {
+  if (!shape || shape.finished) return;
 
-const RectangleTool = {
+  return {
+    ...shape,
+    finished: true,
+  };
+};
+
+const RectangleTool: ShapeTool = {
   component: Rectangle,
-  onCreate,
-  onMove,
-  onUp,
-} as ShapeTool;
+  onGestureDragStart,
+  onGestureDragMove,
+  onGestureDragEnd,
+};
 
 export default RectangleTool;

@@ -5,12 +5,16 @@ import {
   configureStore,
 } from "@reduxjs/toolkit";
 import { enhancedApi } from "../api/enhancedApi";
-import annotateReducer, {
+import annotationsReducer, {
   annotateMiddleware,
-} from "../features/annotate/slice";
+} from "../features/annotate/slice/annotations";
+import canvasReducer from "../features/annotate/slice/canvas";
+import toolsReducer from "../features/annotate/slice/tools";
 
 const rootReducer = combineReducers({
-  annotate: annotateReducer,
+  annotations: annotationsReducer,
+  canvas: canvasReducer,
+  tools: toolsReducer,
   [enhancedApi.reducerPath]: enhancedApi.reducer,
 });
 
@@ -19,9 +23,7 @@ export const store = configureStore({
   // Adding the api middleware enables caching, invalidation, polling,
   // and other useful features of `rtk-query`.
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
-      .concat(enhancedApi.middleware)
-      .concat(annotateMiddleware),
+    getDefaultMiddleware().concat(enhancedApi.middleware, annotateMiddleware),
 });
 
 export type AppDispatch = typeof store.dispatch;

@@ -14,17 +14,17 @@ import SelectIcon from "@mui/icons-material/TouchApp";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
+import { setObjectId } from "./slice/annotations";
 import {
   Modifiers,
   Tool,
-  selectActiveLabel,
+  selectActiveLabelId,
   selectActiveModifiers,
   selectActiveTool,
   setActiveLabel,
   setActiveTool,
-  setObjectId,
   toggleModifier,
-} from "./slice";
+} from "./slice/tools";
 import {
   enhancedApi,
   useFinishObjectMutation,
@@ -52,7 +52,7 @@ const AnnotatePage = () => {
   const { projectId, objectId } = useParams();
 
   const activeTool = useAppSelector(selectActiveTool);
-  const activeLabel = useAppSelector(selectActiveLabel);
+  const activeLabelId = useAppSelector(selectActiveLabelId);
   const activeModifiers = useAppSelector(selectActiveModifiers);
 
   const [getRandom, { isError: randomError }] =
@@ -75,7 +75,7 @@ const AnnotatePage = () => {
   };
 
   const toggleLabelSelection = (label: Label) =>
-    activeLabel?.id === label.id
+    activeLabelId === label.id
       ? dispatch(setActiveLabel(undefined))
       : dispatch(setActiveLabel(label));
 
@@ -83,7 +83,7 @@ const AnnotatePage = () => {
     // start with random object
     if (projectId && !objectId) navigateRandom(projectId);
     // update object id in state
-    if (objectId) dispatch(setObjectId(objectId));
+    if (projectId && objectId) dispatch(setObjectId({ projectId, objectId }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, objectId]);
 
@@ -164,7 +164,7 @@ const AnnotatePage = () => {
           <AnnotationsList projectId={projectId} />
           <LabelsExplorer
             projectId={projectId}
-            selected={activeLabel}
+            selected={activeLabelId}
             onSelect={toggleLabelSelection}
           />
         </Stack>
