@@ -130,8 +130,10 @@ const onGestureMove: ShapeEventHandler = (shape, { transformed: { x, y } }) => {
 const PolygonTool: ShapeTool = {
   component: Polygon,
   onGestureClick,
-  onGestureDragMove: onGestureMove,
   onGestureMove,
+  // drag behaves like click
+  onGestureDragMove: onGestureMove,
+  onGestureDragEnd: onGestureClick,
 };
 
 export default PolygonTool;

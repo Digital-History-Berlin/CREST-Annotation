@@ -112,8 +112,11 @@ const InputStage = ({
         ...positions,
       });
 
-    // check for pan overload
-    const overload = mapOverload(clickButtons);
+    // clear click buttons (this is not a click)
+    setClickButtons(0);
+
+    // pan gesture overrules others
+    const overload = mapOverload(event.evt.buttons);
     if (overload === GestureOverload.Secondary) {
       if (panStart && dragStart)
         dispatch(
@@ -147,15 +150,15 @@ const InputStage = ({
     const positions = getPointerPositions(event);
     if (!positions) return;
 
-    // mouse was moved while buttons where down (drag ended)
+    // gesture was a drag
     if (dragOverload)
       onGestureDragEnd({
         overload: dragOverload,
         transformation,
         ...positions,
       });
-    // mouse was not moved (gesture was a click)
-    else
+    // gesture was a click
+    if (clickButtons)
       onGestureClick({
         overload: mapOverload(clickButtons),
         transformation,
