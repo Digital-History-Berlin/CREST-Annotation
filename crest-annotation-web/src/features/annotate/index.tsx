@@ -68,7 +68,6 @@ const AnnotatePage = () => {
 
   const navigateRandom = async (id: string) => {
     const random = await getRandom({ projectId: id }).unwrap();
-    console.log("random", random);
     navigate(`/annotate/${id}/${random.id}`);
   };
 
@@ -91,8 +90,6 @@ const AnnotatePage = () => {
   };
 
   const finishObject = async () => {
-    console.log(objectId);
-    console.log(projectId);
     if (!objectId) return;
 
     await rqeuestFinishObject({
