@@ -13,7 +13,6 @@ export const shapeMap = {
   [Tool.Circle]: CircleTool,
   [Tool.Rectangle]: RectangleTool,
   [Tool.Polygon]: PolygonTool,
-  [Tool.Select]: undefined,
   [Tool.Edit]: undefined,
 };
 
@@ -45,9 +44,9 @@ const Shape = ({
 
   // properties passed to shape
   const shapeConfig = {
-    stroke: alpha(color, transparent ? 0.2 : 0.8),
-    strokeWidth: (selected ? 2 : 1) / transformation.scale,
-    fill: alpha(color, transparent ? 0.1 : 0.3),
+    stroke: alpha(color, transparent ? 0.2 : selected ? 0.8 : 0.6),
+    strokeWidth: (selected ? 3 : 2) / transformation.scale,
+    fill: alpha(color, transparent ? 0.1 : selected ? 0.3 : 0.2),
     listening: editable,
   };
 

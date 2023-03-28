@@ -4,7 +4,6 @@ import { Label } from "../../../api/openApi";
 import { RootState } from "../../../app/store";
 
 export enum Tool {
-  Select,
   Pen,
   Circle,
   Rectangle,

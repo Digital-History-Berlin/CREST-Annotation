@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
-import CircleIcon from "@mui/icons-material/CircleTwoTone";
-import EditIcon from "@mui/icons-material/CropRotate";
-import GroupIcon from "@mui/icons-material/DashboardCustomize";
-import PenIcon from "@mui/icons-material/Edit";
-import PolygonIcon from "@mui/icons-material/PolylineOutlined";
-import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
-import SelectIcon from "@mui/icons-material/TouchApp";
+import SettingsIcon from "@mui/icons-material/Settings";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
@@ -39,10 +34,52 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
-  ToolbarButton,
+  ToolbarButtonWithTooltip,
   ToolbarDivider,
-  ToolbarToggleButton,
+  ToolbarToggleButtonWithTooltip,
 } from "../../components/ToolbarButton";
+
+const tools = [
+  {
+    tool: Tool.Pen,
+    icon: "majesticons:edit-pen-4-line",
+    style: { fontSize: "22px" },
+    tooltip: "Pen",
+  },
+  {
+    tool: Tool.Rectangle,
+    icon: "mdi:vector-square",
+    style: { fontSize: "25px" },
+    tooltip: "Rectangle",
+  },
+  {
+    tool: Tool.Circle,
+    icon: "mdi:vector-circle-variant",
+    style: { fontSize: "25px" },
+    tooltip: "Circle",
+  },
+  {
+    tool: Tool.Polygon,
+    icon: "mdi:vector-polygon",
+    style: { fontSize: "25px" },
+    tooltip: "Polygon",
+  },
+  { tool: undefined },
+  {
+    tool: Tool.Edit,
+    icon: "mdi:vector-polyline-edit",
+    style: { fontSize: "25px" },
+    tooltip: "Edit",
+  },
+];
+
+const modifiers = [
+  {
+    modifier: Modifiers.Group,
+    icon: "mdi:vector-link",
+    style: { fontSize: "25px" },
+  },
+];
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
@@ -104,36 +141,32 @@ const AnnotatePage = () => {
 
   const renderTools = () => (
     <Stack direction="row">
-      {[
-        { tool: Tool.Select, icon: SelectIcon },
-        { tool: Tool.Pen, icon: PenIcon },
-        { tool: Tool.Rectangle, icon: RectangleIcon },
-        { tool: Tool.Circle, icon: CircleIcon },
-        { tool: Tool.Polygon, icon: PolygonIcon },
-        { tool: Tool.Edit, icon: EditIcon },
-      ].map((button) => {
+      {tools.map((button, index) => {
+        if (button.tool === undefined) return <ToolbarDivider key={index} />;
         return (
-          <ToolbarToggleButton
-            key={button.tool}
+          <ToolbarToggleButtonWithTooltip
+            key={index}
             value={button.tool}
             onClick={() => dispatch(setActiveTool(button.tool))}
             selected={activeTool === button.tool}
+            tooltip={button.tooltip}
           >
-            {<button.icon />}
-          </ToolbarToggleButton>
+            <Icon icon={button.icon} style={button.style} />
+          </ToolbarToggleButtonWithTooltip>
         );
       })}
       <ToolbarDivider />
-      {[{ modifier: Modifiers.Group, icon: GroupIcon }].map((button) => {
+      {modifiers.map((button) => {
         return (
-          <ToolbarToggleButton
+          <ToolbarToggleButtonWithTooltip
             key={button.modifier}
             value={button.modifier}
             onClick={() => dispatch(toggleModifier(button.modifier))}
             selected={activeModifiers.includes(button.modifier)}
+            tooltip={"Group Annotations"}
           >
-            {<button.icon />}
-          </ToolbarToggleButton>
+            <Icon icon={button.icon} style={button.style} />
+          </ToolbarToggleButtonWithTooltip>
         );
       })}
     </Stack>
@@ -141,12 +174,24 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
-      <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/project/${projectId}`)}
+        tooltip={"Settings"}
+      >
+        <SettingsIcon />
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/objects/${projectId}`)}
+        tooltip={"Project Overview"}
+      >
         <ObjectsIcon />
-      </ToolbarButton>
-      <ToolbarButton onClick={() => finishObject()}>
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => finishObject()}
+        tooltip={"Finish Image"}
+      >
         <FinishedIcon />
-      </ToolbarButton>
+      </ToolbarButtonWithTooltip>
     </Stack>
   );
 
@@ -188,12 +233,12 @@ const AnnotatePage = () => {
         }}
         errorPlaceholder={
           <PlaceholderLayout
-            title="This project contains no objects."
+            title="You have finished annotating this project."
             description={
               <>
-                Go to the{" "}
+                There are currently no images left to be annotated. Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                scan the project source for new objects and start annotating!
+                scan the project source for additional ones.
               </>
             }
           />

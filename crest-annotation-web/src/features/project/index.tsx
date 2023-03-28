@@ -1,6 +1,16 @@
 import React, { useState } from "react";
-import { Box, Container, Paper, Tab, Tabs, Typography } from "@mui/material";
+import {
+  Box,
+  Container,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
+import ObjectsIcon from "@mui/icons-material/Apps";
+import AnnotateIcon from "@mui/icons-material/HistoryEdu";
 import LabelsTab from "./components/LabelsTab";
 import SettingsTab from "./components/SettingsTab";
 import WizardsTab from "./components/WizardsTab";
@@ -8,6 +18,7 @@ import { useGetProjectQuery } from "../../api/enhancedApi";
 import Layout from "../../components/layouts/Layout";
 import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
+import { ToolbarButtonWithTooltip } from "../../components/ToolbarButton";
 
 const ProjectPage = () => {
   const navigate = useNavigate();
@@ -26,10 +37,32 @@ const ProjectPage = () => {
     if (group === "labels") setCurrentTab(1);
   };
 
+  const renderActions = () => (
+    <Stack direction="row">
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/objects/${projectId}`)}
+        tooltip={"Project Overview"}
+      >
+        <ObjectsIcon />
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/annotate/${projectId}`)}
+        tooltip={"Annotate Images"}
+      >
+        <AnnotateIcon />
+      </ToolbarButtonWithTooltip>
+    </Stack>
+  );
+
   return (
     <Layout
       scrollable
-      header={<Toolbar title={projectQuery.data?.name ?? "Project Settings"} />}
+      header={
+        <Toolbar
+          title={projectQuery.data?.name ?? "Project Settings"}
+          actions={renderActions()}
+        />
+      }
     >
       <Container maxWidth="sm">
         <Typography variant="h5" color="info">

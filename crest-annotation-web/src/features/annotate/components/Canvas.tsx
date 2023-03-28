@@ -107,7 +107,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   );
 
   // gets the default cursor that is shown when hovering the canvas
-  const defaultCursor = () => (tool === Tool.Select ? "pointer" : "crosshair");
+  const defaultCursor = () => (tool === Tool.Edit ? "pointer" : "crosshair");
   // change the current cursor
   const changeCursor = (cursor: string | undefined) => {
     const container = stageRef.current?.container();

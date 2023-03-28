@@ -1,4 +1,18 @@
-import { Button, Divider, ToggleButton, styled } from "@mui/material";
+import {
+  Button,
+  ButtonProps,
+  Divider,
+  ToggleButton,
+  ToggleButtonProps,
+  Tooltip,
+  styled,
+} from "@mui/material";
+
+type ToolbarButtonProps = { tooltip: string } & ButtonProps;
+
+type ToolbarToggleButtonProps = {
+  tooltip: string;
+} & ToggleButtonProps;
 
 /**
  * Button optimized to be used inside the toolbar
@@ -51,3 +65,27 @@ export const ToolbarDivider = styled(Divider)(({ theme }) => ({
     width: "1px",
   },
 }));
+
+export const ToolbarButtonWithTooltip = ({
+  tooltip,
+  children,
+  ...props
+}: ToolbarButtonProps) => {
+  return (
+    <Tooltip title={tooltip} arrow placement={"bottom"}>
+      <ToolbarButton {...props}>{children}</ToolbarButton>
+    </Tooltip>
+  );
+};
+
+export const ToolbarToggleButtonWithTooltip = ({
+  tooltip,
+  children,
+  ...props
+}: ToolbarToggleButtonProps) => {
+  return (
+    <Tooltip title={tooltip} arrow placement={"bottom"}>
+      <ToolbarToggleButton {...props}>{children}</ToolbarToggleButton>
+    </Tooltip>
+  );
+};

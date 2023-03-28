@@ -39,7 +39,7 @@ const Polygon = ({
     <Group key={identifier}>
       <Line
         {...shapeConfig}
-        points={preview.points.concat(preview.preview)}
+        points={preview.points?.concat(preview.preview)}
         closed={preview.finished}
         tension={0}
         lineCap="round"
