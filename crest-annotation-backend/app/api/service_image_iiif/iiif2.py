@@ -5,37 +5,40 @@ from pydantic import BaseModel, Field
 from ... import schemas
 
 
-class Iiif3ImageSize(BaseModel):
+class Iiif2ImageSize(BaseModel):
     width: int
     height: int
 
 
-class Iiif3ImageService(BaseModel):
+class Iiif2ImageService(BaseModel):
     """
-    Defines a (incomplete) response as retrieved from IIIF 3 image server
+    Defines a (incomplete) response as retrieved from IIIF 2.x image server
     """
 
     # meta data
-    context: str | list[str] = Field(alias="@context")
-    type: str = Field("ImageService3", const=True)
+    context: str = Field(
+        alias="@context",
+        default="http://iiif.io/api/image/2/context.json",
+        const=True,
+    )
 
     # image data
     width: int
     height: int
-    sizes: list[Iiif3ImageSize] | None
+    sizes: list[Iiif2ImageSize] | None
 
 
 def get_image_uri(uri, usage: schemas.ImageRequest):
     """
-    Get image URI from IIIF 3 image server
+    Request image from IIIF 2.x image server
     """
 
     if not usage.width and not usage.height:
-        return f"{uri}/full/max/0/default.jpg"
+        return f"{uri}/full/full/0/default.jpg"
 
     # request service info
-    json_resonse = requests.get(uri).json()
-    service = Iiif3ImageService(**json_resonse)
+    json_resonse = requests.get(f"{uri}/info.json").json()
+    service = Iiif2ImageService(**json_resonse)
 
     # calculate optimal sizes
     width = usage.width or 0

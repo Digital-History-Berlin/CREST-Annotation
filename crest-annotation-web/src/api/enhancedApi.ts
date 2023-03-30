@@ -73,4 +73,5 @@ export const {
   useGetOntologyImportMutation,
   useImportOntologyMutation,
   useImportIiif3Mutation,
+  useImportIiif2Mutation,
 } = enhancedApi;

@@ -17,5 +17,26 @@ export_router = APIRouter(
 
 from .import_labels_ontology import router
 from .import_objects_iiif3 import router
+from .import_objects_iiif2 import router
 
-from .import_objects_iiif3.resolver import iiif3_image_resolver as iiif3_image_resolver
+from .. import schemas
+
+# extended object types
+from .import_objects_iiif3.dependencies import Iiif3ObjectData
+from .import_objects_iiif2.dependencies import Iiif2ObjectData
+
+
+def get_object_data_schema(object_data):
+    """
+    Get image resolver from identifier
+    """
+
+    if object_data is None:
+        raise ValueError()
+
+    if object_data.get("type") == "iiif3":
+        return Iiif3ObjectData
+    if object_data.get("type") == "iiif2":
+        return Iiif2ObjectData
+
+    raise ModuleNotFoundError(name=id)

@@ -1,22 +1,20 @@
 import React from "react";
 import { Button, Divider, Stack, Typography } from "@mui/material";
-import { useImportIiif3Mutation } from "../../../../api/enhancedApi";
-import { Iiif3Import, Project } from "../../../../api/openApi";
+import { useImportIiif2Mutation } from "../../../../api/enhancedApi";
+import { Iiif2Import, Project } from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 import ProblemsList from "../../components/wizards/ProblemsList";
 
 interface IProps {
   project: Project;
   source: string;
-  data: Iiif3Import;
+  data: Iiif2Import;
   onCancel: () => void;
   onProceed: () => void;
 }
 
 const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
-  const title = data.title?.["en"];
-
-  const [importRequest, importQuery] = useImportIiif3Mutation();
+  const [importRequest, importQuery] = useImportIiif2Mutation();
 
   // fetch import info
   const executeImport = async () => {
@@ -45,7 +43,7 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
       }
     >
       <Stack padding={2} spacing={1}>
-        {title && <Typography variant="h4">{title}</Typography>}
+        {data.title && <Typography variant="h4">{data.title}</Typography>}
         <Typography variant="body1">
           <ul>
             <li>Total images: {data.objects.length}</li>

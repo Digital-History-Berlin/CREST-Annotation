@@ -1,20 +1,20 @@
 import React, { useState } from "react";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import StartIcon from "@mui/icons-material/Download";
-import { useImportIiif3Mutation } from "../../../../api/enhancedApi";
-import { Iiif3Import, Project } from "../../../../api/openApi";
+import { useImportIiif2Mutation } from "../../../../api/enhancedApi";
+import { Iiif2Import, Project } from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 
 interface IProps {
   project: Project;
   onCancel: () => void;
-  onProceed: (source: string, data: Iiif3Import) => void;
+  onProceed: (source: string, data: Iiif2Import) => void;
 }
 
 const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
   const [source, setSource] = useState<string>();
 
-  const [importRequest, importQuery] = useImportIiif3Mutation();
+  const [importRequest, importQuery] = useImportIiif2Mutation();
 
   // fetch import info
   const startImport = async () => {

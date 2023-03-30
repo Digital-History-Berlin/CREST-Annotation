@@ -1,20 +1,51 @@
-import React from "react";
-import { Box, Button, Divider, Stack } from "@mui/material";
+import React, { useState } from "react";
+import InfoPage from "./InfoPage";
+import SourcePage from "./SourcePage";
+import { Iiif2Import, Project } from "../../../../api/openApi";
 import { WizardProps } from "../../components/WizardsTab";
 
-const ObjectsIiif2 = ({ onCancel }: WizardProps) => {
-  return (
-    <>
-      <Box padding={2}>Not available</Box>
-      <Divider />
+type IProps = {
+  project: Project;
+} & WizardProps;
 
-      <Stack direction="row" spacing={1} padding={2} justifyContent="flex-end">
-        <Button onClick={onCancel} variant="outlined">
-          Cancel
-        </Button>
-      </Stack>
-    </>
-  );
+const ObjectsIiif2 = ({ project, onCancel, onSuccess }: IProps) => {
+  const [step, setStep] = useState<number>(0);
+  // data from steps
+  const [source, setSource] = useState<string>();
+  const [data, setData] = useState<Iiif2Import>();
+
+  // proceed to next step (as one-liner)
+  const proceed = () => setStep(step + 1);
+
+  if (step === 0)
+    return (
+      <SourcePage
+        project={project}
+        onCancel={onCancel}
+        onProceed={(source, data) => {
+          setSource(source);
+          setData(data);
+          proceed();
+        }}
+      />
+    );
+
+  // missing data after step
+  if (!source || !data) return null;
+
+  if (step === 1)
+    return (
+      <InfoPage
+        project={project}
+        source={source}
+        data={data}
+        onCancel={onCancel}
+        onProceed={onSuccess}
+      />
+    );
+
+  // invalid page
+  return null;
 };
 
 const wizard = {

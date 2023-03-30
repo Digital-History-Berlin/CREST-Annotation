@@ -151,6 +151,17 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    importIiif2: build.mutation<ImportIiif2ApiResponse, ImportIiif2ApiArg>({
+      query: (queryArg) => ({
+        url: `/import/iiif/2`,
+        method: "POST",
+        params: {
+          url: queryArg.url,
+          project_id: queryArg.projectId,
+          commit: queryArg.commit,
+        },
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -255,6 +266,13 @@ export type ImportIiif3ApiArg = {
   projectId: string;
   commit?: boolean;
 };
+export type ImportIiif2ApiResponse =
+  /** status 200 Successful Response */ Iiif2Import;
+export type ImportIiif2ApiArg = {
+  url: string;
+  projectId: string;
+  commit?: boolean;
+};
 export type Label = {
   id: string;
   parent_id?: string;
@@ -300,7 +318,6 @@ export type Object = {
   object_uuid?: string;
   annotated: boolean;
   annotation_data: string;
-  object_data?: string;
 };
 export type ImageRequest = {
   thumbnail?: boolean;
@@ -310,7 +327,7 @@ export type ImageRequest = {
 export type Project = {
   id: string;
   name: string;
-  source: string;
+  source?: string;
   color_table: string[];
 };
 export type CreateProject = {
@@ -342,11 +359,36 @@ export type Ontology = {
   labels: OntologyLabel[];
   problems: string[];
 };
+export type Id = string;
+export type LngString = object;
+export type ServiceItem = {
+  id: Id;
+  type: string;
+  label?: LngString;
+  profile?: string;
+  service?: Service;
+};
+export type ServiceItem1 = {
+  "@id": Id;
+  "@type": string;
+  profile?: string;
+  service?: Service;
+};
+export type Service = (ServiceItem | ServiceItem1)[];
+export type Iiif3ObjectData = {
+  manifest: string;
+  page: string;
+  annotation: string;
+  canvas: string;
+  service: Service;
+  type?: string;
+};
 export type Iiif3Object = {
-  object_uuid: string;
-  image_uri: string;
-  thumbnail_uri?: string;
-  object_data: string;
+  id?: string;
+  object_uuid?: string;
+  annotated?: boolean;
+  annotation_data?: string;
+  object_data: Iiif3ObjectData;
 };
 export type Iiif3Import = {
   title?: {
@@ -355,6 +397,32 @@ export type Iiif3Import = {
   display?: string;
   objects: Iiif3Object[];
   added: Iiif3Object[];
+  problems: string[];
+};
+export type Service2 = {
+  "@id": string;
+  "@context": string;
+  profile?: string;
+};
+export type Iiif2ObjectData = {
+  manifest: string;
+  sequence: string;
+  canvas: string;
+  image?: string;
+  service: Service2;
+  type?: string;
+};
+export type Iiif2Object = {
+  id?: string;
+  object_uuid?: string;
+  annotated?: boolean;
+  annotation_data?: string;
+  object_data: Iiif2ObjectData;
+};
+export type Iiif2Import = {
+  title?: string;
+  objects: Iiif2Object[];
+  added: Iiif2Object[];
   problems: string[];
 };
 export const {
@@ -377,4 +445,5 @@ export const {
   useGetOntologyImportMutation,
   useImportOntologyMutation,
   useImportIiif3Mutation,
+  useImportIiif2Mutation,
 } = injectedRtkApi;

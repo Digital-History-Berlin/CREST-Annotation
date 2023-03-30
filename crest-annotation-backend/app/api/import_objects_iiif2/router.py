@@ -1,8 +1,6 @@
 import requests
 import json
 
-from iiif_prezi3 import Manifest
-
 from pydantic import ValidationError
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -15,10 +13,11 @@ from ...models.objects import Object
 
 from .. import import_router as router
 
-from .dependencies import Iiif3, Iiif3Import, Iiif3Object
+from .dependencies import Iiif2, Iiif2Object, Iiif2Import
+from .schemas import Manifest
 
 
-def map_object(project_id: str, object: Iiif3Object) -> Object:
+def map_object(project_id: str, object: Iiif2Object) -> Object:
     return Object(
         project_id=project_id,
         object_uuid=object.object_uuid,
@@ -26,12 +25,12 @@ def map_object(project_id: str, object: Iiif3Object) -> Object:
     )
 
 
-@router.post("/iiif/3", response_model=Iiif3Import)
-async def import_iiif3(
+@router.post("/iiif/2", response_model=Iiif2Import)
+async def import_iiif2(
     url: str,
     project_id: str,
     commit: bool = False,
-    iiif: Iiif3 = Depends(Iiif3),
+    iiif: Iiif2 = Depends(Iiif2),
     db: Session = Depends(get_db),
     logger=Depends(get_logger),
 ):
@@ -66,9 +65,8 @@ async def import_iiif3(
         db.commit()
 
     return JSONResponse(
-        Iiif3Import(
-            title=dict(manifest.label),
-            display=str(manifest.behavior),
+        Iiif2Import(
+            title=manifest.label,
             objects=objects,
             added=added,
             problems=problems,

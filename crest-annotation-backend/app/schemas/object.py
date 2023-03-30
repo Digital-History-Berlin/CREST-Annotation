@@ -9,10 +9,9 @@ class BaseObject(BaseModel):
     object_uuid: str | None
     annotated: bool
     annotation_data: str
-    object_data: str | None
 
 
-@create("id", "object_uuid", "annotated", "annotation_data", "object_data")
+@create("id", "object_uuid", "annotated", "annotation_data")
 class CreateObject(BaseObject):
     pass
 

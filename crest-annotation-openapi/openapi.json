@@ -938,6 +938,70 @@
      }
     }
    }
+  },
+  "/import/iiif/2": {
+   "post": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Import Iiif2",
+    "operationId": "import_iiif2",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Commit",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "commit",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Iiif2Import"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {
@@ -1025,6 +1089,115 @@
      }
     }
    },
+   "Id": {
+    "title": "Id",
+    "maxLength": 65536,
+    "minLength": 1,
+    "type": "string",
+    "format": "uri"
+   },
+   "Iiif2Import": {
+    "title": "Iiif2Import",
+    "required": [
+     "objects",
+     "added",
+     "problems"
+    ],
+    "type": "object",
+    "properties": {
+     "title": {
+      "title": "Title",
+      "type": "string"
+     },
+     "objects": {
+      "title": "Objects",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Iiif2Object"
+      }
+     },
+     "added": {
+      "title": "Added",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Iiif2Object"
+      }
+     },
+     "problems": {
+      "title": "Problems",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "Iiif2Object": {
+    "title": "Iiif2Object",
+    "required": [
+     "object_data"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "object_uuid": {
+      "title": "Object Uuid",
+      "type": "string"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
+     },
+     "annotation_data": {
+      "title": "Annotation Data",
+      "type": "string"
+     },
+     "object_data": {
+      "$ref": "#/components/schemas/Iiif2ObjectData"
+     }
+    }
+   },
+   "Iiif2ObjectData": {
+    "title": "Iiif2ObjectData",
+    "required": [
+     "manifest",
+     "sequence",
+     "canvas",
+     "service"
+    ],
+    "type": "object",
+    "properties": {
+     "manifest": {
+      "title": "Manifest",
+      "type": "string"
+     },
+     "sequence": {
+      "title": "Sequence",
+      "type": "string"
+     },
+     "canvas": {
+      "title": "Canvas",
+      "type": "string"
+     },
+     "image": {
+      "title": "Image",
+      "type": "string"
+     },
+     "service": {
+      "$ref": "#/components/schemas/app__api__import_objects_iiif2__schemas__Service"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string",
+      "default": "iiif2",
+      "const": "iiif2"
+     }
+    },
+    "description": "Specific data for objects imported from IIIF 2.x"
+   },
    "Iiif3Import": {
     "title": "Iiif3Import",
     "required": [
@@ -1074,29 +1247,69 @@
    "Iiif3Object": {
     "title": "Iiif3Object",
     "required": [
-     "object_uuid",
-     "image_uri",
      "object_data"
     ],
     "type": "object",
     "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
      "object_uuid": {
       "title": "Object Uuid",
       "type": "string"
      },
-     "image_uri": {
-      "title": "Image Uri",
-      "type": "string"
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
      },
-     "thumbnail_uri": {
-      "title": "Thumbnail Uri",
+     "annotation_data": {
+      "title": "Annotation Data",
       "type": "string"
      },
      "object_data": {
-      "title": "Object Data",
-      "type": "string"
+      "$ref": "#/components/schemas/Iiif3ObjectData"
      }
     }
+   },
+   "Iiif3ObjectData": {
+    "title": "Iiif3ObjectData",
+    "required": [
+     "manifest",
+     "page",
+     "annotation",
+     "canvas",
+     "service"
+    ],
+    "type": "object",
+    "properties": {
+     "manifest": {
+      "title": "Manifest",
+      "type": "string"
+     },
+     "page": {
+      "title": "Page",
+      "type": "string"
+     },
+     "annotation": {
+      "title": "Annotation",
+      "type": "string"
+     },
+     "canvas": {
+      "title": "Canvas",
+      "type": "string"
+     },
+     "service": {
+      "$ref": "#/components/schemas/iiif_prezi3__skeleton__Service"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string",
+      "default": "iiif3",
+      "const": "iiif3"
+     }
+    },
+    "description": "Specific data for objects imported from IIIF 3.0"
    },
    "ImageRequest": {
     "title": "ImageRequest",
@@ -1164,6 +1377,11 @@
      }
     }
    },
+   "LngString": {
+    "title": "LngString",
+    "type": "object",
+    "additionalProperties": false
+   },
    "Object": {
     "title": "Object",
     "required": [
@@ -1187,10 +1405,6 @@
      },
      "annotation_data": {
       "title": "Annotation Data",
-      "type": "string"
-     },
-     "object_data": {
-      "title": "Object Data",
       "type": "string"
      }
     }
@@ -1364,7 +1578,6 @@
     "required": [
      "id",
      "name",
-     "source",
      "color_table"
     ],
     "type": "object",
@@ -1387,6 +1600,57 @@
       "items": {
        "type": "string"
       }
+     }
+    }
+   },
+   "ServiceItem": {
+    "title": "ServiceItem",
+    "required": [
+     "id",
+     "type"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "$ref": "#/components/schemas/Id"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string"
+     },
+     "label": {
+      "$ref": "#/components/schemas/LngString"
+     },
+     "profile": {
+      "title": "Profile",
+      "type": "string"
+     },
+     "service": {
+      "$ref": "#/components/schemas/iiif_prezi3__skeleton__Service"
+     }
+    }
+   },
+   "ServiceItem1": {
+    "title": "ServiceItem1",
+    "required": [
+     "@id",
+     "@type"
+    ],
+    "type": "object",
+    "properties": {
+     "@id": {
+      "$ref": "#/components/schemas/Id"
+     },
+     "@type": {
+      "title": "@Type",
+      "type": "string"
+     },
+     "profile": {
+      "title": "Profile",
+      "type": "string"
+     },
+     "service": {
+      "$ref": "#/components/schemas/iiif_prezi3__skeleton__Service"
      }
     }
    },
@@ -1439,6 +1703,42 @@
       "title": "Error Type",
       "type": "string"
      }
+    }
+   },
+   "app__api__import_objects_iiif2__schemas__Service": {
+    "title": "Service",
+    "required": [
+     "@id",
+     "@context"
+    ],
+    "type": "object",
+    "properties": {
+     "@id": {
+      "title": "@Id",
+      "type": "string"
+     },
+     "@context": {
+      "title": "@Context",
+      "type": "string"
+     },
+     "profile": {
+      "title": "Profile",
+      "type": "string"
+     }
+    }
+   },
+   "iiif_prezi3__skeleton__Service": {
+    "title": "Service",
+    "type": "array",
+    "items": {
+     "anyOf": [
+      {
+       "$ref": "#/components/schemas/ServiceItem"
+      },
+      {
+       "$ref": "#/components/schemas/ServiceItem1"
+      }
+     ]
     }
    }
   }

@@ -53,18 +53,11 @@ def response(*hidden):
 def optional(*fields):
     """
     Decorator to mark pydantic fields as optional
-
-    Source from https://github.com/samuelcolvin/pydantic/issues/1223#issuecomment-775363074
     """
 
     def dec(_cls):
         for field in fields:
             _cls.__fields__[field].required = False
         return _cls
-
-    if fields and inspect.isclass(fields[0]) and issubclass(fields[0], BaseModel):
-        cls = fields[0]
-        fields = cls.__fields__
-        return dec(cls)
 
     return dec
