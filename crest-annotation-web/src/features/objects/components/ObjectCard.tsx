@@ -16,7 +16,14 @@ const ObjectCard = ({ projectId, object }: IProps) => {
   const theme = useTheme();
 
   return (
-    <Card sx={{ maxWidth: "260px", height: "140" }}>
+    <Card
+      sx={{
+        maxWidth: "260px",
+        height: "140px",
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
       <CardActionArea
         onClick={() => navigate(`/annotate/${projectId}/${object.id}`)}
       >

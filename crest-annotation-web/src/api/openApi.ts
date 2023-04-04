@@ -44,7 +44,10 @@ const injectedRtkApi = api.injectEndpoints({
       }),
     }),
     getObjects: build.query<GetObjectsApiResponse, GetObjectsApiArg>({
-      query: (queryArg) => ({ url: `/objects/of/${queryArg.projectId}` }),
+      query: (queryArg) => ({
+        url: `/objects/of/${queryArg.projectId}`,
+        params: { page: queryArg.page, size: queryArg.size },
+      }),
     }),
     getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
       query: (queryArg) => ({ url: `/objects/id/${queryArg.objectId}` }),
@@ -81,7 +84,10 @@ const injectedRtkApi = api.injectEndpoints({
       }),
     }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
-      query: () => ({ url: `/projects/` }),
+      query: (queryArg) => ({
+        url: `/projects/`,
+        params: { page: queryArg.page, size: queryArg.size },
+      }),
     }),
     createProject: build.mutation<
       CreateProjectApiResponse,
@@ -198,6 +204,8 @@ export type GetObjectsApiResponse =
   /** status 200 Successful Response */ Object[];
 export type GetObjectsApiArg = {
   projectId: string;
+  page: number;
+  size: number;
 };
 export type GetObjectApiResponse = /** status 200 Successful Response */ any;
 export type GetObjectApiArg = {
@@ -224,8 +232,11 @@ export type FinishObjectApiArg = {
   objectId: string;
 };
 export type GetProjectsApiResponse =
-  /** status 200 Successful Response */ Project[];
-export type GetProjectsApiArg = void;
+  /** status 200 Successful Response */ PaginatedProject;
+export type GetProjectsApiArg = {
+  page: number;
+  size: number;
+};
 export type CreateProjectApiResponse =
   /** status 200 Successful Response */ Project;
 export type CreateProjectApiArg = {
@@ -329,6 +340,12 @@ export type Project = {
   name: string;
   source?: string;
   color_table: string[];
+};
+export type PaginatedProject = {
+  items: Project[];
+  pages: number;
+  page: number;
+  size: number;
 };
 export type CreateProject = {
   id?: string;

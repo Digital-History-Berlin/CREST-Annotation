@@ -1,10 +1,12 @@
 import json
 
+from typing import Callable
+
 from fastapi import APIRouter, Depends, Body, HTTPException
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from ..dependencies.db import get_db
+from ..dependencies.db import get_db, get_paginate
 from ..models.objects import Object
 from .. import schemas
 
@@ -17,13 +19,17 @@ router = APIRouter(
 )
 
 
-def map_object(data_object: Object):
+def to_schema(data_object: Object) -> schemas.Object:
     return schemas.Object(
         id=data_object.id,
         object_uuid=data_object.object_uuid,
         annotated=data_object.annotated,
         annotation_data=data_object.annotation_data,
-    ).dict()
+    )
+
+
+def to_dict(data_object: Object):
+    return to_schema(data_object).dict()
 
 
 @router.get("/random-of/{project_id}", response_model=schemas.Object)
@@ -34,15 +40,20 @@ async def get_random_object(project_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return JSONResponse(map_object(data_object))
+    return JSONResponse(to_dict(data_object))
 
 
-# TODO: pagination
 @router.get("/of/{project_id}", response_model=list[schemas.Object])
-async def get_objects(project_id: str, db: Session = Depends(get_db)):
-    objects: list[Object] = db.query(Object).filter_by(project_id=project_id).limit(10)
+async def get_objects(
+    project_id: str,
+    paginate: Callable = Depends(get_paginate),
+    db: Session = Depends(get_db),
+):
+    objects: schemas.Paginated[schemas.Object] = paginate(
+        db.query(Object).filter_by(project_id=project_id), to_schema
+    )
 
-    return JSONResponse(list(map(map_object, objects)))
+    return JSONResponse(objects.dict())
 
 
 @router.get("/id/{object_id}")
@@ -51,7 +62,7 @@ async def get_object(object_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    return JSONResponse(map_object(data_object))
+    return JSONResponse(to_dict(data_object))
 
 
 @router.post("/uri/{object_id}")

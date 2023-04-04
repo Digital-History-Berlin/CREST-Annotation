@@ -28,7 +28,6 @@ import {
 import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
-import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
 import Layout from "../../components/layouts/Layout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
@@ -103,7 +102,6 @@ const AnnotatePage = () => {
     { skip: !objectId }
   );
 
-  const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
   const navigateRandom = async (id: string) => {
@@ -117,17 +115,14 @@ const AnnotatePage = () => {
       : dispatch(setActiveLabel(label));
 
   useEffect(() => {
+    // select project first
+    if (!projectId) navigate("/");
     // start with random object
-    if (projectId && !objectId) navigateRandom(projectId);
+    else if (!objectId) navigateRandom(projectId);
     // update object id in state
-    if (projectId && objectId) dispatch(setObjectId({ projectId, objectId }));
+    else dispatch(setObjectId({ projectId, objectId }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, objectId]);
-
-  const showCreateDialog = async () => {
-    setShowProjects(false);
-    setShowCreate(true);
-  };
 
   const finishObject = async () => {
     if (!objectId) return;
@@ -215,12 +210,6 @@ const AnnotatePage = () => {
         </Stack>
       }
     >
-      <SelectProjectDialog
-        activeProjectId={projectId}
-        open={!showCreate && (!projectId || showProjects)}
-        onClose={() => setShowProjects(false)}
-        onCreate={showCreateDialog}
-      />
       <AddProjectDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}

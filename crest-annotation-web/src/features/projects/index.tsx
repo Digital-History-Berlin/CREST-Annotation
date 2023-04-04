@@ -25,6 +25,12 @@ const ProjectsPage = () => {
   const navigate = useNavigate();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const projectsQuery = useGetProjectsQuery({
+    page: page,
+    size: 12,
+  });
 
   const deleteProject = (_: Project) => {
     // TODO: delete project
@@ -74,7 +80,8 @@ const ProjectsPage = () => {
         onClose={() => setShowCreate(false)}
       />
       <CardLayout
-        query={useGetProjectsQuery()}
+        onChangePage={setPage}
+        query={projectsQuery}
         renderCard={renderCard}
         header={<Toolbar title="Projects" />}
         placeholder={

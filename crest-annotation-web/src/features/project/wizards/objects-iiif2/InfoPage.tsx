@@ -38,7 +38,7 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
           disabled={data.added.length === 0 || importQuery.isLoading}
           variant="outlined"
         >
-          Import {data.added.length} labels
+          Import {data.added.length} objects
         </Button>
       }
     >

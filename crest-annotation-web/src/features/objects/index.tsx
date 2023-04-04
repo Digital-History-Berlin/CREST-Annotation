@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, Stack } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import AnnotateIcon from "@mui/icons-material/HistoryEdu";
@@ -15,9 +15,17 @@ const ObjectsPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
 
+  const [page, setPage] = useState(1);
+
   const { data: project } = useGetProjectQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
+    { skip: !projectId }
+  );
+
+  const objectsQuery = useGetObjectsQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { projectId: projectId!, page: page, size: 12 },
     { skip: !projectId }
   );
 
@@ -45,11 +53,8 @@ const ObjectsPage = () => {
   return (
     <>
       <CardLayout
-        query={useGetObjectsQuery(
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          { projectId: projectId! },
-          { skip: !projectId }
-        )}
+        onChangePage={setPage}
+        query={objectsQuery}
         renderCard={renderCard}
         header={
           <Toolbar

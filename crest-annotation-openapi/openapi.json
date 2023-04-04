@@ -289,6 +289,25 @@
       },
       "name": "project_id",
       "in": "path"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Page",
+       "minimum": 1.0,
+       "type": "integer"
+      },
+      "name": "page",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Size",
+       "type": "integer"
+      },
+      "name": "size",
+      "in": "query"
      }
     ],
     "responses": {
@@ -563,23 +582,50 @@
     ],
     "summary": "Get Projects",
     "operationId": "get_projects",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Page",
+       "minimum": 1.0,
+       "type": "integer"
+      },
+      "name": "page",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Size",
+       "type": "integer"
+      },
+      "name": "size",
+      "in": "query"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
       "content": {
        "application/json": {
         "schema": {
-         "title": "Response Get Projects Projects  Get",
-         "type": "array",
-         "items": {
-          "$ref": "#/components/schemas/Project"
-         }
+         "$ref": "#/components/schemas/Paginated_Project_"
         }
        }
       }
      },
      "404": {
       "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
      }
     }
    },
@@ -1501,6 +1547,37 @@
       "items": {
        "$ref": "#/components/schemas/OntologyLabel"
       }
+     }
+    }
+   },
+   "Paginated_Project_": {
+    "title": "Paginated[Project]",
+    "required": [
+     "items",
+     "pages",
+     "page",
+     "size"
+    ],
+    "type": "object",
+    "properties": {
+     "items": {
+      "title": "Items",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/Project"
+      }
+     },
+     "pages": {
+      "title": "Pages",
+      "type": "integer"
+     },
+     "page": {
+      "title": "Page",
+      "type": "integer"
+     },
+     "size": {
+      "title": "Size",
+      "type": "integer"
      }
     }
    },
