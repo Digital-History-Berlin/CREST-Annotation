@@ -7,7 +7,7 @@ class Label(Base):
     __tablename__ = "labels"
 
     id = Column(String, primary_key=True, index=True, default=make_uuid)
-    project_id = Column(String, ForeignKey("projects.id"))
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE", name="labels_project_id_fkey"))
     parent_id = Column(String, ForeignKey("labels.id"))
     reference = Column(String)
     name = Column(String)
