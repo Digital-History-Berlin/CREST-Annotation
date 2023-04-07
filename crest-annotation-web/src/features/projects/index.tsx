@@ -17,7 +17,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
-import DefaultDialog from "../../components/dialogs/DefaultDialog";
 import DeleteProjectDialog from "../../components/dialogs/DeleteProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
@@ -82,11 +81,6 @@ const ProjectsPage = () => {
       <AddProjectDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
-      />
-      <DefaultDialog
-        title={"test"}
-        open={showDelete}
-        onClose={() => setShowDelete(false)}
       />
       <CardLayout
         onChangePage={setPage}

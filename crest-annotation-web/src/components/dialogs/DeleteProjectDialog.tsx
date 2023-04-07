@@ -1,6 +1,5 @@
 import React from "react";
 import { Button, DialogActions, DialogTitle } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import DefaultDialog from "./DefaultDialog";
 import { useDeleteProjectMutation } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
@@ -11,16 +10,11 @@ interface IProps {
   project: Project;
 }
 const DeleteProjectDialog = ({ open, onClose, project }: IProps) => {
-  const navigate = useNavigate();
-
   const [requestDeleteProject, { isLoading: createLoading }] =
     useDeleteProjectMutation();
 
   const deleteProject = async () => {
     await requestDeleteProject({ projectId: project.id }).unwrap();
-
-    // redirect to project overview
-    navigate(`/objects/${project.id}`);
   };
 
   return (
