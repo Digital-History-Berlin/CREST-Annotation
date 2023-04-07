@@ -14,12 +14,11 @@ import AddIcon from "@mui/icons-material/Add";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
-import {
-  useDeleteProjectMutation,
-  useGetProjectsQuery,
-} from "../../api/enhancedApi";
+import { useGetProjectsQuery } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
+import DefaultDialog from "../../components/dialogs/DefaultDialog";
+import DeleteProjectDialog from "../../components/dialogs/DeleteProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
@@ -27,6 +26,7 @@ import Toolbar from "../../components/Toolbar";
 const ProjectsPage = () => {
   const navigate = useNavigate();
 
+  const [showDelete, setShowDelete] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -35,14 +35,13 @@ const ProjectsPage = () => {
     size: 12,
   });
 
-  const [reqeuestDeleteProject] = useDeleteProjectMutation();
-
-  const deleteProject = async (project: Project) => {
-    await reqeuestDeleteProject({ projectId: project.id });
-  };
-
   const renderCard = (project: Project) => (
     <Card>
+      <DeleteProjectDialog
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+        project={project}
+      />
       <CardActionArea onClick={() => navigate(`/annotate/${project.id}`)}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
@@ -60,7 +59,7 @@ const ProjectsPage = () => {
         <IconButton onClick={() => navigate(`/project/${project.id}`)}>
           <SettingsIcon />
         </IconButton>
-        <IconButton color="error" onClick={() => deleteProject(project)}>
+        <IconButton color="error" onClick={() => setShowDelete(true)}>
           <DeleteIcon />
         </IconButton>
       </CardActions>
@@ -83,6 +82,11 @@ const ProjectsPage = () => {
       <AddProjectDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
+      />
+      <DefaultDialog
+        title={"test"}
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
       />
       <CardLayout
         onChangePage={setPage}
