@@ -14,7 +14,10 @@ import AddIcon from "@mui/icons-material/Add";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { useGetProjectsQuery } from "../../api/enhancedApi";
+import {
+  useDeleteProjectMutation,
+  useGetProjectsQuery,
+} from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
@@ -32,8 +35,10 @@ const ProjectsPage = () => {
     size: 12,
   });
 
-  const deleteProject = (_: Project) => {
-    // TODO: delete project
+  const [reqeuestDeleteProject] = useDeleteProjectMutation();
+
+  const deleteProject = async (project: Project) => {
+    await reqeuestDeleteProject({ projectId: project.id });
   };
 
   const renderCard = (project: Project) => (
