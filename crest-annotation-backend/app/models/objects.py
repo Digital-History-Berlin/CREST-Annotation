@@ -7,7 +7,7 @@ class Object(Base):
     __tablename__ = "objects"
 
     id = Column(String, primary_key=True, index=True, default=make_uuid)
-    project_id = Column(String, ForeignKey("projects.id"))
+    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE", name="objects_project_id_fkey"))
     object_uuid = Column(String)
     annotated = Column(Boolean, default=False)
     annotation_data = Column(String, default="[]")

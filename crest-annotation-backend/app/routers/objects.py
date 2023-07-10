@@ -65,6 +65,18 @@ async def get_object(object_id: str, db: Session = Depends(get_db)):
     return JSONResponse(to_dict(data_object))
 
 
+@router.post("/finish/{object_id}")
+async def finish_object(object_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    data_object.annotated = True
+    db.commit()
+
+    return Response()
+
+
 @router.post("/uri/{object_id}")
 async def get_image_uri(
     object_id: str, usage: schemas.ImageRequest, db: Session = Depends(get_db)
@@ -104,17 +116,5 @@ async def store_annotations(
     db.commit()
 
     print(data_object.id, data_object.annotation_data)
-
-    return Response()
-
-
-@router.post("/finish/{object_id}")
-async def finish_object(object_id: str, db: Session = Depends(get_db)):
-    data_object: Object = db.query(Object).filter_by(id=object_id).first()
-    if not data_object:
-        raise HTTPException(status_code=404, detail="Object not found")
-
-    data_object.annotated = True
-    db.commit()
 
     return Response()
