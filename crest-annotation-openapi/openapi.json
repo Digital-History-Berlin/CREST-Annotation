@@ -443,6 +443,16 @@
       },
       "name": "object_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Finished",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "finished",
+      "in": "query"
      }
     ],
     "responses": {
@@ -1091,6 +1101,49 @@
      }
     }
    }
+  },
+  "/export/yaml": {
+   "get": {
+    "tags": [
+     "export"
+    ],
+    "summary": "Get Yaml Export",
+    "operationId": "get_yaml_export",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {
@@ -1475,7 +1528,6 @@
     "title": "Object",
     "required": [
      "id",
-     "annotated",
      "annotation_data"
     ],
     "type": "object",

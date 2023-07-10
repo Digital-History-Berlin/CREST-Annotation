@@ -56,6 +56,7 @@ export const {
   useUpdateLabelMutation,
   useDeleteLabelMutation,
   useGetRandomObjectMutation,
+  useGetObjectsCountQuery,
   useGetObjectsQuery,
   useGetObjectQuery,
   useFinishObjectMutation,

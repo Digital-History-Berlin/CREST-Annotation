@@ -63,6 +63,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/objects/finish/${queryArg.objectId}`,
         method: "POST",
+        params: { finished: queryArg.finished },
       }),
     }),
     getImageUri: build.query<GetImageUriApiResponse, GetImageUriApiArg>({
@@ -175,6 +176,12 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    getYamlExport: build.query<GetYamlExportApiResponse, GetYamlExportApiArg>({
+      query: (queryArg) => ({
+        url: `/export/yaml`,
+        params: { project_id: queryArg.projectId },
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -226,6 +233,7 @@ export type GetObjectApiArg = {
 export type FinishObjectApiResponse = /** status 200 Successful Response */ any;
 export type FinishObjectApiArg = {
   objectId: string;
+  finished?: boolean;
 };
 export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
 export type GetImageUriApiArg = {
@@ -296,6 +304,11 @@ export type ImportIiif2ApiArg = {
   projectId: string;
   commit?: boolean;
 };
+export type GetYamlExportApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetYamlExportApiArg = {
+  projectId: string;
+};
 export type Label = {
   id: string;
   parent_id?: string;
@@ -339,7 +352,7 @@ export type PatchLabel = {
 export type Object = {
   id: string;
   object_uuid?: string;
-  annotated: boolean;
+  annotated?: boolean;
   annotation_data: string;
 };
 export type ImageRequest = {
@@ -476,4 +489,5 @@ export const {
   useImportOntologyMutation,
   useImportIiif3Mutation,
   useImportIiif2Mutation,
+  useGetYamlExportQuery,
 } = injectedRtkApi;

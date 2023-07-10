@@ -4,6 +4,8 @@ import {
   CardActions,
   CardContent,
   IconButton,
+  LinearProgress,
+  Stack,
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +24,9 @@ const ProjectCard = ({ project, onDelete }: IProps) => {
 
   const { data: count } = useGetObjectsCountQuery({ projectId: project.id });
 
+  const progress =
+    count && count.total && (count.annotated / count.total) * 100;
+
   return (
     <Card>
       <CardActionArea onClick={() => navigate(`/annotate/${project.id}`)}>
@@ -30,14 +35,12 @@ const ProjectCard = ({ project, onDelete }: IProps) => {
             {project.name}
           </Typography>
           {count && (
-            <>
+            <Stack direction="column" alignItems="stretch" spacing={1}>
+              <LinearProgress variant="determinate" value={progress} />
               <Typography variant="body2" color="text.secondary">
-                {count.total} images
+                {count.annotated} of {count.total} annotated
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {count.annotated} annotated
-              </Typography>
-            </>
+            </Stack>
           )}
         </CardContent>
       </CardActionArea>

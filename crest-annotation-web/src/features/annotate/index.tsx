@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
+import { SkipNext } from "@mui/icons-material";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
@@ -24,8 +25,10 @@ import {
   enhancedApi,
   useFinishObjectMutation,
   useGetImageUriQuery,
+  useGetObjectQuery,
+  useGetObjectsCountQuery,
 } from "../../api/enhancedApi";
-import { Label, useGetObjectsCountQuery } from "../../api/openApi";
+import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import Layout from "../../components/layouts/Layout";
@@ -97,6 +100,10 @@ const AnnotatePage = () => {
   const { data: count } = useGetObjectsCountQuery(
     { projectId: projectId! },
     { skip: !projectId }
+  );
+  const { data: object } = useGetObjectQuery(
+    { objectId: objectId! },
+    { skip: !objectId }
   );
 
   // TODO: move to image component
@@ -173,12 +180,23 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
-      <ToolbarButtonWithTooltip
-        onClick={() => navigate(`/project/${projectId}`)}
-        tooltip={"Settings"}
+      <ToolbarToggleButtonWithTooltip
+        value={"annotated"}
+        onClick={() => finishObject()}
+        selected={!!object?.annotated}
+        tooltip={"Finish Image"}
       >
-        <SettingsIcon />
+        <FinishedIcon />
+      </ToolbarToggleButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => {
+          return;
+        }}
+        tooltip={"Next Image"}
+      >
+        <SkipNext />
       </ToolbarButtonWithTooltip>
+      <ToolbarDivider />
       <ToolbarButtonWithTooltip
         onClick={() => navigate(`/objects/${projectId}`)}
         tooltip={"Project Overview"}
@@ -186,10 +204,10 @@ const AnnotatePage = () => {
         <ObjectsIcon />
       </ToolbarButtonWithTooltip>
       <ToolbarButtonWithTooltip
-        onClick={() => finishObject()}
-        tooltip={"Finish Image"}
+        onClick={() => navigate(`/project/${projectId}`)}
+        tooltip={"Settings"}
       >
-        <FinishedIcon />
+        <SettingsIcon />
       </ToolbarButtonWithTooltip>
     </Stack>
   );

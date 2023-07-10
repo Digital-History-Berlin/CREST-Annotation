@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import { PlayArrow } from "@mui/icons-material";
 import { Link, Stack } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import AnnotateIcon from "@mui/icons-material/HistoryEdu";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ObjectCard from "./components/ObjectCard";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
@@ -36,16 +36,16 @@ const ObjectsPage = () => {
   const renderActions = () => (
     <Stack direction="row">
       <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/annotate/${projectId}`)}
+        tooltip={"Annotate Images"}
+      >
+        <PlayArrow />
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
         onClick={() => navigate(`/project/${projectId}`)}
         tooltip={"Settings"}
       >
         <SettingsIcon />
-      </ToolbarButtonWithTooltip>
-      <ToolbarButtonWithTooltip
-        onClick={() => navigate(`/annotate/${projectId}`)}
-        tooltip={"Annotate Images"}
-      >
-        <AnnotateIcon />
       </ToolbarButtonWithTooltip>
     </Stack>
   );
