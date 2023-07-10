@@ -80,7 +80,7 @@ const ProjectPage = () => {
                 >
                   <Tab label="Settings" />
                   <Tab label="Labels" />
-                  <Tab label="Import" />
+                  <Tab label="Wizards" />
                 </Tabs>
               </Box>
               <Box hidden={currentTab !== 0}>

@@ -1,19 +1,7 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  Card,
-  CardActionArea,
-  CardActions,
-  CardContent,
-  IconButton,
-  Typography,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Box, Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import ObjectsIcon from "@mui/icons-material/Apps";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SettingsIcon from "@mui/icons-material/Settings";
+import ProjectCard from "./components/ProjectCard";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
@@ -23,47 +11,14 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
 
 const ProjectsPage = () => {
-  const navigate = useNavigate();
-
-  const [showDelete, setShowDelete] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [deleteProject, setDeleteProject] = useState<Project>();
   const [page, setPage] = useState(1);
 
   const projectsQuery = useGetProjectsQuery({
     page: page,
     size: 12,
   });
-
-  const renderCard = (project: Project) => (
-    <Card>
-      <DeleteProjectDialog
-        open={showDelete}
-        onClose={() => setShowDelete(false)}
-        project={project}
-      />
-      <CardActionArea onClick={() => navigate(`/annotate/${project.id}`)}>
-        <CardContent>
-          <Typography gutterBottom variant="h5" component="div">
-            {project.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {"TODO: Project description"}
-          </Typography>
-        </CardContent>
-      </CardActionArea>
-      <CardActions disableSpacing sx={{ justifyContent: "flex-end" }}>
-        <IconButton onClick={() => navigate(`/objects/${project.id}`)}>
-          <ObjectsIcon />
-        </IconButton>
-        <IconButton onClick={() => navigate(`/project/${project.id}`)}>
-          <SettingsIcon />
-        </IconButton>
-        <IconButton color="error" onClick={() => setShowDelete(true)}>
-          <DeleteIcon />
-        </IconButton>
-      </CardActions>
-    </Card>
-  );
 
   const addButton = (
     <Button
@@ -82,10 +37,19 @@ const ProjectsPage = () => {
         open={showCreate}
         onClose={() => setShowCreate(false)}
       />
+      <DeleteProjectDialog
+        onClose={() => setDeleteProject(undefined)}
+        project={deleteProject}
+      />
       <CardLayout
         onChangePage={setPage}
         query={projectsQuery}
-        renderCard={renderCard}
+        renderCard={(project) => (
+          <ProjectCard
+            project={project}
+            onDelete={() => setDeleteProject(project)}
+          />
+        )}
         header={<Toolbar title="Projects" />}
         placeholder={
           <PlaceholderLayout

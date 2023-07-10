@@ -5,22 +5,21 @@ import { useDeleteProjectMutation } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 
 interface IProps {
-  open: boolean;
+  project?: Project;
   onClose: () => void;
-  project: Project;
 }
-const DeleteProjectDialog = ({ open, onClose, project }: IProps) => {
+const DeleteProjectDialog = ({ project, onClose }: IProps) => {
   const [requestDeleteProject, { isLoading: createLoading }] =
     useDeleteProjectMutation();
 
   const deleteProject = async () => {
-    await requestDeleteProject({ projectId: project.id }).unwrap();
+    if (project) requestDeleteProject({ projectId: project.id });
   };
 
   return (
     <DefaultDialog
       onClose={onClose}
-      open={open}
+      open={!!project}
       maxWidth="sm"
       fullWidth={true}
       title="Delete Project"
