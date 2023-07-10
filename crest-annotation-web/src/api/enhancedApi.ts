@@ -25,9 +25,6 @@ export const enhancedApi = api.enhanceEndpoints({
     getObjects: {
       providesTags: ["Object"],
     },
-    getRandomObject: {
-      providesTags: ["Object"],
-    },
     finishObject: {
       invalidatesTags: ["Object"],
     },
@@ -58,13 +55,13 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useGetRandomObjectQuery,
+  useGetRandomObjectMutation,
   useGetObjectsQuery,
   useGetObjectQuery,
+  useFinishObjectMutation,
   useGetImageUriQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
-  useFinishObjectMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

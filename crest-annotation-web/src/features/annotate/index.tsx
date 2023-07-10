@@ -25,7 +25,7 @@ import {
   useFinishObjectMutation,
   useGetImageUriQuery,
 } from "../../api/enhancedApi";
-import { Label } from "../../api/openApi";
+import { Label, useGetObjectsCountQuery } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import Layout from "../../components/layouts/Layout";
@@ -92,8 +92,12 @@ const AnnotatePage = () => {
   const activeModifiers = useAppSelector(selectActiveModifiers);
 
   const [getRandom, { isError: randomError }] =
-    enhancedApi.useLazyGetRandomObjectQuery();
-  const [rqeuestFinishObject] = useFinishObjectMutation();
+    enhancedApi.useGetRandomObjectMutation();
+  const [requestFinishObject] = useFinishObjectMutation();
+  const { data: count } = useGetObjectsCountQuery(
+    { projectId: projectId! },
+    { skip: !projectId }
+  );
 
   // TODO: move to image component
   const { data: imageUri } = useGetImageUriQuery(
@@ -127,7 +131,7 @@ const AnnotatePage = () => {
   const finishObject = async () => {
     if (!objectId) return;
 
-    await rqeuestFinishObject({
+    await requestFinishObject({
       objectId: objectId,
     }).unwrap();
 
@@ -222,12 +226,16 @@ const AnnotatePage = () => {
         }}
         errorPlaceholder={
           <PlaceholderLayout
-            title="You have finished annotating this project."
+            title={
+              count?.total > 0
+                ? "You have finished annotating this project."
+                : "The project does not contain any images."
+            }
             description={
               <>
-                There are currently no images left to be annotated. Go to the{" "}
+                There are currently no images to be annotated. Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                scan the project source for additional ones.
+                import some!
               </>
             }
           />

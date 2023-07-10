@@ -32,7 +32,8 @@ def to_dict(data_object: Object):
     return to_schema(data_object).dict()
 
 
-@router.get("/random-of/{project_id}", response_model=schemas.Object)
+# use post to avoid RTK-query caching
+@router.post("/random-of/{project_id}", response_model=schemas.Object)
 async def get_random_object(project_id: str, db: Session = Depends(get_db)):
     data_object: Object = (
         db.query(Object).filter_by(project_id=project_id, annotated=False).first()
@@ -41,6 +42,19 @@ async def get_random_object(project_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No objects found")
 
     return JSONResponse(to_dict(data_object))
+
+
+@router.get("/total-of/{project_id}")
+async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
+    total = db.query(Object).filter_by(project_id=project_id)
+    annotated = total.filter_by(annotated=True)
+
+    return JSONResponse(
+        {
+            "total": total.count(),
+            "annotated": annotated.count(),
+        }
+    )
 
 
 @router.get("/of/{project_id}", response_model=list[schemas.Object])

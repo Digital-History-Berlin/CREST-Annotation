@@ -229,7 +229,7 @@
    }
   },
   "/objects/random-of/{project_id}": {
-   "get": {
+   "post": {
     "tags": [
      "object"
     ],
@@ -254,6 +254,49 @@
         "schema": {
          "$ref": "#/components/schemas/Object"
         }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/total-of/{project_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Objects Count",
+    "operationId": "get_objects_count",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
        }
       }
      },
@@ -348,6 +391,49 @@
     ],
     "summary": "Get Object",
     "operationId": "get_object",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/finish/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Finish Object",
+    "operationId": "finish_object",
     "parameters": [
      {
       "required": true,
@@ -507,49 +593,6 @@
      },
      "required": true
     },
-    "responses": {
-     "200": {
-      "description": "Successful Response",
-      "content": {
-       "application/json": {
-        "schema": {}
-       }
-      }
-     },
-     "404": {
-      "description": "Not found"
-     },
-     "422": {
-      "description": "Validation Error",
-      "content": {
-       "application/json": {
-        "schema": {
-         "$ref": "#/components/schemas/HTTPValidationError"
-        }
-       }
-      }
-     }
-    }
-   }
-  },
-  "/objects/finish/{object_id}": {
-   "post": {
-    "tags": [
-     "object"
-    ],
-    "summary": "Finish Object",
-    "operationId": "finish_object",
-    "parameters": [
-     {
-      "required": true,
-      "schema": {
-       "title": "Object Id",
-       "type": "string"
-      },
-      "name": "object_id",
-      "in": "path"
-     }
-    ],
     "responses": {
      "200": {
       "description": "Successful Response",

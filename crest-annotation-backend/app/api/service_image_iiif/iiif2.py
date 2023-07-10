@@ -3,6 +3,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from ... import schemas
+from . import cache
 
 
 class Iiif2ImageSize(BaseModel):
@@ -37,7 +38,7 @@ def get_image_uri(uri, usage: schemas.ImageRequest):
         return f"{uri}/full/full/0/default.jpg"
 
     # request service info
-    json_resonse = requests.get(f"{uri}/info.json").json()
+    json_resonse = cache.get(f"{uri}/info.json").json()
     service = Iiif2ImageService(**json_resonse)
 
     # calculate optimal sizes

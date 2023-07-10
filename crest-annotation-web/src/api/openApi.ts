@@ -35,13 +35,20 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    getRandomObject: build.query<
+    getRandomObject: build.mutation<
       GetRandomObjectApiResponse,
       GetRandomObjectApiArg
     >({
       query: (queryArg) => ({
         url: `/objects/random-of/${queryArg.projectId}`,
+        method: "POST",
       }),
+    }),
+    getObjectsCount: build.query<
+      GetObjectsCountApiResponse,
+      GetObjectsCountApiArg
+    >({
+      query: (queryArg) => ({ url: `/objects/total-of/${queryArg.projectId}` }),
     }),
     getObjects: build.query<GetObjectsApiResponse, GetObjectsApiArg>({
       query: (queryArg) => ({
@@ -51,6 +58,12 @@ const injectedRtkApi = api.injectEndpoints({
     }),
     getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
       query: (queryArg) => ({ url: `/objects/id/${queryArg.objectId}` }),
+    }),
+    finishObject: build.mutation<FinishObjectApiResponse, FinishObjectApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/finish/${queryArg.objectId}`,
+        method: "POST",
+      }),
     }),
     getImageUri: build.query<GetImageUriApiResponse, GetImageUriApiArg>({
       query: (queryArg) => ({
@@ -75,12 +88,6 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/objects/annotations/${queryArg.objectId}`,
         method: "POST",
         body: queryArg.body,
-      }),
-    }),
-    finishObject: build.mutation<FinishObjectApiResponse, FinishObjectApiArg>({
-      query: (queryArg) => ({
-        url: `/objects/finish/${queryArg.objectId}`,
-        method: "POST",
       }),
     }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
@@ -200,6 +207,11 @@ export type GetRandomObjectApiResponse =
 export type GetRandomObjectApiArg = {
   projectId: string;
 };
+export type GetObjectsCountApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetObjectsCountApiArg = {
+  projectId: string;
+};
 export type GetObjectsApiResponse =
   /** status 200 Successful Response */ Object[];
 export type GetObjectsApiArg = {
@@ -209,6 +221,10 @@ export type GetObjectsApiArg = {
 };
 export type GetObjectApiResponse = /** status 200 Successful Response */ any;
 export type GetObjectApiArg = {
+  objectId: string;
+};
+export type FinishObjectApiResponse = /** status 200 Successful Response */ any;
+export type FinishObjectApiArg = {
   objectId: string;
 };
 export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
@@ -226,10 +242,6 @@ export type StoreAnnotationsApiResponse =
 export type StoreAnnotationsApiArg = {
   objectId: string;
   body: string;
-};
-export type FinishObjectApiResponse = /** status 200 Successful Response */ any;
-export type FinishObjectApiArg = {
-  objectId: string;
 };
 export type GetProjectsApiResponse =
   /** status 200 Successful Response */ PaginatedProject;
@@ -447,13 +459,14 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useGetRandomObjectQuery,
+  useGetRandomObjectMutation,
+  useGetObjectsCountQuery,
   useGetObjectsQuery,
   useGetObjectQuery,
+  useFinishObjectMutation,
   useGetImageUriQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
-  useFinishObjectMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

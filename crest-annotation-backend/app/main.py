@@ -1,5 +1,8 @@
 import logging
-import http.client
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("requests_cache").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,8 +12,6 @@ from .routers import labels, objects, projects
 from .api import import_router, export_router
 from .environment import env
 
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 app = FastAPI()
 
