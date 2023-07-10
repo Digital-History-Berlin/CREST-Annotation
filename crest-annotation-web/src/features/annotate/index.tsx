@@ -97,11 +97,11 @@ const AnnotatePage = () => {
   const [getRandom, { isError: randomError }] =
     enhancedApi.useGetRandomObjectMutation();
   const [requestFinishObject] = useFinishObjectMutation();
-  const { data: count } = useGetObjectsCountQuery(
+  const { currentData: count } = useGetObjectsCountQuery(
     { projectId: projectId! },
     { skip: !projectId }
   );
-  const { data: object } = useGetObjectQuery(
+  const { currentData: object } = useGetObjectQuery(
     { objectId: objectId! },
     { skip: !objectId }
   );
@@ -136,13 +136,15 @@ const AnnotatePage = () => {
   }, [projectId, objectId]);
 
   const finishObject = async () => {
-    if (!objectId) return;
+    if (!object) return;
 
+    const finished = !object.annotated;
     await requestFinishObject({
-      objectId: objectId,
+      objectId: object.id,
+      finished,
     }).unwrap();
 
-    if (projectId) navigateRandom(projectId);
+    if (finished && projectId) navigateRandom(projectId);
   };
 
   const renderTools = () => (
