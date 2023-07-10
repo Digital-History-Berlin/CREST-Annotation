@@ -1,96 +1,75 @@
-import React from "react";
-import { alpha } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import Konva from "konva";
-import { Group, Circle as KonvaCircle, Ring } from "react-konva";
-import { Position, ShapeProps, ShapeTool } from "./Shape";
-import { Shape, Tool } from "../../slice";
+import { Group, Circle as KonvaCircle } from "react-konva";
+import Anchor from "./Anchor";
+import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { Shape } from "../../slice/annotations";
+import { Tool } from "../../slice/tools";
 import { Circle as CircleShape } from "../../tools/circle";
+import { GestureOverload } from "../types/Events";
 
 const Circle = ({
-  annotation,
+  identifier,
+  shape,
   color,
   shapeConfig,
-  editing,
+  editingPointConfig,
+  editable,
   onUpdate,
-  getTransformedPointerPosition,
+  onClick,
 }: ShapeProps) => {
-  const circle = annotation.shape as CircleShape;
+  // use internal state for editing to avoid re-renders
+  const [preview, setPreview] = useState(shape as CircleShape);
+  useEffect(() => setPreview(shape as CircleShape), [shape]);
 
-  const onDragBorder = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
-
-    const pos = getTransformedPointerPosition(e);
-    if (pos === undefined) return;
-
-    // stop konva from changing the position of the ring object and keep it in the center of the original circle
-    e.target?.setAttrs({
-      x: circle.x,
-      y: circle.y,
+  const dragMoveBorder = (e: Konva.KonvaEventObject<DragEvent>) =>
+    setPreview({
+      ...preview,
+      radius: Math.sqrt(
+        Math.pow(e.target.x() - preview.x, 2) +
+          Math.pow(e.target.y() - preview.y, 2)
+      ),
     });
 
-    const radius = Math.sqrt(
-      Math.pow(pos.x - circle.x, 2) + Math.pow(pos.y - circle.y, 2)
-    );
+  const dragEndBorder = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // reset the draggable
+    e.target.x(preview.x + preview.radius);
+    e.target.y(preview.y);
 
-    onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        radius: radius,
-      },
-    });
+    onUpdate?.(preview as Shape);
   };
 
-  const onDragCenter = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const shape = annotation.shape;
-    if (shape === undefined) return;
+  const dragMoveCenter = (e: Konva.KonvaEventObject<DragEvent>) =>
+    setPreview({ ...preview, x: e.target.x(), y: e.target.y() });
 
-    const pos = getTransformedPointerPosition(e);
-    if (pos === undefined) return;
-
-    onUpdate?.({
-      ...annotation,
-      shape: {
-        ...shape,
-        x: pos.x,
-        y: pos.y,
-      },
-    });
-  };
+  const dragEndCenter = () => onUpdate?.(preview as Shape);
 
   return (
-    <Group key={annotation.id}>
+    <Group key={identifier}>
       <KonvaCircle
         {...shapeConfig}
-        x={circle.x}
-        y={circle.y}
-        radius={circle.radius}
+        x={preview.x}
+        y={preview.y}
+        radius={preview.radius}
+        onClick={onClick}
       />
-      {editing && (
+      {editable && (
         <>
-          <Ring
-            x={circle.x}
-            y={circle.y}
-            innerRadius={circle.radius - 3}
-            outerRadius={circle.radius + 3}
-            offset={{ x: 0, y: 0 }}
-            listening={true}
-            fill={alpha(color, 0.8)}
-            draggable
-            onDragMove={(e) => {
-              onDragBorder(e);
-            }}
+          <Anchor
+            {...editingPointConfig}
+            x={preview.x + preview.radius}
+            y={preview.y}
+            fill={color}
+            onDragMove={dragMoveBorder}
+            onDragEnd={dragEndBorder}
           />
-          <KonvaCircle
-            x={circle.x}
-            y={circle.y}
-            radius={5}
-            fill={alpha(color, 0.8)}
-            draggable
-            onDragMove={(e) => {
-              onDragCenter(e);
-            }}
+          <Anchor
+            {...editingPointConfig}
+            x={preview.x}
+            y={preview.y}
+            fill={color}
+            onDragMove={dragMoveCenter}
+            onDragEnd={dragEndCenter}
           />
         </>
       )}
@@ -98,32 +77,50 @@ const Circle = ({
   );
 };
 
-const onCreate = ({ x, y }: Position) => ({
-  x: x,
-  y: y,
-  radius: 0,
-  tool: Tool.Circle,
-});
+const onGestureDragStart: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || shape) return;
 
-const onMove = (shape: Shape, { x, y }: Position) => {
+  // create new shape
+  return {
+    x: x,
+    y: y,
+    radius: 0,
+    tool: Tool.Circle,
+  };
+};
+
+const onGestureDragMove: ShapeEventHandler = (
+  shape,
+  { overload, transformed: { x, y } }
+) => {
+  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+
   const circle = shape as CircleShape;
 
+  // update existing shape
   return {
     ...shape,
     radius: Math.sqrt(Math.pow(x - circle.x, 2) + Math.pow(y - circle.y, 2)),
   };
 };
 
-const onUp = (shape: Shape) => ({
-  ...shape,
-  finished: true,
-});
+const onGestureDragEnd: ShapeEventHandler = (shape) => {
+  if (!shape || shape.finished) return;
 
-const CircleTool = {
+  return {
+    ...shape,
+    finished: true,
+  };
+};
+
+const CircleTool: ShapeTool = {
   component: Circle,
-  onCreate,
-  onMove,
-  onUp,
-} as ShapeTool;
+  onGestureDragStart,
+  onGestureDragMove,
+  onGestureDragEnd,
+};
 
 export default CircleTool;

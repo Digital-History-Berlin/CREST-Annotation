@@ -53,4 +53,11 @@ const LabelsOntology = ({ project, onCancel, onSuccess }: IProps) => {
   return null;
 };
 
-export default LabelsOntology;
+const wizard = {
+  component: LabelsOntology,
+  group: "labels",
+  name: "OWL 2",
+  description: "Import labels from OWL 2 JSON-LD ontology",
+};
+
+export default wizard;

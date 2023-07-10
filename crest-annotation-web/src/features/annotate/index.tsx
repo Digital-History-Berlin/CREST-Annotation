@@ -1,43 +1,84 @@
 import React, { useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
-import CircleIcon from "@mui/icons-material/CircleTwoTone";
-import EditIcon from "@mui/icons-material/CropRotate";
-import PenIcon from "@mui/icons-material/Edit";
-import PolygonIcon from "@mui/icons-material/PolylineOutlined";
-import RectangleIcon from "@mui/icons-material/RectangleTwoTone";
-import SelectIcon from "@mui/icons-material/TouchApp";
+import SettingsIcon from "@mui/icons-material/Settings";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import LabelsExplorer from "./components/LabelsExplorer";
+import { setObjectId } from "./slice/annotations";
 import {
+  Modifiers,
   Tool,
-  selectActiveLabel,
+  selectActiveLabelId,
+  selectActiveModifiers,
   selectActiveTool,
   setActiveLabel,
   setActiveTool,
-  setObjectId,
-} from "./slice";
+  toggleModifier,
+} from "./slice/tools";
 import {
   enhancedApi,
   useFinishObjectMutation,
-  useGetObjectQuery,
+  useGetImageUriQuery,
 } from "../../api/enhancedApi";
-import { Label } from "../../api/openApi";
+import { Label, useGetObjectsCountQuery } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
-import SelectProjectDialog from "../../components/dialogs/SelectProjectDialog";
 import Layout from "../../components/layouts/Layout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
 import {
-  ToolbarButton,
-  ToolbarToggleButton,
+  ToolbarButtonWithTooltip,
+  ToolbarDivider,
+  ToolbarToggleButtonWithTooltip,
 } from "../../components/ToolbarButton";
+
+const tools = [
+  {
+    tool: Tool.Pen,
+    icon: "majesticons:edit-pen-4-line",
+    style: { fontSize: "22px" },
+    tooltip: "Pen",
+  },
+  {
+    tool: Tool.Rectangle,
+    icon: "mdi:vector-square",
+    style: { fontSize: "25px" },
+    tooltip: "Rectangle",
+  },
+  {
+    tool: Tool.Circle,
+    icon: "mdi:vector-circle-variant",
+    style: { fontSize: "25px" },
+    tooltip: "Circle",
+  },
+  {
+    tool: Tool.Polygon,
+    icon: "mdi:vector-polygon",
+    style: { fontSize: "25px" },
+    tooltip: "Polygon",
+  },
+  { tool: undefined },
+  {
+    tool: Tool.Edit,
+    icon: "mdi:vector-polyline-edit",
+    style: { fontSize: "25px" },
+    tooltip: "Edit",
+  },
+];
+
+const modifiers = [
+  {
+    modifier: Modifiers.Group,
+    icon: "mdi:vector-link",
+    style: { fontSize: "25px" },
+  },
+];
 
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
@@ -47,20 +88,24 @@ const AnnotatePage = () => {
   const { projectId, objectId } = useParams();
 
   const activeTool = useAppSelector(selectActiveTool);
-  const activeLabel = useAppSelector(selectActiveLabel);
+  const activeLabelId = useAppSelector(selectActiveLabelId);
+  const activeModifiers = useAppSelector(selectActiveModifiers);
 
   const [getRandom, { isError: randomError }] =
-    enhancedApi.useLazyGetRandomObjectQuery();
-  const [rqeuestFinishObject] = useFinishObjectMutation();
+    enhancedApi.useGetRandomObjectMutation();
+  const [requestFinishObject] = useFinishObjectMutation();
+  const { data: count } = useGetObjectsCountQuery(
+    { projectId: projectId! },
+    { skip: !projectId }
+  );
 
   // TODO: move to image component
-  const { data: object } = useGetObjectQuery(
+  const { data: imageUri } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { objectId: objectId! },
+    { objectId: objectId!, imageRequest: {} },
     { skip: !objectId }
   );
 
-  const [showProjects, setShowProjects] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
   const navigateRandom = async (id: string) => {
@@ -69,27 +114,24 @@ const AnnotatePage = () => {
   };
 
   const toggleLabelSelection = (label: Label) =>
-    activeLabel?.id === label.id
-      ? dispatch(setActiveLabel(null))
+    activeLabelId === label.id
+      ? dispatch(setActiveLabel(undefined))
       : dispatch(setActiveLabel(label));
 
   useEffect(() => {
+    // select project first
+    if (!projectId) navigate("/");
     // start with random object
-    if (projectId && !objectId) navigateRandom(projectId);
+    else if (!objectId) navigateRandom(projectId);
     // update object id in state
-    if (objectId) dispatch(setObjectId(objectId));
+    else dispatch(setObjectId({ projectId, objectId }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, objectId]);
-
-  const showCreateDialog = async () => {
-    setShowProjects(false);
-    setShowCreate(true);
-  };
 
   const finishObject = async () => {
     if (!objectId) return;
 
-    await rqeuestFinishObject({
+    await requestFinishObject({
       objectId: objectId,
     }).unwrap();
 
@@ -98,23 +140,32 @@ const AnnotatePage = () => {
 
   const renderTools = () => (
     <Stack direction="row">
-      {[
-        { tool: Tool.Select, icon: SelectIcon },
-        { tool: Tool.Pen, icon: PenIcon },
-        { tool: Tool.Rectangle, icon: RectangleIcon },
-        { tool: Tool.Circle, icon: CircleIcon },
-        { tool: Tool.Polygon, icon: PolygonIcon },
-        { tool: Tool.Edit, icon: EditIcon },
-      ].map((button) => {
+      {tools.map((button, index) => {
+        if (button.tool === undefined) return <ToolbarDivider key={index} />;
         return (
-          <ToolbarToggleButton
-            key={button.tool}
+          <ToolbarToggleButtonWithTooltip
+            key={index}
             value={button.tool}
             onClick={() => dispatch(setActiveTool(button.tool))}
             selected={activeTool === button.tool}
+            tooltip={button.tooltip}
           >
-            {<button.icon />}
-          </ToolbarToggleButton>
+            <Icon icon={button.icon} style={button.style} />
+          </ToolbarToggleButtonWithTooltip>
+        );
+      })}
+      <ToolbarDivider />
+      {modifiers.map((button) => {
+        return (
+          <ToolbarToggleButtonWithTooltip
+            key={button.modifier}
+            value={button.modifier}
+            onClick={() => dispatch(toggleModifier(button.modifier))}
+            selected={activeModifiers.includes(button.modifier)}
+            tooltip={"Group Annotations"}
+          >
+            <Icon icon={button.icon} style={button.style} />
+          </ToolbarToggleButtonWithTooltip>
         );
       })}
     </Stack>
@@ -122,18 +173,30 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
-      <ToolbarButton onClick={() => navigate(`/objects/${projectId}`)}>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/project/${projectId}`)}
+        tooltip={"Settings"}
+      >
+        <SettingsIcon />
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => navigate(`/objects/${projectId}`)}
+        tooltip={"Project Overview"}
+      >
         <ObjectsIcon />
-      </ToolbarButton>
-      <ToolbarButton onClick={() => finishObject()}>
+      </ToolbarButtonWithTooltip>
+      <ToolbarButtonWithTooltip
+        onClick={() => finishObject()}
+        tooltip={"Finish Image"}
+      >
         <FinishedIcon />
-      </ToolbarButton>
+      </ToolbarButtonWithTooltip>
     </Stack>
   );
 
   return (
     <Layout
-      scrollable={true}
+      sx={{ display: "flex" }}
       header={<Toolbar tools={renderTools()} actions={renderActions()} />}
       left={
         <Stack
@@ -145,42 +208,40 @@ const AnnotatePage = () => {
           <AnnotationsList projectId={projectId} />
           <LabelsExplorer
             projectId={projectId}
-            selected={activeLabel}
+            selected={activeLabelId}
             onSelect={toggleLabelSelection}
           />
         </Stack>
       }
     >
-      <SelectProjectDialog
-        activeProjectId={projectId}
-        open={!showCreate && (!projectId || showProjects)}
-        onClose={() => setShowProjects(false)}
-        onCreate={showCreateDialog}
-      />
       <AddProjectDialog
         open={showCreate}
         onClose={() => setShowCreate(false)}
       />
       <Loader
         query={{
-          isLoading: !projectId || (!object && !randomError),
+          isLoading: !projectId || (!imageUri && !randomError),
           isError: randomError,
-          data: object,
+          data: imageUri,
         }}
         errorPlaceholder={
           <PlaceholderLayout
-            title="This project contains no objects."
+            title={
+              count?.total > 0
+                ? "You have finished annotating this project."
+                : "The project does not contain any images."
+            }
             description={
               <>
-                Go to the{" "}
+                There are currently no images to be annotated. Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                scan the project source for new objects and start annotating!
+                import some!
               </>
             }
           />
         }
-        render={({ data: object }) => (
-          <Canvas projectId={projectId} imageUri={object.uri} />
+        render={({ data: imageUri }) => (
+          <Canvas projectId={projectId} imageUri={imageUri} />
         )}
       />
     </Layout>

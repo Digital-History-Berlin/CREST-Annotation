@@ -1,12 +1,17 @@
 import logging
 
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("requests_cache").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils import openapi
 
-from .routers import labels, objects, projects, imports
-from .database import Base, engine
+from .routers import labels, objects, projects
+from .api import import_router, export_router
 from .environment import env
+
 
 app = FastAPI()
 
@@ -25,7 +30,9 @@ app.add_middleware(
 app.include_router(labels.router)
 app.include_router(objects.router)
 app.include_router(projects.router)
-app.include_router(imports.router)
+
+app.include_router(import_router)
+app.include_router(export_router)
 
 # use function names only for endpoint names,
 # which improves readability on the frontend side

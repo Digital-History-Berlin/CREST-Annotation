@@ -1,19 +1,26 @@
-from typing import Optional, List
 from pydantic import BaseModel
 
 
-# TODO: schemas are outdated, see label.py
+from .modifiers import create, patch, response
+
+
 class BaseProject(BaseModel):
-    name: str
-
-
-class ShallowProject(BaseProject):
-    id: Optional[str]
-    source: Optional[str]
-    color_table: Optional[List[str]]
-
-
-class Project(BaseProject):
     id: str
-    source: Optional[str]
-    color_table: List[str]
+    name: str
+    source: str | None
+    color_table: list[str]
+
+
+@create("id", "source", "color_table")
+class CreateProject(BaseProject):
+    pass
+
+
+@patch("id")
+class PatchProject(BaseProject):
+    pass
+
+
+@response()
+class Project(BaseProject):
+    pass

@@ -16,7 +16,7 @@ const SettingsTab = ({ project }: IProps) => {
 
   const save = async (current: Project) => {
     try {
-      await updateRequest({ shallowProject: current }).unwrap();
+      await updateRequest({ patchProject: current }).unwrap();
       // clear changes to show updates
       setChanged(undefined);
     } catch {

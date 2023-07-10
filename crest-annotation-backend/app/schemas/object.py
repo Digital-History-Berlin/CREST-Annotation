@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -7,12 +6,22 @@ from .modifiers import create, patch, response
 
 class BaseObject(BaseModel):
     id: str
-    uri: str
-    thumbnail_uri: Optional[str]
+    object_uuid: str | None
     annotated: bool
     annotation_data: str
+
+
+@create("id", "object_uuid", "annotated", "annotation_data")
+class CreateObject(BaseObject):
+    pass
 
 
 @response()
 class Object(BaseObject):
     pass
+
+
+class ImageRequest(BaseModel):
+    thumbnail: bool | None
+    width: int | None
+    height: int | None

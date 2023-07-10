@@ -1,5 +1,8 @@
 from enum import auto
+from typing import Generic, TypeVar
 
+from pydantic import BaseModel
+from pydantic.generics import GenericModel
 from fastapi_utils.enums import StrEnum
 from sqlalchemy import desc
 
@@ -18,3 +21,13 @@ class SortDirection(StrEnum):
         if self == SortDirection.desc:
             return map(desc, sorting)
         raise Exception(f"Invalid sorting {sorting}")
+
+
+T = TypeVar("T")
+
+
+class Paginated(GenericModel, Generic[T]):
+    items: list[T]
+    pages: int
+    page: int
+    size: int

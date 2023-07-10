@@ -1,16 +1,16 @@
-import os
+import json
 
-from glob import iglob
-from typing import List
+from typing import Callable
+
 from fastapi import APIRouter, Depends, Body, HTTPException
-from fastapi.responses import JSONResponse, FileResponse, Response
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from ..dependencies.logger import get_logger
-from ..dependencies.db import get_db
-from ..models.projects import Project
+from ..dependencies.db import get_db, get_paginate
 from ..models.objects import Object
 from .. import schemas
+
+from ..api import get_object_data_schema
 
 router = APIRouter(
     prefix="/objects",
@@ -19,52 +19,21 @@ router = APIRouter(
 )
 
 
-def map_object(data_object: Object) -> schemas.Object:
-    return {
-        "id": data_object.id,
-        "uri": data_object.uri,
-        "thumbnail_uri": data_object.thumbnail_uri,
-        "annotated": data_object.annotated,
-        "annotation_data": data_object.annotation_data,
-    }
-
-
-@router.post("/collect-of/{project_id}")
-async def collect_objects(
-    project_id: str, db: Session = Depends(get_db), logger=Depends(get_logger)
-):
-
-    # get and validate the project
-    project: Project = db.query(Project).filter_by(id=project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    # generate search pattern
-    base = project.source
-    pattern = os.path.join(base, "*")
-
-    logger.info(f"searching {pattern}")
-
-    # compare filesystem and database
-    collected = set(iglob(pattern))
-    known = set(db.query(Object.uri).filter_by(project_id=project_id))
-    collectables = collected - known
-
-    logger.info(f"found {len(collected)} objects")
-
-    # insert new objects
-    db.add_all(map(lambda file: Object(project_id=project_id, uri=file), collectables))
-    db.commit()
-
-    return JSONResponse(
-        {
-            "available": len(collected),
-            "inserted": len(collectables),
-        }
+def to_schema(data_object: Object) -> schemas.Object:
+    return schemas.Object(
+        id=data_object.id,
+        object_uuid=data_object.object_uuid,
+        annotated=data_object.annotated,
+        annotation_data=data_object.annotation_data,
     )
 
 
-@router.get("/random-of/{project_id}", response_model=schemas.Object)
+def to_dict(data_object: Object):
+    return to_schema(data_object).dict()
+
+
+# use post to avoid RTK-query caching
+@router.post("/random-of/{project_id}", response_model=schemas.Object)
 async def get_random_object(project_id: str, db: Session = Depends(get_db)):
     data_object: Object = (
         db.query(Object).filter_by(project_id=project_id, annotated=False).first()
@@ -72,14 +41,33 @@ async def get_random_object(project_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return JSONResponse(map_object(data_object))
+    return JSONResponse(to_dict(data_object))
 
 
-@router.get("/of/{project_id}", response_model=List[schemas.Object])
-async def get_objects(project_id: str, db: Session = Depends(get_db)):
-    objects: List[Object] = db.query(Object).filter_by(project_id=project_id)
+@router.get("/total-of/{project_id}")
+async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
+    total = db.query(Object).filter_by(project_id=project_id)
+    annotated = total.filter_by(annotated=True)
 
-    return JSONResponse(list(map(map_object, objects)))
+    return JSONResponse(
+        {
+            "total": total.count(),
+            "annotated": annotated.count(),
+        }
+    )
+
+
+@router.get("/of/{project_id}", response_model=list[schemas.Object])
+async def get_objects(
+    project_id: str,
+    paginate: Callable = Depends(get_paginate),
+    db: Session = Depends(get_db),
+):
+    objects: schemas.Paginated[schemas.Object] = paginate(
+        db.query(Object).filter_by(project_id=project_id), to_schema
+    )
+
+    return JSONResponse(objects.dict())
 
 
 @router.get("/id/{object_id}")
@@ -88,20 +76,34 @@ async def get_object(object_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    return JSONResponse(map_object(data_object))
+    return JSONResponse(to_dict(data_object))
 
 
-@router.get("/image/{object_id}")
-async def get_image(object_id: str, db: Session = Depends(get_db)):
+@router.post("/finish/{object_id}")
+async def finish_object(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    # ensure that the image file is still available
-    if not os.path.isfile(data_object.uri):
-        raise HTTPException(status_code=404, detail="Image missing")
+    data_object.annotated = True
+    db.commit()
 
-    return FileResponse(data_object.uri)
+    return Response()
+
+
+@router.post("/uri/{object_id}")
+async def get_image_uri(
+    object_id: str, usage: schemas.ImageRequest, db: Session = Depends(get_db)
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    object_data = json.loads(data_object.object_data)
+    schema = get_object_data_schema(object_data)
+    data = schema(**object_data)
+
+    return JSONResponse(data.get_image_uri(usage))
 
 
 @router.get("/annotations/{object_id}")
@@ -109,6 +111,8 @@ async def get_annotations(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
+
+    print(data_object.id, data_object.annotation_data)
 
     return JSONResponse(data_object.annotation_data)
 
@@ -121,19 +125,10 @@ async def store_annotations(
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
+    data_object.annotated = False
     data_object.annotation_data = annotation_data
     db.commit()
 
-    return Response()
-
-
-@router.post("/finish/{object_id}")
-async def finish_object(object_id: str, db: Session = Depends(get_db)):
-    data_object: Object = db.query(Object).filter_by(id=object_id).first()
-    if not data_object:
-        raise HTTPException(status_code=404, detail="Object not found")
-
-    data_object.annotated = True
-    db.commit()
+    print(data_object.id, data_object.annotation_data)
 
     return Response()

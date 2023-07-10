@@ -17,4 +17,11 @@ const ObjectsFileSystem = ({ onCancel }: WizardProps) => {
   );
 };
 
-export default ObjectsFileSystem;
+const wizard = {
+  component: ObjectsFileSystem,
+  group: "objects",
+  name: "File System",
+  description: "Import images directly from file system",
+};
+
+export default wizard;

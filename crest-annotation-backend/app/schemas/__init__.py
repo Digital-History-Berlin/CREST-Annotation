@@ -1,6 +1,4 @@
 from .label import Label, PatchLabel, CreateLabel
-from .object import Object
-from .project import Project, ShallowProject
-from .ontology import Ontology, OntologyDescription, OntologyLabel
-from .sorting import SortDirection
-from .iiif import Iiif3Import
+from .object import BaseObject, Object, CreateObject, ImageRequest
+from .project import Project, PatchProject, CreateProject
+from .sorting import SortDirection, Paginated

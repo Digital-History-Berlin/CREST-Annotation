@@ -17,6 +17,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
+import DeleteProjectDialog from "../../components/dialogs/DeleteProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
@@ -24,14 +25,22 @@ import Toolbar from "../../components/Toolbar";
 const ProjectsPage = () => {
   const navigate = useNavigate();
 
+  const [showDelete, setShowDelete] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const deleteProject = (_: Project) => {
-    // TODO: delete project
-  };
+  const projectsQuery = useGetProjectsQuery({
+    page: page,
+    size: 12,
+  });
 
   const renderCard = (project: Project) => (
     <Card>
+      <DeleteProjectDialog
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+        project={project}
+      />
       <CardActionArea onClick={() => navigate(`/annotate/${project.id}`)}>
         <CardContent>
           <Typography gutterBottom variant="h5" component="div">
@@ -49,7 +58,7 @@ const ProjectsPage = () => {
         <IconButton onClick={() => navigate(`/project/${project.id}`)}>
           <SettingsIcon />
         </IconButton>
-        <IconButton color="error" onClick={() => deleteProject(project)}>
+        <IconButton color="error" onClick={() => setShowDelete(true)}>
           <DeleteIcon />
         </IconButton>
       </CardActions>
@@ -74,7 +83,8 @@ const ProjectsPage = () => {
         onClose={() => setShowCreate(false)}
       />
       <CardLayout
-        query={useGetProjectsQuery()}
+        onChangePage={setPage}
+        query={projectsQuery}
         renderCard={renderCard}
         header={<Toolbar title="Projects" />}
         placeholder={

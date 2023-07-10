@@ -22,12 +22,11 @@ import {
   deleteAnnotation,
   hideAnnotation,
   lockAnnotation,
-  selectAnnotation,
   selectAnnotations,
   showAnnotation,
+  toggleAnnotation,
   unlockAnnotation,
-  unselectAnnotation,
-} from "../slice";
+} from "../slice/annotations";
 
 interface IProps {
   projectId?: string;
@@ -39,11 +38,6 @@ const AnnotationsList = ({ projectId }: IProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const annotations = useAppSelector(selectAnnotations);
-
-  const toggleAnnotationSelection = (annotation: Annotation) =>
-    annotation.selected
-      ? dispatch(unselectAnnotation())
-      : dispatch(selectAnnotation(annotation));
 
   const renderActions = (annotation: Annotation) => (
     <Stack direction="row">
@@ -107,7 +101,7 @@ const AnnotationsList = ({ projectId }: IProps) => {
                 secondaryAction={renderActions(annotation)}
               >
                 <ListItemButton
-                  onClick={() => toggleAnnotationSelection(annotation)}
+                  onClick={() => dispatch(toggleAnnotation(annotation))}
                   selected={annotation.selected}
                   disableGutters
                 >
