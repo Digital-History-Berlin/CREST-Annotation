@@ -2,6 +2,7 @@ import React from "react";
 import { alpha } from "@mui/material";
 import CircleTool from "./Circle";
 import LineTool from "./Line";
+import MaskTool from "./Mask";
 import PolygonTool from "./Polygon";
 import RectangleTool from "./Rectangle";
 import { ShapeProps } from "./Types";
@@ -14,6 +15,7 @@ export const shapeMap = {
   [Tool.Rectangle]: RectangleTool,
   [Tool.Polygon]: PolygonTool,
   [Tool.Edit]: undefined,
+  [Tool.Segment]: MaskTool,
 };
 
 export type IProps = ShapeProps & {

@@ -1,0 +1,11 @@
+[MASTER]
+disable=
+    R0903, # too-few-public-methods
+    R0913, # too-many-arguments
+    C0114, # missing-module-docstring
+    C0115, # missing-class-docstring
+    C0116, # missing-function-docstring
+extension-pkg-whitelist=pydantic
+
+[FORMAT]
+good-names=_,i,j,k,x,y,ex,db

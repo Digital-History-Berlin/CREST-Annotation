@@ -11,11 +11,14 @@ import { RootState } from "../../../app/store";
 import { pullAnnotations } from "../epics";
 import { Circle } from "../tools/circle";
 import { Line } from "../tools/line";
+import { Mask } from "../tools/mask";
 import { Polygon } from "../tools/polygon";
 import { Rectangle } from "../tools/rectangle";
 
 /// Combines all available shape types with meta fields
-export type Shape = (Rectangle | Circle | Line | Polygon) & { tool: Tool };
+export type Shape = (Rectangle | Circle | Line | Polygon | Mask) & {
+  tool: Tool;
+};
 
 export interface Annotation {
   id: string;

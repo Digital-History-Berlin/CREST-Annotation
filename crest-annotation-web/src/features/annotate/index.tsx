@@ -84,6 +84,13 @@ const tools = [
     style: { fontSize: "25px" },
     tooltip: "Edit",
   },
+  { tool: undefined },
+  {
+    tool: Tool.Segment,
+    icon: "fluent:brain-circuit-24-regular",
+    style: { fontSize: "25px" },
+    tooltip: "Segment",
+  },
 ];
 
 const modifiers = [

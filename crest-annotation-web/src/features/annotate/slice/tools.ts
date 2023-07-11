@@ -9,6 +9,7 @@ export enum Tool {
   Rectangle,
   Polygon,
   Edit,
+  Segment,
 }
 
 export enum Modifiers {
