@@ -1,8 +1,10 @@
-import React from "react";
+import React, { CSSProperties } from "react";
 import { Box, styled } from "@mui/material";
 
 interface IProps {
   color: string;
+  disablePadding?: boolean;
+  sx?: CSSProperties;
 }
 
 const defaultProps = {};
@@ -13,16 +15,16 @@ const DotBox = styled(Box)(({ theme }) => ({
     height: "14px",
     borderRadius: "7px",
     border: `1px solid ${theme.palette.divider}`,
-    marginLeft: theme.spacing(2),
-    marginRight: theme.spacing(2),
   },
 }));
 
-const Dot = ({ color }: IProps) => (
+const Dot = ({ color, disablePadding, sx }: IProps) => (
   <DotBox
     className="Dot"
     sx={{
       backgroundColor: color,
+      mx: !disablePadding ? 2 : 0,
+      ...sx,
     }}
   />
 );

@@ -4,10 +4,10 @@ import { KonvaEventObject } from "konva/lib/Node";
 import { Group, Rect as KonvaRectangle } from "react-konva";
 import Anchor from "./Anchor";
 import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { GestureOverload } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Rectangle as RectangleShape } from "../../tools/rectangle";
-import { GestureOverload } from "../types/Events";
 
 enum Edges {
   Left = 0,

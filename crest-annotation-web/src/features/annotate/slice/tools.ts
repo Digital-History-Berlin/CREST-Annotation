@@ -36,6 +36,10 @@ const isModifierMutation = (action: AnyAction) =>
     action.type
   );
 
+// actions that change the active label
+const isLabelChange = (action: AnyAction) =>
+  ["tools/setActiveLabel"].includes(action.type);
+
 export const slice = createSlice({
   name: "tools",
   initialState,
@@ -45,8 +49,6 @@ export const slice = createSlice({
     },
     setActiveLabel: (state, action: PayloadAction<Label | undefined>) => {
       state.activeLabelId = action.payload?.id;
-      // disable group tool if it was active (label must stay same)
-      state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
     },
     setModifiers: (state, action: PayloadAction<Modifiers[]>) => {
       state.activeModifiers = action.payload;
@@ -70,14 +72,7 @@ export const slice = createSlice({
       else state.activeModifiers.push(action.payload);
     },
   },
-  extraReducers(builder) {
-    builder.addCase(setActiveLabel, (state) => {
-      if (state.groupAnnotationId) {
-        // deactivate group modifier on label change (if already in progress)
-        state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
-        state.groupAnnotationId = undefined;
-      }
-    });
+  extraReducers: (builder) => {
     builder.addCase(addAnnotation, (state, action) => {
       if (
         state.activeModifiers.includes(Modifiers.Group) &&
@@ -86,10 +81,15 @@ export const slice = createSlice({
         // use new annotation for group
         state.groupAnnotationId = action.payload.id;
     });
+    builder.addMatcher(isLabelChange, (state) => {
+      if (state.groupAnnotationId) {
+        // deactivate group modifier on label change (if already in progress)
+        state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
+        state.groupAnnotationId = undefined;
+      }
+    });
     builder.addMatcher(isModifierMutation, (state) => {
       if (!state.activeModifiers.includes(Modifiers.Group))
-        // clear active group on deactivate
-        // TODO: not called by extra reducers
         state.groupAnnotationId = undefined;
     });
   },
@@ -103,6 +103,7 @@ export const {
   toggleModifier,
 } = slice.actions;
 
+// tools
 export const selectActiveTool = (state: RootState) => state.tools.activeTool;
 export const selectActiveLabelId = (state: RootState) =>
   state.tools.activeLabelId;

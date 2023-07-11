@@ -4,6 +4,7 @@ import {
   combineReducers,
   configureStore,
 } from "@reduxjs/toolkit";
+import globalReducer from "./slice";
 import { enhancedApi } from "../api/enhancedApi";
 import annotationsReducer, {
   annotateMiddleware,
@@ -12,6 +13,7 @@ import canvasReducer from "../features/annotate/slice/canvas";
 import toolsReducer from "../features/annotate/slice/tools";
 
 const rootReducer = combineReducers({
+  global: globalReducer,
   annotations: annotationsReducer,
   canvas: canvasReducer,
   tools: toolsReducer,

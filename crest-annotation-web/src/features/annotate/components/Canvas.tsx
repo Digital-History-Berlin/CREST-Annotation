@@ -8,11 +8,11 @@ import BackgroundImage from "./BackgroundImage";
 import InputStage from "./InputStage";
 import LabelsPopup from "./LabelsPopup";
 import ShapeRenderer, { shapeMap } from "./tools/Shape";
-import { GestureEvent } from "./types/Events";
-import { Position } from "./types/Position";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import { GestureEvent } from "../../../types/Events";
+import { Position } from "../../../types/Position";
 import { Shape, addAnnotation, addShape } from "../slice/annotations";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 import {

@@ -244,6 +244,24 @@
       },
       "name": "project_id",
       "in": "path"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Offset",
+       "type": "integer"
+      },
+      "name": "offset",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Annotated",
+       "type": "boolean"
+      },
+      "name": "annotated",
+      "in": "query"
      }
     ],
     "responses": {
@@ -332,6 +350,15 @@
       },
       "name": "project_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Annotated",
+       "type": "boolean"
+      },
+      "name": "annotated",
+      "in": "query"
      },
      {
       "required": true,
@@ -449,7 +476,7 @@
       "schema": {
        "title": "Finished",
        "type": "boolean",
-       "default": false
+       "default": true
       },
       "name": "finished",
       "in": "query"

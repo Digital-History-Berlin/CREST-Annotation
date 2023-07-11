@@ -1,9 +1,9 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
 import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { GestureOverload } from "../../../../types/Events";
 import { Tool } from "../../slice/tools";
 import { Line as LineShape } from "../../tools/line";
-import { GestureOverload } from "../types/Events";
 
 const Line = ({ identifier, shape, shapeConfig, onClick }: ShapeProps) => {
   const line = shape as LineShape;

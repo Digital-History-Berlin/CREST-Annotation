@@ -3,10 +3,10 @@ import Konva from "konva";
 import { Group, Circle as KonvaCircle } from "react-konva";
 import Anchor from "./Anchor";
 import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { GestureOverload } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Circle as CircleShape } from "../../tools/circle";
-import { GestureOverload } from "../types/Events";
 
 const Circle = ({
   identifier,

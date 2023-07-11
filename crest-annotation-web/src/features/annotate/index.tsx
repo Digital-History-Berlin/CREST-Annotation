@@ -9,8 +9,13 @@ import FinishedIcon from "@mui/icons-material/Check";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
+import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
-import { setObjectId } from "./slice/annotations";
+import {
+  editAnnotation,
+  selectEditing,
+  setObjectId,
+} from "./slice/annotations";
 import {
   Modifiers,
   Tool,
@@ -30,10 +35,16 @@ import {
 } from "../../api/enhancedApi";
 import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  ObjectFilters,
+  selectObjectFilters,
+  updateObjectFilters,
+} from "../../app/slice";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import Layout from "../../components/layouts/Layout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
+import StateSelect from "../../components/StateSelect";
 import Toolbar from "../../components/Toolbar";
 import {
   ToolbarButtonWithTooltip,
@@ -93,6 +104,8 @@ const AnnotatePage = () => {
   const activeTool = useAppSelector(selectActiveTool);
   const activeLabelId = useAppSelector(selectActiveLabelId);
   const activeModifiers = useAppSelector(selectActiveModifiers);
+  const editingAnnotation = useAppSelector(selectEditing);
+  const filters = useAppSelector(selectObjectFilters);
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useGetRandomObjectMutation();
@@ -115,9 +128,15 @@ const AnnotatePage = () => {
 
   const [showCreate, setShowCreate] = useState(false);
 
-  const navigateRandom = async (id: string) => {
-    const random = await getRandom({ projectId: id }).unwrap();
+  const navigateRandom = async (id: string, filters: ObjectFilters) => {
+    const random = await getRandom({
+      projectId: id,
+      ...filters,
+    }).unwrap();
+
     navigate(`/annotate/${id}/${random.id}`);
+    // automatically update filters
+    dispatch(updateObjectFilters(filters));
   };
 
   const toggleLabelSelection = (label: Label) =>
@@ -129,7 +148,7 @@ const AnnotatePage = () => {
     // select project first
     if (!projectId) navigate("/");
     // start with random object
-    else if (!objectId) navigateRandom(projectId);
+    else if (!objectId) navigateRandom(projectId, { ...filters, offset: 0 });
     // update object id in state
     else dispatch(setObjectId({ projectId, objectId }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,7 +163,17 @@ const AnnotatePage = () => {
       finished,
     }).unwrap();
 
-    if (finished && projectId) navigateRandom(projectId);
+    if (finished && projectId) navigateRandom(projectId, filters);
+  };
+
+  const skipObject = async () => {
+    if (projectId)
+      navigateRandom(projectId, { ...filters, offset: filters.offset + 1 });
+  };
+
+  const changeState = (annotated: boolean | undefined) => {
+    if (projectId)
+      navigateRandom(projectId, { ...filters, annotated, offset: 0 });
   };
 
   const renderTools = () => (
@@ -182,6 +211,8 @@ const AnnotatePage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
+      <StateSelect annotated={filters.annotated} onChange={changeState} />
+      <ToolbarDivider />
       <ToolbarToggleButtonWithTooltip
         value={"annotated"}
         onClick={() => finishObject()}
@@ -191,9 +222,7 @@ const AnnotatePage = () => {
         <FinishedIcon />
       </ToolbarToggleButtonWithTooltip>
       <ToolbarButtonWithTooltip
-        onClick={() => {
-          return;
-        }}
+        onClick={() => skipObject()}
         tooltip={"Next Image"}
       >
         <SkipNext />
@@ -221,7 +250,7 @@ const AnnotatePage = () => {
       left={
         <Stack
           sx={{
-            width: "300px",
+            width: "440px",
             borderRight: `1px solid ${theme.palette.divider}`,
           }}
         >
@@ -238,6 +267,11 @@ const AnnotatePage = () => {
         open={showCreate}
         onClose={() => setShowCreate(false)}
       />
+      <EditAnnotationDialog
+        projectId={projectId}
+        annotation={editingAnnotation}
+        onClose={() => dispatch(editAnnotation(null))}
+      />
       <Loader
         query={{
           isLoading: !projectId || (!imageUri && !randomError),
@@ -248,14 +282,14 @@ const AnnotatePage = () => {
           <PlaceholderLayout
             title={
               count?.total > 0
-                ? "You have finished annotating this project."
+                ? "There are no more images in this project."
                 : "The project does not contain any images."
             }
             description={
               <>
-                There are currently no images to be annotated. Go to the{" "}
+                Go to the{" "}
                 <Link href={`/project/${projectId}`}>project settings</Link> to
-                import some!
+                import new images or export the results!
               </>
             }
           />

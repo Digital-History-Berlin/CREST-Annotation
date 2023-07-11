@@ -26,3 +26,7 @@ class ImageRequest(BaseModel):
     thumbnail: bool | None
     width: int | None
     height: int | None
+
+
+class ObjectFilters(BaseModel):
+    annotated: bool | None

@@ -3,10 +3,10 @@ import Konva from "konva";
 import { Group, Line } from "react-konva";
 import Anchor from "./Anchor";
 import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { GestureOverload } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Polygon as PolygonShape } from "../../tools/polygon";
-import { GestureOverload } from "../types/Events";
 
 const Polygon = ({
   identifier,

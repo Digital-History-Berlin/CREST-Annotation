@@ -1,8 +1,9 @@
 import json
+import logging
 
 from typing import Callable
 
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body, HTTPException, Query
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -34,10 +35,16 @@ def to_dict(data_object: Object):
 
 # use post to avoid RTK-query caching
 @router.post("/random-of/{project_id}", response_model=schemas.Object)
-async def get_random_object(project_id: str, db: Session = Depends(get_db)):
-    data_object: Object = (
-        db.query(Object).filter_by(project_id=project_id, annotated=False).first()
-    )
+async def get_random_object(
+    project_id: str,
+    filters: schemas.ObjectFilters = Depends(),
+    offset: int | None = Query(),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Object).filter_by(project_id=project_id)
+    if filters.annotated is not None:
+        query = query.filter_by(annotated=filters.annotated)
+    data_object: Object = query.offset(offset or 0).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
@@ -60,12 +67,14 @@ async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
 @router.get("/of/{project_id}", response_model=list[schemas.Object])
 async def get_objects(
     project_id: str,
+    filters: schemas.ObjectFilters = Depends(),
     paginate: Callable = Depends(get_paginate),
     db: Session = Depends(get_db),
 ):
-    objects: schemas.Paginated[schemas.Object] = paginate(
-        db.query(Object).filter_by(project_id=project_id), to_schema
-    )
+    query = db.query(Object).filter_by(project_id=project_id)
+    if filters.annotated is not None:
+        query = query.filter_by(annotated=filters.annotated)
+    objects: schemas.Paginated[schemas.Object] = paginate(query, to_schema)
 
     return JSONResponse(objects.dict())
 
@@ -114,8 +123,6 @@ async def get_annotations(object_id: str, db: Session = Depends(get_db)):
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    print(data_object.id, data_object.annotation_data)
-
     return JSONResponse(data_object.annotation_data)
 
 
@@ -130,7 +137,5 @@ async def store_annotations(
     data_object.annotated = False
     data_object.annotation_data = annotation_data
     db.commit()
-
-    print(data_object.id, data_object.annotation_data)
 
     return Response()

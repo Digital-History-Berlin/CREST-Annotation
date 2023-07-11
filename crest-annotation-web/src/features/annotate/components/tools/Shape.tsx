@@ -5,7 +5,7 @@ import LineTool from "./Line";
 import PolygonTool from "./Polygon";
 import RectangleTool from "./Rectangle";
 import { ShapeProps } from "./Types";
-import { Transformation } from "../../slice/canvas";
+import { Transformation } from "../../../../types/Transformation";
 import { Tool } from "../../slice/tools";
 
 export const shapeMap = {
@@ -46,7 +46,7 @@ const Shape = ({
   const shapeConfig = {
     stroke: alpha(color, transparent ? 0.2 : selected ? 0.8 : 0.6),
     strokeWidth: (selected ? 3 : 2) / transformation.scale,
-    fill: alpha(color, transparent ? 0.1 : selected ? 0.3 : 0.2),
+    fill: alpha(color, transparent ? 0.1 : selected ? 0.4 : 0.2),
     listening: editable,
   };
 

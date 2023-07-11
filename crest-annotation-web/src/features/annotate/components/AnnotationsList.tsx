@@ -9,6 +9,7 @@ import {
   useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import LockedIcon from "@mui/icons-material/Lock";
 import UnlockedIcon from "@mui/icons-material/LockOpen";
 import VisibleIcon from "@mui/icons-material/Visibility";
@@ -20,6 +21,7 @@ import SidebarContainer from "../../../components/SidebarContainer";
 import {
   Annotation,
   deleteAnnotation,
+  editAnnotation,
   hideAnnotation,
   lockAnnotation,
   selectAnnotations,
@@ -73,6 +75,12 @@ const AnnotationsList = ({ projectId }: IProps) => {
         </IconButton>
       )}
 
+      <IconButton
+        onClick={() => dispatch(editAnnotation(annotation))}
+        size="small"
+      >
+        <EditIcon />
+      </IconButton>
       <IconButton
         onClick={() => dispatch(deleteAnnotation(annotation))}
         size="small"

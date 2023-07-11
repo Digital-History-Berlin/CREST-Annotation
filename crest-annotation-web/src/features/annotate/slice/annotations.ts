@@ -32,6 +32,7 @@ export interface Annotation {
 export interface AnnotationsSlice {
   annotations: Annotation[];
   latestChange: number | null;
+  editing: Annotation | null;
   // required for middleware
   objectId: string | null;
   projectId: string | null;
@@ -40,6 +41,7 @@ export interface AnnotationsSlice {
 const initialState: AnnotationsSlice = {
   annotations: [],
   latestChange: null,
+  editing: null,
   objectId: null,
   projectId: null,
 };
@@ -60,6 +62,7 @@ const isServerMutation = (action: AnyAction) =>
     "annotations/addAnnotation",
     "annotations/addShape",
     "annotations/updateShape",
+    "annotations/updateAnnotation",
     "annotations/deleteAnnotation",
     "annotations/lockAnnotation",
     "annotations/unlockAnnotation",
@@ -124,6 +127,15 @@ export const slice = createSlice({
           : annotation
       );
     },
+    editAnnotation: (state, action: PayloadAction<Annotation | null>) => {
+      // start editing annotation (show dialog)
+      state.editing = action.payload;
+    },
+    updateAnnotation: (state, action: PayloadAction<Annotation>) => {
+      state.annotations = state.annotations.map((annotation) =>
+        annotation.id === action.payload.id ? action.payload : annotation
+      );
+    },
     deleteAnnotation: (state, action: PayloadAction<{ id: string }>) => {
       state.annotations = state.annotations.filter(
         (annotation) => annotation.id !== action.payload.id
@@ -184,6 +196,8 @@ export const {
   addAnnotation,
   addShape,
   updateShape,
+  editAnnotation,
+  updateAnnotation,
   deleteAnnotation,
   selectAnnotation,
   unselectAnnotation,
@@ -195,6 +209,7 @@ export const {
 } = slice.actions;
 
 export const selectObjectId = (state: RootState) => state.annotations.objectId;
+export const selectEditing = (state: RootState) => state.annotations.editing;
 export const selectAnnotations = (state: RootState) =>
   state.annotations.annotations;
 

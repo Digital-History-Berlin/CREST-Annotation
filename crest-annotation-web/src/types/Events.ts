@@ -1,5 +1,5 @@
 import { Position } from "./Position";
-import { Transformation } from "../../slice/canvas";
+import { Transformation } from "./Transformation";
 
 /**
  * Identifies the case for an overloaded gesture

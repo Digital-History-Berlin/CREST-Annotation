@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import { ShapeConfig } from "konva/lib/Shape";
+import { GestureEvent, GestureEvents } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
-import { GestureEvent, GestureEvents } from "../types/Events";
 
 /// Callbacks provided to a shape component
 export type ShapeCallbacks = {

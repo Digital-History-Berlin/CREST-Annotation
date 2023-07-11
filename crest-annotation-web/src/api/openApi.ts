@@ -42,6 +42,7 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/objects/random-of/${queryArg.projectId}`,
         method: "POST",
+        params: { offset: queryArg.offset, annotated: queryArg.annotated },
       }),
     }),
     getObjectsCount: build.query<
@@ -53,7 +54,11 @@ const injectedRtkApi = api.injectEndpoints({
     getObjects: build.query<GetObjectsApiResponse, GetObjectsApiArg>({
       query: (queryArg) => ({
         url: `/objects/of/${queryArg.projectId}`,
-        params: { page: queryArg.page, size: queryArg.size },
+        params: {
+          annotated: queryArg.annotated,
+          page: queryArg.page,
+          size: queryArg.size,
+        },
       }),
     }),
     getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
@@ -213,6 +218,8 @@ export type GetRandomObjectApiResponse =
   /** status 200 Successful Response */ Object;
 export type GetRandomObjectApiArg = {
   projectId: string;
+  offset: number;
+  annotated?: boolean;
 };
 export type GetObjectsCountApiResponse =
   /** status 200 Successful Response */ any;
@@ -223,6 +230,7 @@ export type GetObjectsApiResponse =
   /** status 200 Successful Response */ Object[];
 export type GetObjectsApiArg = {
   projectId: string;
+  annotated?: boolean;
   page: number;
   size: number;
 };

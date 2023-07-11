@@ -1,5 +1,11 @@
 import React from "react";
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  useTheme,
+} from "@mui/material";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
@@ -15,6 +21,8 @@ interface IProps {
 const defaultProps = {};
 
 const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
+  const theme = useTheme();
+
   return (
     <Loader
       emptyPlaceholder="This project contains no starred labels"
@@ -39,6 +47,7 @@ const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
                 <ListItemButton
                   disableGutters
                   onClick={onSelect && (() => onSelect(label))}
+                  sx={{ paddingRight: theme.spacing(2) }}
                 >
                   <Dot color={label.color} />
                   <ListItemText primary={label.name ?? "Unnamed"} />

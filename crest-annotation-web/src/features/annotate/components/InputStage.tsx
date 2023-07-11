@@ -1,9 +1,13 @@
 import React, { RefObject, useState } from "react";
 import Konva from "konva";
 import { Stage, StageProps } from "react-konva";
-import { GestureEvents, GestureOverload, Positions } from "./types/Events";
-import { Position } from "./types/Position";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import {
+  GestureEvents,
+  GestureOverload,
+  Positions,
+} from "../../../types/Events";
+import { Position } from "../../../types/Position";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 
 type IProps = { stageRef: RefObject<Konva.Stage> } & GestureEvents & StageProps;

@@ -1,15 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../../../app/store";
-
-export interface Translation {
-  x: number;
-  y: number;
-}
-
-export interface Transformation {
-  translate: Translation;
-  scale: number;
-}
+import { Transformation } from "../../../types/Transformation";
+import { Translation } from "../../../types/Translation";
 
 export const defaultTransformation = {
   translate: { x: 0.0, y: 0.0 },

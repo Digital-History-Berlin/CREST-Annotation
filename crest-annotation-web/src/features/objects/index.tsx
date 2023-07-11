@@ -1,21 +1,31 @@
 import React, { useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import { Link, Stack } from "@mui/material";
+import { useDispatch } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ObjectCard from "./components/ObjectCard";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
 import { Object as DataObject } from "../../api/openApi";
+import { useAppSelector } from "../../app/hooks";
+import { selectObjectFilters, updateObjectFilters } from "../../app/slice";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
+import StateSelect from "../../components/StateSelect";
 import Toolbar from "../../components/Toolbar";
-import { ToolbarButtonWithTooltip } from "../../components/ToolbarButton";
+import {
+  ToolbarButtonWithTooltip,
+  ToolbarDivider,
+} from "../../components/ToolbarButton";
 
 const ObjectsPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [page, setPage] = useState(1);
+
+  const filters = useAppSelector(selectObjectFilters);
 
   const { data: project } = useGetProjectQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -25,9 +35,17 @@ const ObjectsPage = () => {
 
   const objectsQuery = useGetObjectsQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { projectId: projectId!, page: page, size: 12 },
+    {
+      projectId: projectId!,
+      page: page,
+      size: 12,
+      ...filters,
+    },
     { skip: !projectId }
   );
+
+  const changeState = (annotated: boolean | undefined) =>
+    dispatch(updateObjectFilters({ ...filters, annotated, offset: 0 }));
 
   const renderCard = (object: DataObject) => (
     <ObjectCard projectId={projectId} object={object} />
@@ -35,6 +53,8 @@ const ObjectsPage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
+      <StateSelect annotated={filters.annotated} onChange={changeState} />
+      <ToolbarDivider />
       <ToolbarButtonWithTooltip
         onClick={() => navigate(`/annotate/${projectId}`)}
         tooltip={"Annotate Images"}
