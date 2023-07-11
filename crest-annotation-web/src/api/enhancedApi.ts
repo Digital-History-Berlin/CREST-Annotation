@@ -25,6 +25,9 @@ export const enhancedApi = api.enhanceEndpoints({
     getObjects: {
       providesTags: ["Object"],
     },
+    getObjectsCount: {
+      providesTags: ["Object"],
+    },
     finishObject: {
       invalidatesTags: ["Object"],
     },

@@ -157,13 +157,19 @@ const AnnotatePage = () => {
   const finishObject = async () => {
     if (!object) return;
 
-    const finished = !object.annotated;
+    const annotated = !object.annotated;
     await requestFinishObject({
       objectId: object.id,
-      finished,
+      finished: annotated,
     }).unwrap();
 
-    if (finished && projectId) navigateRandom(projectId, filters);
+    if (
+      projectId &&
+      filters.annotated !== undefined &&
+      filters.annotated !== annotated
+    )
+      // update current object if neccessary
+      navigateRandom(projectId, filters);
   };
 
   const skipObject = async () => {
