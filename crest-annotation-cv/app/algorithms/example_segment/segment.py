@@ -1,17 +1,19 @@
 import logging
+import json
 import numpy as np
 import cv2
 
-from fastapi import UploadFile, Body, File
-from fastapi.responses import JSONResponse
+from urllib import request
+from fastapi import Body
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from . import router
 
 # TODO: make reusable
 class Position(BaseModel):
-    x: int
-    y: int
+    x: float
+    y: float
 
 
 class Predictor:
@@ -21,11 +23,11 @@ class Predictor:
     def set_image(self, image):
         self.cv_data = image
 
-    def predict(self, position):
+    def predict(self, x: int, y: int):
         # mask no pixels by default
-        mask = np.zeros(self.cv_data.shape)
+        mask = np.zeros(self.cv_data.shape[0:2])
         # mask all pixels around cursor
-        mask[position.x - 10 : position.x + 10, position.y - 10 : position.y + 10] = 1
+        mask[y - 100 : y + 100, x - 100 : x + 100] = 1
 
         return mask
 
@@ -34,25 +36,31 @@ predictor = Predictor()
 
 
 @router.post("/prepare")
-async def prepare(file: UploadFile = File()):
-    global cv_data
-
+async def prepare(url: str | None = Body(embed=True)):
     # TODO: make reusable
-    py_data = bytearray(await file.read())
+    if url:
+        response = request.urlopen(url)
+        py_data = bytearray(response.read())
+    else:
+        raise Exception("Invalid request")
+
     np_data = np.asarray(py_data, dtype=np.uint8)
-    cv_data = cv2.imdecode(np_data, cv2.CV_LOAD_IMAGE_UNCHANGED)
+    cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+
     predictor.set_image(cv_data)
 
 
 @router.post("/preview")
-async def preview(cursor: Position = Body(alias="cursor")):
-    mask = predictor.predict(cursor)
+async def preview(cursor: Position = Body(embed=True)):
+    mask = predictor.predict(int(cursor.x), int(cursor.y))
+    content = json.dumps({"mask": mask.tolist()})
 
-    return JSONResponse({"mask": mask})
+    return Response(content=content, media_type="application/json")
 
 
 @router.post("/run")
-async def run(cursor: Position = Body(alias="cursor")):
-    mask = predictor.predict(cursor)
+async def run(cursor: Position = Body(embed=True)):
+    mask = predictor.predict(int(cursor.x), int(cursor.y))
+    content = json.dumps({"mask": mask.tolist()})
 
-    return JSONResponse({"mask": mask})
+    return Response(content=content, media_type="application/json")

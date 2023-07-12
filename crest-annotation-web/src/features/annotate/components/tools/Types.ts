@@ -1,5 +1,6 @@
 import { ReactElement } from "react";
 import { ShapeConfig } from "konva/lib/Shape";
+import { Object as DataObject } from "../../../../api/openApi";
 import { GestureEvent, GestureEvents } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 
@@ -30,10 +31,18 @@ export type ShapeProps = {
 /// Event handler for gesture events
 export type ShapeEventHandler = (
   shape: Shape | undefined,
-  event: GestureEvent
-) => void;
+  event: GestureEvent,
+  callback: (shape: Shape) => void
+) => Shape | undefined | void;
+
+export type ShapeToolEvent = {
+  projectId: string;
+  object: DataObject;
+  image: string;
+};
 
 /// Combines a shape component with gesture event handlers
 export type ShapeTool = {
   component: (props: ShapeProps) => ReactElement;
+  onBegin?: (event: ShapeToolEvent) => void;
 } & Partial<Record<keyof GestureEvents, ShapeEventHandler>>;

@@ -151,7 +151,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     setLabelPopup(popupPos);
   };
 
-  const updateActiveShape = (shape: Shape): void => {
+  const updateActive = (shape: Shape): void => {
     if (!shape.finished) {
       // shape not yet finished, update active shape
       setActiveShape(shape);
@@ -176,41 +176,56 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     displayPopup(cursor);
   };
 
-  const handleClick = (event: GestureEvent) => {
+  const handleClick = async (event: GestureEvent) => {
     // popup is currently open, cancel annotation
     if (labelPopup) {
       cancelAnnotation();
       return;
     }
 
-    const shape = shapeMap[tool]?.onGestureClick?.(activeShape, event);
-    if (shape) updateActiveShape(shape);
+    const shape = await Promise.resolve(
+      shapeMap[tool]?.onGestureClick?.(activeShape, event, updateActive)
+    );
+
+    if (shape) updateActive(shape);
   };
 
-  const handleMove = (event: GestureEvent) => {
+  const handleMove = async (event: GestureEvent) => {
     // track cursor position
     setCursor(event.absolute);
 
-    const shape = shapeMap[tool]?.onGestureMove?.(activeShape, event);
-    if (shape) updateActiveShape(shape);
+    const shape = await Promise.resolve(
+      shapeMap[tool]?.onGestureMove?.(activeShape, event, updateActive)
+    );
+
+    if (shape) updateActive(shape);
   };
 
-  const handleDragStart = (event: GestureEvent) => {
-    const shape = shapeMap[tool]?.onGestureDragStart?.(activeShape, event);
-    if (shape) updateActiveShape(shape);
+  const handleDragStart = async (event: GestureEvent) => {
+    const shape = await Promise.resolve(
+      shapeMap[tool]?.onGestureDragStart?.(activeShape, event, updateActive)
+    );
+
+    if (shape) updateActive(shape);
   };
 
-  const handleDragMove = (event: GestureEvent) => {
+  const handleDragMove = async (event: GestureEvent) => {
     // track cursor position
     setCursor(event.absolute);
 
-    const shape = shapeMap[tool]?.onGestureDragMove?.(activeShape, event);
-    if (shape) updateActiveShape(shape);
+    const shape = await Promise.resolve(
+      shapeMap[tool]?.onGestureDragMove?.(activeShape, event, updateActive)
+    );
+
+    if (shape) updateActive(shape);
   };
 
-  const handleDragEnd = (event: GestureEvent) => {
-    const shape = shapeMap[tool]?.onGestureDragEnd?.(activeShape, event);
-    if (shape) updateActiveShape(shape);
+  const handleDragEnd = async (event: GestureEvent) => {
+    const shape = await Promise.resolve(
+      shapeMap[tool]?.onGestureDragEnd?.(activeShape, event, updateActive)
+    );
+
+    if (shape) updateActive(shape);
   };
 
   return (

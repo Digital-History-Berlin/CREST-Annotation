@@ -1,8 +1,11 @@
+import json
+import logging
 import numpy as np
 import cv2
 
-from fastapi import UploadFile, Body, File
-from fastapi.responses import JSONResponse
+from urllib import request
+from fastapi import Body
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from segment_anything import SamPredictor, sam_model_registry
@@ -24,22 +27,29 @@ predictor = SamPredictor(sam)
 
 # TODO: make reusable
 class Position(BaseModel):
-    x: int
-    y: int
+    x: float
+    y: float
 
 
 @router.post("/prepare")
-async def prepare(file: UploadFile = File()):
+async def prepare(url: str | None = Body(embed=True)):
     # TODO: make reusable
-    py_data = bytearray(await file.read())
+    if url:
+        logging.info("Loading image...")
+        response = request.urlopen(url)
+        py_data = bytearray(response.read())
+        logging.info("Image loaded")
+    else:
+        raise Exception("Invalid request")
+
     np_data = np.asarray(py_data, dtype=np.uint8)
-    cv_data = cv2.imdecode(np_data, cv2.CV_LOAD_IMAGE_UNCHANGED)
+    cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
     predictor.set_image(cv_data)
 
 
 @router.post("/preview")
-async def preview(cursor: Position = Body(alias="cursor")):
-    input_point = np.array([[cursor.x, cursor.y]])
+async def preview(cursor: Position = Body(embed=True)):
+    input_point = np.array([[int(cursor.x), int(cursor.y)]])
     input_label = np.array([1])
 
     masks, _, _ = predictor.predict(
@@ -48,12 +58,14 @@ async def preview(cursor: Position = Body(alias="cursor")):
         multimask_output=False,
     )
 
-    return JSONResponse({"mask": masks[0]})
+    content = json.dumps({"mask": masks[0].tolist()})
+
+    return Response(content=content, media_type="application/json")
 
 
 @router.post("/run")
-async def run(cursor: Position = Body(alias="cursor")):
-    input_point = np.array([[cursor.x, cursor.y]])
+async def run(cursor: Position = Body(embed=True)):
+    input_point = np.array([[int(cursor.x), int(cursor.y)]])
     input_label = np.array([1])
 
     masks, _, _ = predictor.predict(
@@ -62,4 +74,6 @@ async def run(cursor: Position = Body(alias="cursor")):
         multimask_output=False,
     )
 
-    return JSONResponse({"mask": masks[0]})
+    content = json.dumps({"mask": masks[0].tolist()})
+
+    return Response(content=content, media_type="application/json")

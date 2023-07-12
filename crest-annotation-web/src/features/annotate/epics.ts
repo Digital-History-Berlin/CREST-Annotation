@@ -8,8 +8,6 @@ export const pullAnnotations = createAsyncThunk(
     { objectId, projectId }: { objectId: string; projectId: string },
     { dispatch }
   ) => {
-    console.log(objectId);
-    console.log(projectId);
     // re-fetch the annotations
     const json = await dispatch(
       enhancedApi.endpoints.getAnnotations.initiate(

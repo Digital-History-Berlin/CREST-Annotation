@@ -11,6 +11,7 @@ import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
+import { shapeMap } from "./components/tools/Shape";
 import {
   editAnnotation,
   selectEditing,
@@ -189,6 +190,22 @@ const AnnotatePage = () => {
       navigateRandom(projectId, { ...filters, annotated, offset: 0 });
   };
 
+  const activateTool = (tool: Tool) => {
+    if (projectId && object)
+      // run initialization routine if neccessary
+      // TODO: maybe run this in reducer/epic
+      Promise.resolve(
+        shapeMap[tool]?.onBegin?.({
+          projectId: projectId,
+          object: object,
+          image: imageUri,
+        })
+      )
+        .then(() => dispatch(setActiveTool(tool)))
+        // TODO: error message
+        .catch((error) => console.log(error));
+  };
+
   const renderTools = () => (
     <Stack direction="row">
       {tools.map((button, index) => {
@@ -197,7 +214,7 @@ const AnnotatePage = () => {
           <ToolbarToggleButtonWithTooltip
             key={index}
             value={button.tool}
-            onClick={() => dispatch(setActiveTool(button.tool))}
+            onClick={() => activateTool(button.tool)}
             selected={activeTool === button.tool}
             tooltip={button.tooltip}
           >

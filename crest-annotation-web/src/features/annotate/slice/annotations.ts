@@ -157,7 +157,6 @@ export const slice = createSlice({
       }));
     },
     toggleAnnotation: (state, action: PayloadAction<{ id: string }>) => {
-      console.log(action.payload);
       state.annotations = state.annotations.map((annotation) => ({
         ...annotation,
         selected: !annotation.selected && annotation.id === action.payload.id,
