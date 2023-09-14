@@ -20,10 +20,10 @@ type ToolbarToggleButtonProps = {
  */
 export const ToolbarButton = styled(Button)(({ theme }) => ({
   "&": {
-    minWidth: 0,
-    padding: theme.spacing(1),
+    minWidth: 48,
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),
+    justifyContent: "center",
     color: theme.palette.primary.contrastText,
 
     border: 0,
@@ -42,9 +42,10 @@ export const ToolbarButton = styled(Button)(({ theme }) => ({
  */
 export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
   "&": {
-    padding: theme.spacing(1),
+    minWidth: 48,
     marginLeft: theme.spacing(0.5),
     marginRight: theme.spacing(0.5),
+    justifyContent: "center",
     color: theme.palette.primary.contrastText,
 
     border: 0,

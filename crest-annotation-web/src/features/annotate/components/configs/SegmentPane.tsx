@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   Button,
   Divider,
@@ -11,31 +11,34 @@ import {
 import InvalidIcon from "@mui/icons-material/Cancel";
 import CheckIcon from "@mui/icons-material/Check";
 import ValidIcon from "@mui/icons-material/CheckCircle";
+import { ToolPane } from "./ToolPane";
 import { info } from "../../../../api/cvApi";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import SidebarContainer from "../../../../components/SidebarContainer";
-import { Tool, ToolState, updateToolConfig } from "../../slice/tools";
-
-type Algorithms = [{ id: string; name: string }];
+import { SegmentConfig, Tool, updateToolConfig } from "../../slice/tools";
 
 interface IProps {
   onUpdate: (tool: Tool) => void;
+  loading: boolean;
 }
 
-const SegmentPane = ({ onUpdate }: IProps) => {
+const SegmentPane = ({ onUpdate, loading }: IProps) => {
   const dispatch = useAppDispatch();
-
-  const [backendState, setBackendState] = useState<boolean>();
-  const [algorithms, setAlgorithms] = useState<Algorithms>();
 
   const config = useAppSelector(
     (state) => state.tools.toolConfigs[Tool.Segment]
   );
-  // TODO: it is weird to access the active tool here
-  // maybe place the tool state beside the tool config
-  const state = useAppSelector((state) => state.tools.activeTool.state);
 
-  useEffect(() => setBackendState(undefined), [config.backend]);
+  const updateConfig = useCallback(
+    (config: Partial<SegmentConfig>) => {
+      dispatch(updateToolConfig({ tool: Tool.Segment, config }));
+    },
+    [dispatch]
+  );
+
+  useEffect(
+    () => updateConfig({ state: undefined }),
+    [updateConfig, config.backend]
+  );
 
   // fetch available algorithms when backend is specified
   const validateBackend = () => {
@@ -43,13 +46,11 @@ const SegmentPane = ({ onUpdate }: IProps) => {
       info(config.backend)
         .then((response) => response.json())
         .then((data) => {
-          setBackendState(true);
-          setAlgorithms(data.algorithms);
+          updateConfig({ state: true, algorithms: data.algorithms });
           console.log("Backend available");
         })
         .catch((e) => {
-          setBackendState(false);
-          setAlgorithms(undefined);
+          updateConfig({ state: false, algorithms: undefined });
           console.log(e);
         });
   };
@@ -61,7 +62,7 @@ const SegmentPane = ({ onUpdate }: IProps) => {
   };
 
   return (
-    <SidebarContainer title={"Segmentation Settings"}>
+    <ToolPane loading={loading}>
       <Stack padding={2} spacing={2}>
         <Stack direction="row" spacing={1} alignItems="center">
           <TextField
@@ -82,13 +83,13 @@ const SegmentPane = ({ onUpdate }: IProps) => {
             <CheckIcon />
           </IconButton>
         </Stack>
-        {backendState === true && (
+        {config.state === true && (
           <Stack direction="row" alignItems="center" gap={1}>
             <ValidIcon color="success" />
             <Typography color="success">Backend available</Typography>
           </Stack>
         )}
-        {backendState === false && (
+        {config.state === false && (
           <Stack direction="row" alignItems="center" gap={1}>
             <InvalidIcon color="error" />
             <Typography color="error">
@@ -97,7 +98,7 @@ const SegmentPane = ({ onUpdate }: IProps) => {
           </Stack>
         )}
 
-        {algorithms && (
+        {config.algorithms && (
           <>
             <Divider />
             <TextField
@@ -115,23 +116,19 @@ const SegmentPane = ({ onUpdate }: IProps) => {
                 )
               }
             >
-              {algorithms.map((algorithm) => (
+              {config.algorithms.map((algorithm) => (
                 <MenuItem key={algorithm.id} value={algorithm.id}>
                   {algorithm.name}
                 </MenuItem>
               ))}
             </TextField>
-            <Button
-              onClick={applyChanges}
-              variant="contained"
-              disabled={state === ToolState.Preparing}
-            >
+            <Button onClick={applyChanges} variant="contained">
               Apply
             </Button>
           </>
         )}
       </Stack>
-    </SidebarContainer>
+    </ToolPane>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
-import { SkipNext } from "@mui/icons-material";
+import { PriorityHigh, SkipNext } from "@mui/icons-material";
 import { CircularProgress, Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
@@ -209,7 +209,9 @@ const AnnotatePage = () => {
       {tools.map((button, index) => {
         if (button.tool === undefined) return <ToolbarDivider key={index} />;
         const active = activeTool.tool === button.tool;
-        const preparing = activeTool.state === ToolState.Preparing;
+        const ready = !active || activeTool.state === ToolState.Ready;
+        const loading = active && activeTool.state === ToolState.Loading;
+        const failed = active && activeTool.state === ToolState.Failed;
 
         return (
           <ToolbarToggleButtonWithTooltip
@@ -218,12 +220,20 @@ const AnnotatePage = () => {
             onClick={() => updateTool(button.tool)}
             selected={active}
             tooltip={button.tooltip}
-            disabled={preparing}
           >
-            {active && preparing ? (
-              <CircularProgress size={22} />
-            ) : (
-              <Icon icon={button.icon} style={button.style} />
+            <Icon
+              icon={button.icon}
+              style={{ ...button.style }}
+              color={!ready ? theme.palette.primary.dark : undefined}
+            />
+            {loading && (
+              <CircularProgress
+                style={{ color: "white", position: "absolute" }}
+                size={32}
+              />
+            )}
+            {failed && (
+              <PriorityHigh style={{ color: "white", position: "absolute" }} />
             )}
           </ToolbarToggleButtonWithTooltip>
         );
@@ -306,7 +316,10 @@ const AnnotatePage = () => {
             borderLeft: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <ConfigPane onUpdate={updateTool} />
+          <ConfigPane
+            loading={activeTool.state === ToolState.Loading}
+            onUpdate={updateTool}
+          />
         </Stack>
       );
 

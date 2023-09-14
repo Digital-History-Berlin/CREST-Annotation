@@ -81,6 +81,14 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLabel]);
 
+  // cancel the annotation on tool change
+  useEffect(
+    () => cancelAnnotation(),
+    // this should explicitly only trigger when the active tool changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tool]
+  );
+
   // update the zoom on change
   useEffect(() => {
     stageRef.current?.scale({
@@ -126,11 +134,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       })
     );
 
+    console.log("Annotation created");
     setActiveShape(undefined);
     setLabelPopup(undefined);
   };
 
   const cancelAnnotation = () => {
+    console.log("Annotation cancelled");
     setActiveShape(undefined);
     setLabelPopup(undefined);
   };

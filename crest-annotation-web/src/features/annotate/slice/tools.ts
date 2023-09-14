@@ -17,20 +17,24 @@ export enum Modifiers {
 }
 
 export enum ToolState {
-  Preparing = "Preparing",
   Ready = "Ready",
+  Loading = "Loading",
   Failed = " Failed",
 }
 
+export type Algorithm = { id: string; name: string };
+
 export interface SegmentConfig {
   backend?: string;
+  state?: boolean;
+  algorithms?: Algorithm[];
   algorithm?: string;
   // algorithm specific config
   details?: { [key: string]: unknown };
 }
 
 export interface ToolsSlice {
-  activeTool: { tool: Tool; state: ToolState; config?: unknown };
+  activeTool: { tool: Tool; config: unknown; state: ToolState };
   activeModifiers: Modifiers[];
   activeLabelId?: string;
   // modifier specific data
@@ -48,7 +52,7 @@ export interface ToolsSlice {
 }
 
 const initialState: ToolsSlice = {
-  activeTool: { tool: Tool.Pen, state: ToolState.Ready },
+  activeTool: { tool: Tool.Pen, config: undefined, state: ToolState.Ready },
   activeModifiers: [],
   toolConfigs: {
     [Tool.Pen]: undefined,
@@ -76,26 +80,21 @@ export const slice = createSlice({
   name: "tools",
   initialState,
   reducers: {
-    setActiveTool: (state, action: PayloadAction<Tool>) => {
-      state.activeTool = {
-        tool: action.payload,
-        state: ToolState.Ready,
-        config: undefined,
-      };
-    },
-    prepareActiveTool: (state, action: PayloadAction<Tool>) => {
-      state.activeTool = {
-        tool: action.payload,
-        state: ToolState.Preparing,
-        config: undefined,
-      };
+    setActiveTool: (
+      state,
+      action: PayloadAction<{ tool: Tool; config: unknown; state: ToolState }>
+    ) => {
+      state.activeTool = action.payload;
     },
     updateActiveTool: (
       state,
-      action: PayloadAction<{ state: ToolState; config?: unknown }>
+      action: PayloadAction<{ config?: unknown; state?: ToolState }>
     ) => {
-      state.activeTool.state = action.payload.state;
-      state.activeTool.config = action.payload.config;
+      // patch the tool
+      state.activeTool = {
+        ...state.activeTool,
+        ...action.payload,
+      };
     },
     setActiveLabel: (state, action: PayloadAction<Label | undefined>) => {
       state.activeLabelId = action.payload?.id;
@@ -161,7 +160,6 @@ export const slice = createSlice({
 
 export const {
   setActiveTool,
-  prepareActiveTool,
   updateActiveTool,
   setActiveLabel,
   setModifiers,

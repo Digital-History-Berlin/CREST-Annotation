@@ -1,7 +1,6 @@
 import { ReactElement } from "react";
 import { ShapeConfig } from "konva/lib/Shape";
 import { Object as DataObject } from "../../../../api/openApi";
-import { AppDispatch, RootState } from "../../../../app/store";
 import { GestureEvent, GestureEvents } from "../../../../types/Events";
 import { MaybePromise } from "../../../../types/MaybePromise";
 import { Shape } from "../../slice/annotations";
@@ -44,15 +43,13 @@ export type ShapeToolEvent = {
   image: string;
 };
 
+export type ShapeToolEventHandler = (
+  event: ShapeToolEvent,
+  config: unknown
+) => MaybePromise<void>;
+
 /// Combines a shape component with gesture event handlers
 export type ShapeTool = {
   component: (props: ShapeProps) => ReactElement;
-  onBegin?: (
-    event: ShapeToolEvent,
-    // provide additional tools during config
-    api: {
-      dispatch: AppDispatch;
-      getState: () => RootState;
-    }
-  ) => MaybePromise<unknown>;
+  onBegin?: ShapeToolEventHandler;
 } & Partial<Record<keyof GestureEvents, ShapeEventHandler>>;

@@ -60,7 +60,8 @@ const SidebarContainer = ({
         {actions}
       </TitleBox>
       {/* make sure content always stretches over full height */}
-      <Box flex="1" sx={{ overflow: "auto" }}>
+      {/* use relative position to allow absolute in children */}
+      <Box flex="1" sx={{ overflow: "auto", position: "relative" }}>
         {children}
       </Box>
     </Stack>

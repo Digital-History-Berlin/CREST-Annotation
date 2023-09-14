@@ -5,7 +5,6 @@ import { Annotation, updateAnnotations } from "./slice/annotations";
 import {
   Tool,
   ToolState,
-  prepareActiveTool,
   setActiveTool,
   updateActiveTool,
 } from "./slice/tools";
@@ -47,22 +46,25 @@ export const pullAnnotations = createAsyncThunk(
 
 export const activateTool = createAsyncThunk<
   void,
-  { tool: Tool } & Omit<ShapeToolEvent, "api">,
+  { tool: Tool } & ShapeToolEvent,
   { state: RootState; dispatch: AppDispatch }
 >(
   "annotations/activateTool",
   async ({ tool, ...event }, { dispatch, getState }) => {
     console.log(`Selected tool ${tool}`);
 
+    // get the tools current configuration
+    const config = getState().tools.toolConfigs[tool];
+
     // asynchronously initialize the tool
     const initializer = shapeMap[tool]?.onBegin;
     if (initializer) {
-      dispatch(prepareActiveTool(tool));
+      dispatch(setActiveTool({ tool, config, state: ToolState.Loading }));
 
-      await Promise.resolve(initializer(event, { dispatch, getState }))
-        .then((config) => {
-          dispatch(updateActiveTool({ state: ToolState.Ready, config }));
-          console.log("Tool activated", config);
+      return Promise.resolve(initializer(event, config))
+        .then(() => {
+          dispatch(updateActiveTool({ state: ToolState.Ready }));
+          console.log("Tool activated");
         })
         .catch((error) => {
           dispatch(updateActiveTool({ state: ToolState.Failed }));
@@ -71,6 +73,6 @@ export const activateTool = createAsyncThunk<
     }
 
     // synchronously activate the tool
-    dispatch(setActiveTool(tool));
+    dispatch(setActiveTool({ tool, config, state: ToolState.Ready }));
   }
 );

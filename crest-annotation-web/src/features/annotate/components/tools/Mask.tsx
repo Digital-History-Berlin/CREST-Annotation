@@ -3,7 +3,24 @@ import { Group, Image } from "react-konva";
 import { ShapeProps } from "./Types";
 import { Mask as MaskShape } from "../../tools/mask";
 
-export const Mask = ({ identifier, shape, onClick }: ShapeProps) => {
+const colorRegex =
+  /#([a-fA-F0-9][a-fA-F0-9])([a-fA-F0-9][a-fA-F0-9])([a-fA-F0-9][a-fA-F0-9])/;
+
+const hexToRgbA = (hex: string, alpha: number) => {
+  const match = hex.match(colorRegex);
+
+  if (match)
+    return {
+      red: parseInt(match[1], 16),
+      green: parseInt(match[2], 16),
+      blue: parseInt(match[3], 16),
+      alpha,
+    };
+
+  return { red: 255, green: 255, blue: 255, alpha };
+};
+
+export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
   const mask = shape as MaskShape;
 
   const canvasRef = useRef<HTMLCanvasElement>();
@@ -23,15 +40,33 @@ export const Mask = ({ identifier, shape, onClick }: ShapeProps) => {
     const id = context.createImageData(width, height);
     const d = id.data;
 
+    const foreground = shape.finished
+      ? hexToRgbA(color, 100)
+      : { red: 255, green: 255, blue: 255, alpha: 100 };
+    const background = shape.finished
+      ? { red: 0, green: 0, blue: 0, alpha: 0 }
+      : { red: 0, green: 0, blue: 0, alpha: 100 };
+
+    console.log(color);
+    console.log(foreground);
+
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
-        d[x * 4 + y * width * 4 + 0] = mask.mask[y][x] ? 255 : 0;
-        d[x * 4 + y * width * 4 + 1] = mask.mask[y][x] ? 255 : 0;
-        d[x * 4 + y * width * 4 + 2] = mask.mask[y][x] ? 255 : 0;
-        d[x * 4 + y * width * 4 + 3] = 100;
+        d[x * 4 + y * width * 4 + 0] = mask.mask[y][x]
+          ? foreground.red
+          : background.red;
+        d[x * 4 + y * width * 4 + 1] = mask.mask[y][x]
+          ? foreground.green
+          : background.green;
+        d[x * 4 + y * width * 4 + 2] = mask.mask[y][x]
+          ? foreground.blue
+          : background.blue;
+        d[x * 4 + y * width * 4 + 3] = mask.mask[y][x]
+          ? foreground.alpha
+          : background.alpha;
       }
     context.putImageData(id, 0, 0);
-  }, [mask]);
+  }, [shape.finished, mask, color]);
 
   return (
     <Group key={identifier}>
