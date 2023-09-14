@@ -6,14 +6,9 @@ import cv2
 from urllib import request
 from fastapi import Body
 from fastapi.responses import Response
-from pydantic import BaseModel
 
+from app.schemas.common import Position
 from . import router
-
-# TODO: make reusable
-class Position(BaseModel):
-    x: float
-    y: float
 
 
 class Predictor:
@@ -37,7 +32,6 @@ predictor = Predictor()
 
 @router.post("/prepare")
 async def prepare(url: str | None = Body(embed=True)):
-    # TODO: make reusable
     if url:
         response = request.urlopen(url)
         py_data = bytearray(response.read())

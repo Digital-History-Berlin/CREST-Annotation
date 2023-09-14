@@ -63,9 +63,13 @@ export const ToolbarDivider = styled(Divider)(({ theme }) => ({
     backgroundColor: theme.palette.primary.contrastText,
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
-    width: "1px",
   },
 }));
+
+ToolbarDivider.defaultProps = {
+  orientation: "vertical",
+  flexItem: true,
+};
 
 export const ToolbarButtonWithTooltip = ({
   tooltip,

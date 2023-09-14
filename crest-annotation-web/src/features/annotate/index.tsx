@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { SkipNext } from "@mui/icons-material";
-import { Link, Stack, useTheme } from "@mui/material";
+import { CircularProgress, Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
 import ObjectsIcon from "@mui/icons-material/Apps";
@@ -9,9 +9,10 @@ import FinishedIcon from "@mui/icons-material/Check";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AnnotationsList from "./components/AnnotationsList";
 import Canvas from "./components/Canvas";
+import { toolPaneMap } from "./components/configs/ToolPane";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
-import { shapeMap } from "./components/tools/Shape";
+import { activateTool } from "./epics";
 import {
   editAnnotation,
   selectEditing,
@@ -20,11 +21,11 @@ import {
 import {
   Modifiers,
   Tool,
+  ToolState,
   selectActiveLabelId,
   selectActiveModifiers,
   selectActiveTool,
   setActiveLabel,
-  setActiveTool,
   toggleModifier,
 } from "./slice/tools";
 import {
@@ -74,7 +75,7 @@ const tools = [
   },
   {
     tool: Tool.Polygon,
-    icon: "mdi:vector-polygon",
+    icon: "mdi:vector-polygon-variant",
     style: { fontSize: "25px" },
     tooltip: "Polygon",
   },
@@ -88,7 +89,7 @@ const tools = [
   { tool: undefined },
   {
     tool: Tool.Segment,
-    icon: "fluent:brain-circuit-24-regular",
+    icon: "mdi:auto-fix",
     style: { fontSize: "25px" },
     tooltip: "Segment",
   },
@@ -190,35 +191,40 @@ const AnnotatePage = () => {
       navigateRandom(projectId, { ...filters, annotated, offset: 0 });
   };
 
-  const activateTool = (tool: Tool) => {
-    if (projectId && object)
-      // run initialization routine if neccessary
-      // TODO: maybe run this in reducer/epic
-      Promise.resolve(
-        shapeMap[tool]?.onBegin?.({
-          projectId: projectId,
-          object: object,
+  const updateTool = (tool: Tool) => {
+    if (object && projectId)
+      dispatch(
+        // @ts-expect-error dispatch has incorrect type
+        activateTool({
+          tool: tool,
           image: imageUri,
+          object: object,
+          projectId: projectId,
         })
-      )
-        .then(() => dispatch(setActiveTool(tool)))
-        // TODO: error message
-        .catch((error) => console.log(error));
+      );
   };
 
   const renderTools = () => (
     <Stack direction="row">
       {tools.map((button, index) => {
         if (button.tool === undefined) return <ToolbarDivider key={index} />;
+        const active = activeTool.tool === button.tool;
+        const preparing = activeTool.state === ToolState.Preparing;
+
         return (
           <ToolbarToggleButtonWithTooltip
             key={index}
             value={button.tool}
-            onClick={() => activateTool(button.tool)}
-            selected={activeTool === button.tool}
+            onClick={() => updateTool(button.tool)}
+            selected={active}
             tooltip={button.tooltip}
+            disabled={preparing}
           >
-            <Icon icon={button.icon} style={button.style} />
+            {active && preparing ? (
+              <CircularProgress size={22} />
+            ) : (
+              <Icon icon={button.icon} style={button.style} />
+            )}
           </ToolbarToggleButtonWithTooltip>
         );
       })}
@@ -273,25 +279,47 @@ const AnnotatePage = () => {
     </Stack>
   );
 
+  const renderLeft = () => (
+    <Stack
+      sx={{
+        width: "440px",
+        borderRight: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <AnnotationsList projectId={projectId} />
+      <LabelsExplorer
+        projectId={projectId}
+        selected={activeLabelId}
+        onSelect={toggleLabelSelection}
+      />
+    </Stack>
+  );
+
+  const renderRight = () => {
+    const ConfigPane = toolPaneMap[activeTool.tool];
+
+    if (ConfigPane)
+      return (
+        <Stack
+          sx={{
+            width: "440px",
+            borderLeft: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <ConfigPane onUpdate={updateTool} />
+        </Stack>
+      );
+
+    // hide sidebar if not required
+    return undefined;
+  };
+
   return (
     <Layout
       sx={{ display: "flex" }}
       header={<Toolbar tools={renderTools()} actions={renderActions()} />}
-      left={
-        <Stack
-          sx={{
-            width: "440px",
-            borderRight: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <AnnotationsList projectId={projectId} />
-          <LabelsExplorer
-            projectId={projectId}
-            selected={activeLabelId}
-            onSelect={toggleLabelSelection}
-          />
-        </Stack>
-      }
+      left={renderLeft()}
+      right={renderRight()}
     >
       <AddProjectDialog
         open={showCreate}

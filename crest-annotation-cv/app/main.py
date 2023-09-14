@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from .environment import env
+from .routers import common
 
 # TODO: automatically import routers
 from .algorithms import example_segment
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(common.router)
 # TODO: automatically include routers
 app.include_router(example_segment.router)
 app.include_router(facebook_sam.router)

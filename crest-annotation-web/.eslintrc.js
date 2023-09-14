@@ -8,7 +8,7 @@ module.exports = {
     node: true,
   },
   ignorePatterns: ["*.d.ts", "/src/api/openApi.ts"],
-  plugins: ["@typescript-eslint", "prettier", "import"],
+  plugins: ["@typescript-eslint", "prettier", "import", "unused-imports"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -25,6 +25,7 @@ module.exports = {
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
     ],
     // imports
+    "unused-imports/no-unused-imports": "error",
     "sort-imports": [
       "error",
       {

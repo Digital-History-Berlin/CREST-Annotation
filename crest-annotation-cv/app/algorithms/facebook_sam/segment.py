@@ -5,35 +5,27 @@ import cv2
 
 from urllib import request
 from fastapi import Body
-from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel
+from fastapi.responses import Response
 
 from segment_anything import SamPredictor, sam_model_registry
 
+from app.environment import env
+from app.schemas.common import Position
 from . import router
 
-# TODO: configuration
-sam_checkpoint = "./models/sam_vit_h_4b8939.pth"
-model_type = "vit_h"
+# TODO: this will initialize SAM on startup
+# maybe implement some lazy loading
+sam = sam_model_registry[env.sam_model_type](checkpoint=env.sam_checkpoint)
 
-device = "cuda"
-
-# TODO: do this when neccessary
-sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-sam.to(device=device)
+if env.sam_device:
+    # if no device is specified leave on CPU
+    sam.to(device=env.sam_device)
 
 predictor = SamPredictor(sam)
 
 
-# TODO: make reusable
-class Position(BaseModel):
-    x: float
-    y: float
-
-
 @router.post("/prepare")
 async def prepare(url: str | None = Body(embed=True)):
-    # TODO: make reusable
     if url:
         logging.info("Loading image...")
         response = request.urlopen(url)

@@ -109,12 +109,12 @@ const onSecondaryClick: ShapeEventHandler = (shape) => {
   };
 };
 
-const onGestureClick: ShapeEventHandler = (shape, event, callback) => {
+const onGestureClick: ShapeEventHandler = (shape, event, callback, config) => {
   switch (event.overload) {
     case GestureOverload.Primary:
-      return onPrimaryClick(shape, event, callback);
+      return onPrimaryClick(shape, event, callback, config);
     case GestureOverload.Secondary:
-      return onSecondaryClick(shape, event, callback);
+      return onSecondaryClick(shape, event, callback, config);
   }
 };
 

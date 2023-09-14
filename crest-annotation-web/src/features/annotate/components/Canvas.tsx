@@ -107,7 +107,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   );
 
   // gets the default cursor that is shown when hovering the canvas
-  const defaultCursor = () => (tool === Tool.Edit ? "pointer" : "crosshair");
+  const defaultCursor = () =>
+    tool.tool === Tool.Edit ? "pointer" : "crosshair";
   // change the current cursor
   const changeCursor = (cursor: string | undefined) => {
     const container = stageRef.current?.container();
@@ -184,7 +185,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     }
 
     const shape = await Promise.resolve(
-      shapeMap[tool]?.onGestureClick?.(activeShape, event, updateActive)
+      shapeMap[tool.tool]?.onGestureClick?.(
+        activeShape,
+        event,
+        updateActive,
+        tool.config
+      )
     );
 
     if (shape) updateActive(shape);
@@ -195,7 +201,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     setCursor(event.absolute);
 
     const shape = await Promise.resolve(
-      shapeMap[tool]?.onGestureMove?.(activeShape, event, updateActive)
+      shapeMap[tool.tool]?.onGestureMove?.(
+        activeShape,
+        event,
+        updateActive,
+        tool.config
+      )
     );
 
     if (shape) updateActive(shape);
@@ -203,7 +214,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   const handleDragStart = async (event: GestureEvent) => {
     const shape = await Promise.resolve(
-      shapeMap[tool]?.onGestureDragStart?.(activeShape, event, updateActive)
+      shapeMap[tool.tool]?.onGestureDragStart?.(
+        activeShape,
+        event,
+        updateActive,
+        tool.config
+      )
     );
 
     if (shape) updateActive(shape);
@@ -214,7 +230,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     setCursor(event.absolute);
 
     const shape = await Promise.resolve(
-      shapeMap[tool]?.onGestureDragMove?.(activeShape, event, updateActive)
+      shapeMap[tool.tool]?.onGestureDragMove?.(
+        activeShape,
+        event,
+        updateActive,
+        tool.config
+      )
     );
 
     if (shape) updateActive(shape);
@@ -222,7 +243,12 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   const handleDragEnd = async (event: GestureEvent) => {
     const shape = await Promise.resolve(
-      shapeMap[tool]?.onGestureDragEnd?.(activeShape, event, updateActive)
+      shapeMap[tool.tool]?.onGestureDragEnd?.(
+        activeShape,
+        event,
+        updateActive,
+        tool.config
+      )
     );
 
     if (shape) updateActive(shape);

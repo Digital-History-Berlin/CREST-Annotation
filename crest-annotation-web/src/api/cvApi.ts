@@ -1,26 +1,43 @@
 import { Position } from "../types/Position";
 
-const cvBaseUrl = "http://localhost:9000/facebook-sam";
-
 const debounceTimeout = 500;
 let previewDebounce: NodeJS.Timeout | undefined;
 let previewRunning = false;
 
-export const prepare = async (body: { url?: string }): Promise<Response> => {
+export const info = async (backend: string): Promise<Response> => {
+  const response = await fetch(`${backend}/info`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) throw new Error("Invalid response");
+
+  return response;
+};
+
+export const prepare = async (
+  backend: string,
+  algorithm: string,
+  body: { url?: string }
+): Promise<Response> => {
   previewRunning = false;
   // reset any previously scheduled tasks
   clearTimeout(previewDebounce);
 
-  const response = await fetch(`${cvBaseUrl}/prepare`, {
+  const response = await fetch(`${backend}/${algorithm}/prepare`, {
     body: JSON.stringify(body),
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
 
+  if (!response.ok) throw new Error("Invalid response");
+
   return response;
 };
 
 export const preview = (
+  backend: string,
+  algorithm: string,
   body: { cursor: Position },
   callback?: (response: Response) => void
 ): void => {
@@ -32,29 +49,35 @@ export const preview = (
   previewDebounce = setTimeout(async () => {
     previewRunning = true;
     try {
-      const response = await fetch(`${cvBaseUrl}/preview`, {
+      const response = await fetch(`${backend}/${algorithm}/preview`, {
         body: JSON.stringify(body),
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
 
       // handle result
-      callback?.(response);
+      if (response.ok) callback?.(response);
     } finally {
       previewRunning = false;
     }
   }, debounceTimeout);
 };
 
-export const run = async (body: { cursor: Position }): Promise<Response> => {
+export const run = async (
+  backend: string,
+  algorithm: string,
+  body: { cursor: Position }
+): Promise<Response> => {
   // reset any previously scheduled tasks
   clearTimeout(previewDebounce);
 
-  const response = await fetch(`${cvBaseUrl}/run`, {
+  const response = await fetch(`${backend}/${algorithm}/run`, {
     body: JSON.stringify(body),
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
+
+  if (!response.ok) throw new Error("Invalid response");
 
   return response;
 };
