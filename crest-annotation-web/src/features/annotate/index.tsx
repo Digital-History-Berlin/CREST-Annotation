@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { PriorityHigh, SkipNext } from "@mui/icons-material";
 import { CircularProgress, Link, Stack, useTheme } from "@mui/material";
@@ -35,7 +35,7 @@ import {
   useGetObjectQuery,
   useGetObjectsCountQuery,
 } from "../../api/enhancedApi";
-import { Label } from "../../api/openApi";
+import { Label, useGetProjectQuery } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   ObjectFilters,
@@ -109,6 +109,18 @@ const AnnotatePage = () => {
   const theme = useTheme();
 
   const { projectId, objectId } = useParams();
+  const { currentData: project } = useGetProjectQuery(
+    { projectId: projectId! },
+    { skip: !projectId }
+  );
+  const { currentData: object } = useGetObjectQuery(
+    { objectId: objectId! },
+    { skip: !objectId }
+  );
+  const { currentData: count } = useGetObjectsCountQuery(
+    { projectId: projectId! },
+    { skip: !projectId }
+  );
 
   const activeTool = useAppSelector(selectActiveTool);
   const activeLabelId = useAppSelector(selectActiveLabelId);
@@ -119,17 +131,9 @@ const AnnotatePage = () => {
   const [getRandom, { isError: randomError }] =
     enhancedApi.useGetRandomObjectMutation();
   const [requestFinishObject] = useFinishObjectMutation();
-  const { currentData: count } = useGetObjectsCountQuery(
-    { projectId: projectId! },
-    { skip: !projectId }
-  );
-  const { currentData: object } = useGetObjectQuery(
-    { objectId: objectId! },
-    { skip: !objectId }
-  );
 
   // TODO: move to image component
-  const { data: imageUri } = useGetImageUriQuery(
+  const { data: image } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { objectId: objectId!, imageRequest: {} },
     { skip: !objectId }
@@ -160,6 +164,9 @@ const AnnotatePage = () => {
     else if (!objectId) navigateRandom(projectId, { ...filters, offset: 0 });
     // update object id in state
     else dispatch(setObjectId({ projectId, objectId }));
+
+    // explictly respond only on project or object change
+    // TODO: in case this causes problems, add other deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, objectId]);
 
@@ -191,18 +198,33 @@ const AnnotatePage = () => {
       navigateRandom(projectId, { ...filters, annotated, offset: 0 });
   };
 
-  const updateTool = (tool: Tool) => {
-    if (object && projectId)
-      dispatch(
-        // @ts-expect-error dispatch has incorrect type
-        activateTool({
-          tool: tool,
-          image: imageUri,
-          object: object,
-          projectId: projectId,
-        })
-      );
-  };
+  const updateTool = useCallback(
+    (tool: Tool) => {
+      if (object && project)
+        dispatch(
+          // @ts-expect-error dispatch has incorrect type
+          activateTool({
+            tool,
+            image,
+            object,
+            project,
+          })
+        );
+    },
+    [dispatch, object, project, image]
+  );
+
+  // re-initialize the tool on changes
+  // (the callback itself tracks the changes)
+  useEffect(
+    () => {
+      updateTool(activeTool.tool);
+      console.log("HELLO");
+    },
+    // do not respond to tool changes itself
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [updateTool]
+  );
 
   const renderTools = () => (
     <Stack direction="row">
@@ -345,9 +367,9 @@ const AnnotatePage = () => {
       />
       <Loader
         query={{
-          isLoading: !projectId || (!imageUri && !randomError),
+          isLoading: !projectId || (!image && !randomError),
           isError: randomError,
-          data: imageUri,
+          data: image,
         }}
         errorPlaceholder={
           <PlaceholderLayout

@@ -15,7 +15,7 @@ class Predictor:
     def __init__(self):
         self.cv_data = None
 
-    def set_image(self, image):
+    def set_image(self, image, cache_index):
         self.cv_data = image
 
     def predict(self, x: int, y: int):
@@ -28,20 +28,30 @@ class Predictor:
 
 
 predictor = Predictor()
+cache_index= None
 
 
 @router.post("/prepare")
 async def prepare(url: str | None = Body(embed=True)):
+    global cache_index
+    
+    if(cache_index == url):
+        logging.info('Image cached')
+        return
+
     if url:
+        logging.info("Loading image...")
         response = request.urlopen(url)
         py_data = bytearray(response.read())
+        logging.info("Image loaded")
     else:
         raise Exception("Invalid request")
 
     np_data = np.asarray(py_data, dtype=np.uint8)
     cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-
     predictor.set_image(cv_data)
+
+    cache_index = url
 
 
 @router.post("/preview")

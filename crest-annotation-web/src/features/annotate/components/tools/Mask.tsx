@@ -47,9 +47,7 @@ export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
       ? { red: 0, green: 0, blue: 0, alpha: 0 }
       : { red: 0, green: 0, blue: 0, alpha: 100 };
 
-    console.log(color);
-    console.log(foreground);
-
+    console.log("(Re-)rendering mask...");
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
         d[x * 4 + y * width * 4 + 0] = mask.mask[y][x]
@@ -65,7 +63,9 @@ export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
           ? foreground.alpha
           : background.alpha;
       }
+    console.log("Storing rendering...");
     context.putImageData(id, 0, 0);
+    console.log("Rendering done");
   }, [shape.finished, mask, color]);
 
   return (

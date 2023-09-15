@@ -22,10 +22,17 @@ if env.sam_device:
     sam.to(device=env.sam_device)
 
 predictor = SamPredictor(sam)
+cache_index = None
 
 
 @router.post("/prepare")
 async def prepare(url: str | None = Body(embed=True)):
+    global cache_index
+    
+    if(cache_index == url):
+        logging.info('Image cached')
+        return
+    
     if url:
         logging.info("Loading image...")
         response = request.urlopen(url)
@@ -37,6 +44,8 @@ async def prepare(url: str | None = Body(embed=True)):
     np_data = np.asarray(py_data, dtype=np.uint8)
     cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
     predictor.set_image(cv_data)
+
+    cache_index = url
 
 
 @router.post("/preview")
