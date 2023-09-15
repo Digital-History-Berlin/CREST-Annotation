@@ -1,6 +1,12 @@
 {
   "editor.formatOnSave": true,
+  // default for backend
   "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
+  "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
+  "python.formatting.provider": "black",
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.python"
+  },
   // disable default formatters in favor of prettier
   "typescript.format.enable": false,
   "javascript.format.enable": false,
