@@ -135,7 +135,7 @@ const AnnotatePage = () => {
   // TODO: move to image component
   const { data: image } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { objectId: objectId!, imageRequest: {} },
+    { objectId: objectId!, imageRequest: { height: 800 } },
     { skip: !objectId }
   );
 

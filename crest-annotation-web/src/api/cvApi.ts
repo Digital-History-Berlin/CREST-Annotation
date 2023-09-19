@@ -1,6 +1,6 @@
 import { Position } from "../types/Position";
 
-const debounceTimeout = 500;
+const debounceTimeout = 150;
 let previewDebounce: NodeJS.Timeout | undefined;
 let previewRunning = false;
 
