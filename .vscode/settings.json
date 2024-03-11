@@ -14,6 +14,6 @@
   "prettier.enable": true,
   // apply linter rules if possible
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   }
 }
