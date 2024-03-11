@@ -15,6 +15,11 @@ const ObjectCard = ({ projectId, object }: IProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
+  const imageQuery = useGetImageUriQuery({
+    objectId: object.id,
+    imageRequest: { thumbnail: true, width: 240 },
+  });
+
   return (
     <Card
       sx={{
@@ -28,10 +33,7 @@ const ObjectCard = ({ projectId, object }: IProps) => {
         onClick={() => navigate(`/annotate/${projectId}/${object.id}`)}
       >
         <Loader
-          query={useGetImageUriQuery({
-            objectId: object.id,
-            imageRequest: { thumbnail: true, width: 240 },
-          })}
+          query={imageQuery}
           render={({ data: uri }) => (
             <>
               {object.annotated && (
