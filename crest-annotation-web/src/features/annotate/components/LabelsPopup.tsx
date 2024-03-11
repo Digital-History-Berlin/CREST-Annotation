@@ -23,20 +23,22 @@ const defaultProps = {};
 const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
   const theme = useTheme();
 
+  const labelsQuery = useGetProjectLabelsQuery(
+    {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      projectId: projectId!,
+      starred: true,
+      grouped: false,
+    },
+    { skip: !projectId }
+  );
+
   return (
     <Loader
       emptyPlaceholder="This project contains no starred labels"
       disabledPlaceholder={"No project selected"}
       query={{
-        ...useGetProjectLabelsQuery(
-          {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            projectId: projectId!,
-            starred: true,
-            grouped: false,
-          },
-          { skip: !projectId }
-        ),
+        ...labelsQuery,
         isDisabled: !projectId,
       }}
       render={({ data: labels }) => {

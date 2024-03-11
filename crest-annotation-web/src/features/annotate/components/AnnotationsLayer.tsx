@@ -61,7 +61,7 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
           color={annotation.label?.color ?? "#f00"}
           transformation={transformation}
           selected={annotation.selected === true}
-          editable={tool.tool === Tool.Edit}
+          editable={tool === Tool.Edit}
           transparent={transparent}
           onClick={toggle}
           onUpdate={update}

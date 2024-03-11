@@ -14,7 +14,8 @@ import ValidIcon from "@mui/icons-material/CheckCircle";
 import { ToolPane } from "./ToolPane";
 import { info } from "../../../../api/cvApi";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import { SegmentConfig, Tool, updateToolConfig } from "../../slice/tools";
+import { SegmentConfig, updateToolConfig } from "../../slice/configs";
+import { Tool } from "../../slice/tools";
 
 interface IProps {
   onUpdate: (tool: Tool) => void;
@@ -24,9 +25,7 @@ interface IProps {
 const SegmentPane = ({ onUpdate, loading }: IProps) => {
   const dispatch = useAppDispatch();
 
-  const config = useAppSelector(
-    (state) => state.tools.toolConfigs[Tool.Segment]
-  );
+  const config = useAppSelector((state) => state.configs[Tool.Segment]);
 
   const updateConfig = useCallback(
     (config: Partial<SegmentConfig>) => {

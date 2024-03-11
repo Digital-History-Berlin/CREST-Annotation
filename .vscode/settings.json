@@ -2,10 +2,8 @@
   "editor.formatOnSave": true,
   // default for backend
   "python.defaultInterpreterPath": "crest-annotation-backend/.venv/bin/python",
-  "python.formatting.blackPath": "crest-annotation-backend/.venv/bin/black",
-  "python.formatting.provider": "black",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python"
+    "editor.defaultFormatter": "ms-python.black-formatter"
   },
   // disable default formatters in favor of prettier
   "typescript.format.enable": false,
@@ -15,5 +13,7 @@
   // apply linter rules if possible
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
-  }
+  },
+  // enable error reporting
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true
 }

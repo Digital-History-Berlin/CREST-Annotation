@@ -35,6 +35,7 @@ export interface Annotation {
 export interface AnnotationsSlice {
   annotations: Annotation[];
   latestChange: number | null;
+  // existing annotation that is being edited
   editing: Annotation | null;
   // required for middleware
   objectId: string | null;

@@ -33,6 +33,16 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
   const [stack, setStack] = useState<Label[]>([]);
   const [view, setView] = useState("list");
 
+  const labelsQuery = useGetProjectLabelsQuery(
+    {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      projectId: projectId!,
+      starred: view === "starred" ? true : undefined,
+      grouped: view === "list",
+    },
+    { skip: !projectId }
+  );
+
   const pushLabel = (label: Label) => {
     setStack([label, ...stack]);
   };
@@ -99,15 +109,7 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
         }
         disabledPlaceholder={"No project selected"}
         query={{
-          ...useGetProjectLabelsQuery(
-            {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              projectId: projectId!,
-              starred: view === "starred" ? true : undefined,
-              grouped: view === "list",
-            },
-            { skip: !projectId }
-          ),
+          ...labelsQuery,
           isDisabled: !projectId,
         }}
         render={({ data: labels }) => {

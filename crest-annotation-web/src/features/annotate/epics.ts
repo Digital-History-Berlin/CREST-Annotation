@@ -51,10 +51,10 @@ export const activateTool = createAsyncThunk<
 >(
   "annotations/activateTool",
   async ({ tool, ...event }, { dispatch, getState }) => {
-    console.log(`Selected tool ${tool}`);
+    console.debug(`Selected tool ${tool}`);
 
     // get the tools current configuration
-    const config = getState().tools.toolConfigs[tool];
+    const config = getState().configs[tool];
 
     // asynchronously initialize the tool
     const initializer = shapeMap[tool]?.onBegin;
@@ -64,11 +64,11 @@ export const activateTool = createAsyncThunk<
       return Promise.resolve(initializer(event, config))
         .then(() => {
           dispatch(updateActiveTool({ state: ToolState.Ready }));
-          console.log("Tool activated");
+          console.debug("Tool activated");
         })
         .catch((error) => {
           dispatch(updateActiveTool({ state: ToolState.Failed }));
-          console.log("Failed to activate tool", error);
+          console.error("Failed to activate tool", error);
         });
     }
 

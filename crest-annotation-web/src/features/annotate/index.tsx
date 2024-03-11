@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Icon } from "@iconify/react";
-import { PriorityHigh, SkipNext } from "@mui/icons-material";
-import { CircularProgress, Link, Stack, useTheme } from "@mui/material";
+import React, { useCallback, useEffect } from "react";
+import { SkipNext } from "@mui/icons-material";
+import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 // TODO: better icons
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AnnotationsList from "./components/AnnotationsList";
+import AnnotationTools from "./components/AnnotationTools";
 import Canvas from "./components/Canvas";
 import { toolPaneMap } from "./components/configs/ToolPane";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
@@ -19,14 +19,12 @@ import {
   setObjectId,
 } from "./slice/annotations";
 import {
-  Modifiers,
   Tool,
   ToolState,
   selectActiveLabelId,
-  selectActiveModifiers,
+  selectActiveState,
   selectActiveTool,
   setActiveLabel,
-  toggleModifier,
 } from "./slice/tools";
 import {
   enhancedApi,
@@ -42,7 +40,6 @@ import {
   selectObjectFilters,
   updateObjectFilters,
 } from "../../app/slice";
-import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import Layout from "../../components/layouts/Layout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Loader from "../../components/Loader";
@@ -54,92 +51,43 @@ import {
   ToolbarToggleButtonWithTooltip,
 } from "../../components/ToolbarButton";
 
-const tools = [
-  {
-    tool: Tool.Pen,
-    icon: "majesticons:edit-pen-4-line",
-    style: { fontSize: "22px" },
-    tooltip: "Pen",
-  },
-  {
-    tool: Tool.Rectangle,
-    icon: "mdi:vector-square",
-    style: { fontSize: "25px" },
-    tooltip: "Rectangle",
-  },
-  {
-    tool: Tool.Circle,
-    icon: "mdi:vector-circle-variant",
-    style: { fontSize: "25px" },
-    tooltip: "Circle",
-  },
-  {
-    tool: Tool.Polygon,
-    icon: "mdi:vector-polygon-variant",
-    style: { fontSize: "25px" },
-    tooltip: "Polygon",
-  },
-  { tool: undefined },
-  {
-    tool: Tool.Edit,
-    icon: "mdi:vector-polyline-edit",
-    style: { fontSize: "25px" },
-    tooltip: "Edit",
-  },
-  { tool: undefined },
-  {
-    tool: Tool.Segment,
-    icon: "mdi:auto-fix",
-    style: { fontSize: "25px" },
-    tooltip: "Segment",
-  },
-];
-
-const modifiers = [
-  {
-    modifier: Modifiers.Group,
-    icon: "mdi:vector-link",
-    style: { fontSize: "25px" },
-  },
-];
-
 const AnnotatePage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
 
   const { projectId, objectId } = useParams();
+
   const { currentData: project } = useGetProjectQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
     { skip: !projectId }
   );
   const { currentData: object } = useGetObjectQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { objectId: objectId! },
     { skip: !objectId }
   );
   const { currentData: count } = useGetObjectsCountQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
     { skip: !projectId }
   );
-
-  const activeTool = useAppSelector(selectActiveTool);
-  const activeLabelId = useAppSelector(selectActiveLabelId);
-  const activeModifiers = useAppSelector(selectActiveModifiers);
-  const editingAnnotation = useAppSelector(selectEditing);
-  const filters = useAppSelector(selectObjectFilters);
-
-  const [getRandom, { isError: randomError }] =
-    enhancedApi.useGetRandomObjectMutation();
-  const [requestFinishObject] = useFinishObjectMutation();
-
-  // TODO: move to image component
   const { data: image } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { objectId: objectId!, imageRequest: { height: 800 } },
     { skip: !objectId }
   );
 
-  const [showCreate, setShowCreate] = useState(false);
+  const activeTool = useAppSelector(selectActiveTool);
+  const activeState = useAppSelector(selectActiveState);
+  const activeLabelId = useAppSelector(selectActiveLabelId);
+  const editingAnnotation = useAppSelector(selectEditing);
+  const filters = useAppSelector(selectObjectFilters);
+
+  const [getRandom, { isError: randomError }] =
+    enhancedApi.useGetRandomObjectMutation();
+  const [requestFinishObject] = useFinishObjectMutation();
 
   const navigateRandom = async (id: string, filters: ObjectFilters) => {
     const random = await getRandom({
@@ -217,64 +165,10 @@ const AnnotatePage = () => {
   // re-initialize the tool on changes
   // (the callback itself tracks the changes)
   useEffect(
-    () => {
-      updateTool(activeTool.tool);
-      console.log("HELLO");
-    },
+    () => updateTool(activeTool),
     // do not respond to tool changes itself
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateTool]
-  );
-
-  const renderTools = () => (
-    <Stack direction="row">
-      {tools.map((button, index) => {
-        if (button.tool === undefined) return <ToolbarDivider key={index} />;
-        const active = activeTool.tool === button.tool;
-        const ready = !active || activeTool.state === ToolState.Ready;
-        const loading = active && activeTool.state === ToolState.Loading;
-        const failed = active && activeTool.state === ToolState.Failed;
-
-        return (
-          <ToolbarToggleButtonWithTooltip
-            key={index}
-            value={button.tool}
-            onClick={() => updateTool(button.tool)}
-            selected={active}
-            tooltip={button.tooltip}
-          >
-            <Icon
-              icon={button.icon}
-              style={{ ...button.style }}
-              color={!ready ? theme.palette.primary.dark : undefined}
-            />
-            {loading && (
-              <CircularProgress
-                style={{ color: "white", position: "absolute" }}
-                size={32}
-              />
-            )}
-            {failed && (
-              <PriorityHigh style={{ color: "white", position: "absolute" }} />
-            )}
-          </ToolbarToggleButtonWithTooltip>
-        );
-      })}
-      <ToolbarDivider />
-      {modifiers.map((button) => {
-        return (
-          <ToolbarToggleButtonWithTooltip
-            key={button.modifier}
-            value={button.modifier}
-            onClick={() => dispatch(toggleModifier(button.modifier))}
-            selected={activeModifiers.includes(button.modifier)}
-            tooltip={"Group Annotations"}
-          >
-            <Icon icon={button.icon} style={button.style} />
-          </ToolbarToggleButtonWithTooltip>
-        );
-      })}
-    </Stack>
   );
 
   const renderActions = () => (
@@ -327,8 +221,10 @@ const AnnotatePage = () => {
     </Stack>
   );
 
+  // TODO: maybe move this into a component to avoid tool and state dependency
+  // this is tricky though, because if there is no tool pane, the whole sidebar should be hidden
   const renderRight = () => {
-    const ConfigPane = toolPaneMap[activeTool.tool];
+    const ConfigPane = toolPaneMap[activeTool];
 
     if (ConfigPane)
       return (
@@ -339,7 +235,7 @@ const AnnotatePage = () => {
           }}
         >
           <ConfigPane
-            loading={activeTool.state === ToolState.Loading}
+            loading={activeState === ToolState.Loading}
             onUpdate={updateTool}
           />
         </Stack>
@@ -352,14 +248,15 @@ const AnnotatePage = () => {
   return (
     <Layout
       sx={{ display: "flex" }}
-      header={<Toolbar tools={renderTools()} actions={renderActions()} />}
+      header={
+        <Toolbar
+          tools={<AnnotationTools onActivate={updateTool} />}
+          actions={renderActions()}
+        />
+      }
       left={renderLeft()}
       right={renderRight()}
     >
-      <AddProjectDialog
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-      />
       <EditAnnotationDialog
         projectId={projectId}
         annotation={editingAnnotation}

@@ -12,4 +12,4 @@ export const rootApi = createApi({
   endpoints: () => ({}),
 });
 
-console.log(`Using backend at ${baseUrl}`);
+console.info(`Using backend at ${baseUrl}`);

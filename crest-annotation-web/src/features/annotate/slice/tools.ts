@@ -22,46 +22,20 @@ export enum ToolState {
   Failed = " Failed",
 }
 
-export type Algorithm = { id: string; name: string };
-
-export interface SegmentConfig {
-  backend?: string;
-  state?: boolean;
-  algorithms?: Algorithm[];
-  algorithm?: string;
-  // algorithm specific config
-  details?: { [key: string]: unknown };
-}
-
 export interface ToolsSlice {
-  activeTool: { tool: Tool; config: unknown; state: ToolState };
+  activeTool: Tool;
+  activeState: ToolState;
   activeModifiers: Modifiers[];
+  activeConfig?: unknown;
   activeLabelId?: string;
   // modifier specific data
   groupAnnotationId?: string;
-  // tool specific configurations
-  // (can be changed by the user)
-  toolConfigs: {
-    [Tool.Pen]: undefined;
-    [Tool.Circle]: undefined;
-    [Tool.Rectangle]: undefined;
-    [Tool.Polygon]: undefined;
-    [Tool.Edit]: undefined;
-    [Tool.Segment]: SegmentConfig;
-  };
 }
 
 const initialState: ToolsSlice = {
-  activeTool: { tool: Tool.Pen, config: undefined, state: ToolState.Ready },
+  activeTool: Tool.Pen,
+  activeState: ToolState.Ready,
   activeModifiers: [],
-  toolConfigs: {
-    [Tool.Pen]: undefined,
-    [Tool.Circle]: undefined,
-    [Tool.Rectangle]: undefined,
-    [Tool.Polygon]: undefined,
-    [Tool.Edit]: undefined,
-    [Tool.Segment]: {},
-  },
 };
 
 const except = <T>(items: T[], item: T) => items.filter((i) => i !== item);
@@ -84,17 +58,17 @@ export const slice = createSlice({
       state,
       action: PayloadAction<{ tool: Tool; config: unknown; state: ToolState }>
     ) => {
-      state.activeTool = action.payload;
+      state.activeTool = action.payload.tool;
+      state.activeConfig = action.payload.config;
+      state.activeState = action.payload.state;
     },
     updateActiveTool: (
       state,
       action: PayloadAction<{ config?: unknown; state?: ToolState }>
     ) => {
-      // patch the tool
-      state.activeTool = {
-        ...state.activeTool,
-        ...action.payload,
-      };
+      // patch the state
+      state.activeConfig = action.payload.config || state.activeConfig;
+      state.activeState = action.payload.state || state.activeState;
     },
     setActiveLabel: (state, action: PayloadAction<Label | undefined>) => {
       state.activeLabelId = action.payload?.id;
@@ -119,20 +93,6 @@ export const slice = createSlice({
       if (state.activeModifiers.includes(action.payload))
         state.activeModifiers = except(state.activeModifiers, action.payload);
       else state.activeModifiers.push(action.payload);
-    },
-    updateToolConfig: (
-      state,
-      // TODO: add typings for other tools as needed
-      action: PayloadAction<{
-        tool: Tool.Segment;
-        config: Partial<SegmentConfig>;
-      }>
-    ) => {
-      // patch the state
-      state.toolConfigs[action.payload.tool] = {
-        ...state.toolConfigs[action.payload.tool],
-        ...action.payload.config,
-      };
     },
   },
   extraReducers: (builder) => {
@@ -165,15 +125,19 @@ export const {
   setModifiers,
   setModifier,
   toggleModifier,
-  updateToolConfig,
 } = slice.actions;
 
-// tools
+// active tool
 export const selectActiveTool = (state: RootState) => state.tools.activeTool;
-export const selectActiveLabelId = (state: RootState) =>
-  state.tools.activeLabelId;
+export const selectActiveState = (state: RootState) => state.tools.activeState;
 export const selectActiveModifiers = (state: RootState) =>
   state.tools.activeModifiers;
+
+// tool config
+export const selectActiveConfig = (state: RootState) =>
+  state.tools.activeConfig;
+export const selectActiveLabelId = (state: RootState) =>
+  state.tools.activeLabelId;
 
 // modifier specific data
 export const selectGroupAnnotationId = (state: RootState) =>

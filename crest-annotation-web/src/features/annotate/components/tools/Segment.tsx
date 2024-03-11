@@ -1,7 +1,8 @@
 import { Mask } from "./Mask";
 import { ShapeEventHandler, ShapeTool, ShapeToolEventHandler } from "./Types";
 import { prepare, preview, run } from "../../../../api/cvApi";
-import { SegmentConfig, Tool } from "../../slice/tools";
+import { SegmentConfig } from "../../slice/configs";
+import { Tool } from "../../slice/tools";
 
 const onBegin: ShapeToolEventHandler = async ({ image }, config) => {
   const valid = config as SegmentConfig;
