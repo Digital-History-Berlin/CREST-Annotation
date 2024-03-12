@@ -32,7 +32,7 @@ export const cursorMap = {
 
 interface LabelPopup {
   resolve: (label: Label) => void;
-  reject: () => void;
+  reject: (reason: string) => void;
 
   left?: number | string;
   right?: number | string;
@@ -89,12 +89,15 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     };
   }, []);
 
-  const cancelLabel = useCallback(() => {
-    // discard ongoing label selection
-    labelPopup?.reject();
-    // hide label popup
-    setLabelPopup(undefined);
-  }, [labelPopup]);
+  const cancelLabel = useCallback(
+    (reason: string) => {
+      // discard ongoing label selection
+      labelPopup?.reject(reason);
+      // hide label popup
+      setLabelPopup(undefined);
+    },
+    [labelPopup]
+  );
 
   const requestLabel = useCallback(
     () =>
@@ -107,7 +110,6 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   const {
     activeShape,
-    cancelAnnotation,
     handleClick,
     handleMove,
     handleDragStart,
@@ -181,7 +183,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         <LabelsPopup
           projectId={projectId}
           onSelect={labelPopup?.resolve}
-          onCancel={cancelAnnotation}
+          onCancel={() => labelPopup?.reject("Popup closed")}
         />
       </div>
 

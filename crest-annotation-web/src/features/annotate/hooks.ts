@@ -27,6 +27,9 @@ import { Position } from "../../types/Position";
  * The canvas (which provides the UI) can then use this logic.
  * This part is also responsible for keeping the user actions in sync
  * (especially when executing async actions whithout waiting in between).
+ *
+ * Since the logic can be a bit more complex, the hook provides a lot
+ * of debug information to figure out what is going on in detail.
  */
 export const useAnnotationTools = ({
   cursorRef,
@@ -35,7 +38,7 @@ export const useAnnotationTools = ({
 }: {
   cursorRef: MutableRefObject<Position>;
   onRequestLabel: () => MaybePromise<Label>;
-  onCancelLabel: () => void;
+  onCancelLabel: (reason: string) => void;
 }) => {
   const dispatch = useAppDispatch();
 
@@ -44,13 +47,22 @@ export const useAnnotationTools = ({
   const modifiers = useAppSelector(selectActiveModifiers);
   const groupAnnotationId = useAppSelector(selectGroupAnnotationId);
 
+  // identifies an ongoing label request
   const labelRequestRef = useRef<string>();
   // shape that is currently being created
   const [activeShape, setActiveShape] = useState<Shape>();
 
-  // create new annotation with given label and shape
-  const labelAnnotation = useCallback(
-    (shape: Shape, label: Label) => {
+  const requestLabel = useCallback(async (shape: Shape, requestId: string) => {
+    try {
+      await Promise.resolve(onRequestLabel);
+      if (labelRequestRef.current !== requestId) {
+        console.warn(
+          `Discarding outdated label request (${requestId}/${labelRequestRef.current})`
+        );
+        // discard outdated request
+        return;
+      }
+
       console.info("Label selected");
       dispatch(
         addAnnotation({
@@ -59,54 +71,52 @@ export const useAnnotationTools = ({
           id: uuidv4(),
         })
       );
-
-      console.info("Annotation completed");
-      setActiveShape(undefined);
-      onCancelLabel?.();
-    },
-    [onCancelLabel, dispatch]
-  );
+    } catch (error) {
+      if (typeof error === "string")
+        console.info(
+          `Label request cancelled (${requestId}/${labelRequestRef.current}): ${error}`
+        );
+      // unexpected exception occured
+      else console.error(error);
+    } finally {
+      console.info(
+        `Label request finalized (${requestId}/${labelRequestRef.current})`
+      );
+      if (labelRequestRef.current === requestId) {
+        // reset the active shape
+        setActiveShape(undefined);
+        // reset the label request
+        labelRequestRef.current = undefined;
+      }
+    }
+  }, []);
 
   // create new annotation from shape
+  // this is the main logic, which includes an asynchronous call to request the label
+  // TODO: generalized approach to discard outdated interaction
   const createAnnotation = useCallback(
     (shape: Shape) => {
       // TODO: this should be checked in other places as well
-      // TODO: generalized approach to discard outdated interaction
       if (labelRequestRef.current !== undefined) {
-        console.warn("Label request not cancelled");
+        console.warn(
+          `Previous label request not cancelled (${labelRequestRef.current})`
+        );
         // cancel ongoing request
-        onCancelLabel?.();
+        onCancelLabel?.("New label request");
       }
 
       // trace request to discard outdated promises
       const requestId = uuidv4();
       labelRequestRef.current = requestId;
+      console.info(`Requesting label (${labelRequestRef.current})`);
 
       Promise.resolve(onRequestLabel())
-        .then((label) => {
-          if (labelRequestRef.current !== requestId) {
-            console.warn("Discarding outdated label request");
-            // discard outdated request
-            return;
-          }
-          // assign the selected label to the created shape
-          labelAnnotation(shape, label);
-        })
-        .catch((error) => {
-          if (error) console.error(error);
-          // if no error is given label request was discarded
-          else console.info("Label request cancelled");
-        });
+        .then((label) => {})
+        .catch((error) => {})
+        .finally(() => {});
     },
-    [labelAnnotation, onRequestLabel, onCancelLabel]
+    [onRequestLabel, onCancelLabel, dispatch]
   );
-
-  // cancel the current annotation
-  const cancelAnnotation = useCallback(() => {
-    console.info("Annotation cancelled");
-    setActiveShape(undefined);
-    onCancelLabel?.();
-  }, [onCancelLabel]);
 
   const updateActive = useCallback(
     (shape: Shape): void => {
@@ -131,7 +141,7 @@ export const useAnnotationTools = ({
   const handleClick = async (event: GestureEvent) => {
     // cancel ongoing label request
     if (labelRequestRef.current !== undefined) {
-      cancelAnnotation();
+      onCancelLabel?.("User click");
       return;
     }
 
@@ -197,7 +207,17 @@ export const useAnnotationTools = ({
 
   // cancel the annotation on tool change
   useEffect(
-    () => cancelAnnotation(),
+    () => {
+      if (labelRequestRef.current !== undefined) {
+        console.info(
+          `Tool changed during label request ${labelRequestRef.current}`
+        );
+        onCancelLabel?.("Tool change");
+      } else if (activeShape !== undefined) {
+        console.info("Tool changed during usage");
+        setActiveShape(undefined);
+      }
+    },
     // this should explicitly only trigger when the active tool changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tool]
@@ -205,9 +225,6 @@ export const useAnnotationTools = ({
 
   return {
     activeShape,
-    labelAnnotation,
-    createAnnotation,
-    cancelAnnotation,
     handleClick,
     handleMove,
     handleDragStart,

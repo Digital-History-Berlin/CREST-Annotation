@@ -4,10 +4,12 @@ import logging
 from typing import Callable
 
 from fastapi import APIRouter, Depends, Body, HTTPException, Query
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, FileResponse, Response
 from sqlalchemy.orm import Session
 
+from ..environment import env
 from ..dependencies.db import get_db, get_paginate
+from ..dependencies.cache import Cache
 from ..models.objects import Object
 from .. import schemas
 
@@ -104,7 +106,10 @@ async def finish_object(
 
 @router.post("/uri/{object_id}")
 async def get_image_uri(
-    object_id: str, usage: schemas.ImageRequest, db: Session = Depends(get_db)
+    object_id: str,
+    usage: schemas.ImageRequest,
+    db: Session = Depends(get_db),
+    cache: Cache = Depends(Cache),
 ):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
@@ -113,8 +118,18 @@ async def get_image_uri(
     object_data = json.loads(data_object.object_data)
     schema = get_object_data_schema(object_data)
     data = schema(**object_data)
+    uri = data.get_image_uri(usage)
 
-    return JSONResponse(data.get_image_uri(usage))
+    # inject cache if enabled
+    if env.image_cache:
+        uri = f"{env.image_cache_url}/{cache.encode(uri)}"
+
+    return JSONResponse(uri)
+
+
+@router.get("/cache/{encoded}")
+async def get_cached_image(encoded: str, cache: Cache = Depends(Cache)):
+    return FileResponse(cache.get(encoded))
 
 
 @router.get("/annotations/{object_id}")
