@@ -1,8 +1,9 @@
-import React, { RefObject, useState } from "react";
+import { useCallback, useState } from "react";
 import Konva from "konva";
-import { Stage, StageProps } from "react-konva";
+import { StageProps } from "react-konva";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import {
+  GestureEvent,
   GestureEvents,
   GestureOverload,
   Positions,
@@ -10,27 +11,91 @@ import {
 import { Position } from "../../../types/Position";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 
-type IProps = { stageRef: RefObject<Konva.Stage> } & GestureEvents & StageProps;
+// TODO: configure from environment or somewhere else
+// IMPORTANT: this must be constant during runtime
+// because this is a conditional for hooks
+const debugGestures = "single" as "none" | "single" | "all";
+
+export const useDebugGestures = ({
+  onGestureMove,
+  onGestureDragStart,
+  onGestureDragMove,
+  onGestureDragEnd,
+  onGestureClick,
+}: GestureEvents) => {
+  if (debugGestures === "none")
+    return {
+      gestureMove: onGestureMove,
+      gestureDragStart: onGestureDragStart,
+      gestureDragMove: onGestureDragMove,
+      gestureDragEnd: onGestureDragEnd,
+      gestureClick: onGestureClick,
+    };
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const gestureMove = useCallback(
+    (event: GestureEvent) => {
+      if (debugGestures === "all")
+        console.debug(`Gesture move ${event.overload}`);
+      onGestureMove(event);
+    },
+    [onGestureMove]
+  );
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const gestureDragStart = useCallback(
+    (event: GestureEvent) => {
+      console.debug(`Gesture drag start ${event.overload}`);
+      onGestureDragStart(event);
+    },
+    [onGestureDragStart]
+  );
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const gestureDragMove = useCallback(
+    (event: GestureEvent) => {
+      if (debugGestures === "all")
+        console.debug(`Gesture drag move ${event.overload}`);
+      onGestureDragMove(event);
+    },
+    [onGestureDragMove]
+  );
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const gestureDragEnd = useCallback(
+    (event: GestureEvent) => {
+      console.debug(`Gesture drag end ${event.overload}`);
+      onGestureDragEnd(event);
+    },
+    [onGestureDragEnd]
+  );
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const gestureClick = useCallback(
+    (event: GestureEvent) => {
+      console.debug(`Gesture click ${event.overload}`);
+      onGestureClick(event);
+    },
+    [onGestureClick]
+  );
+
+  return {
+    gestureMove,
+    gestureDragStart,
+    gestureDragMove,
+    gestureDragEnd,
+    gestureClick,
+  };
+};
 
 /**
- * Input wrapper for the standard Konva stage
- *
  * Collects input from mouse and tablet/touch and unifies them into
  * a simplified interface. Internally extract zoom/pan events and
  * applies the corresponding transformation.
  *
  * Currently uses global transformation by default.
  */
-const InputStage = ({
-  stageRef,
-  children,
-  onGestureMove,
-  onGestureDragStart,
-  onGestureDragMove,
-  onGestureDragEnd,
-  onGestureClick,
-  ...props
-}: IProps) => {
+export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
   const dispatch = useAppDispatch();
 
   // use global transformation
@@ -43,24 +108,41 @@ const InputStage = ({
   // state during pan gesture
   const [panStart, setPanStart] = useState<Position>();
 
+  // use debug gestures if enabled
+  const {
+    gestureMove,
+    gestureDragStart,
+    gestureDragMove,
+    gestureDragEnd,
+    gestureClick,
+  } = useDebugGestures(gestureHandlers);
+
   // map mouse buttons flags to enum
-  const mapOverload = (flags: number): GestureOverload => {
-    switch (flags) {
-      case 0x01:
-        return GestureOverload.Primary;
-      case 0x02:
-        return GestureOverload.Secondary;
-      case 0x03:
-      case 0x04:
-        return GestureOverload.Tertiary;
-      default:
-        // other combinations are currently unsupported
-        return GestureOverload.Other;
-    }
-  };
+  const mapOverload = useCallback(
+    (flags: number, alternate?: boolean): GestureOverload => {
+      switch (flags) {
+        case 0x01:
+          // alternate enforces secondary gesture with primary click
+          // (can be used i.e. to use shift-key with touchpad)
+          return alternate
+            ? GestureOverload.Secondary
+            : GestureOverload.Primary;
+        case 0x02:
+          return GestureOverload.Secondary;
+        case 0x03:
+        case 0x04:
+          return GestureOverload.Tertiary;
+        default:
+          // other combinations are currently unsupported
+          return GestureOverload.Other;
+      }
+    },
+    []
+  );
 
   // map single button to button flags
-  const mapButton = (button: number): number => {
+  // (because mouse down events use different identifiers)
+  const mapButton = useCallback((button: number): number => {
     switch (button) {
       case 0:
         return 0x01;
@@ -71,7 +153,7 @@ const InputStage = ({
       default:
         return 0x00;
     }
-  };
+  }, []);
 
   // apply transformation to stage coordinates
   const transform = ({ x, y }: Position) => {
@@ -110,7 +192,7 @@ const InputStage = ({
 
     // move without buttons is handled separately
     if (!event.evt.buttons)
-      onGestureMove({
+      gestureMove({
         overload: GestureOverload.Primary,
         transformation,
         ...positions,
@@ -120,7 +202,7 @@ const InputStage = ({
     setClickButtons(0);
 
     // pan gesture overrules others
-    const overload = mapOverload(event.evt.buttons);
+    const overload = mapOverload(event.evt.buttons, event.evt.shiftKey);
     if (overload === GestureOverload.Secondary) {
       if (panStart && dragStart)
         dispatch(
@@ -137,13 +219,13 @@ const InputStage = ({
 
     // check if drag was started
     if (!dragOverload && dragStart) {
-      onGestureDragStart({ overload, transformation, ...dragStart });
+      gestureDragStart({ overload, transformation, ...dragStart });
       setDragOverload(overload);
     }
 
     // trigger default drag move event
     if (dragOverload)
-      onGestureDragMove({
+      gestureDragMove({
         overload: dragOverload,
         transformation,
         ...positions,
@@ -156,15 +238,15 @@ const InputStage = ({
 
     // gesture was a drag
     if (dragOverload)
-      onGestureDragEnd({
+      gestureDragEnd({
         overload: dragOverload,
         transformation,
         ...positions,
       });
     // gesture was a click
     if (clickButtons)
-      onGestureClick({
-        overload: mapOverload(clickButtons),
+      gestureClick({
+        overload: mapOverload(clickButtons, event.evt.shiftKey),
         transformation,
         ...positions,
       });
@@ -189,7 +271,7 @@ const InputStage = ({
     const positions = getPointerPositions(event);
     if (!positions) return;
 
-    onGestureDragMove({
+    gestureDragMove({
       overload: GestureOverload.Primary,
       transformation,
       ...positions,
@@ -205,14 +287,14 @@ const InputStage = ({
 
     // mouse was moved while buttons where down (drag ended)
     if (dragOverload)
-      onGestureDragEnd({
+      gestureDragEnd({
         overload: dragOverload,
         transformation,
         ...positions,
       });
     // mouse was not moved (gesture was a click)
     else
-      onGestureClick({
+      gestureClick({
         overload: mapOverload(clickButtons),
         transformation,
         ...positions,
@@ -248,23 +330,14 @@ const InputStage = ({
     );
   };
 
-  return (
-    <Stage
-      {...props}
-      ref={stageRef}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
-      onContextMenu={(e) => e.evt.preventDefault()}
-    >
-      {children}
-    </Stage>
-  );
+  return {
+    onMouseDown: handleMouseDown,
+    onMouseMove: handleMouseMove,
+    onMouseUp: handleMouseUp,
+    onMouseLeave: handleMouseUp,
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+    onWheel: handleWheel,
+  };
 };
-
-export default InputStage;

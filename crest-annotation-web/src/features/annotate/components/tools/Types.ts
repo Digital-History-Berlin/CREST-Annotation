@@ -33,9 +33,8 @@ export type ShapeProps = {
 export type ShapeEventHandler = (
   shape: Shape | undefined,
   event: GestureEvent,
-  callback: (shape: Shape) => void,
   config: unknown
-) => Shape | undefined | void;
+) => MaybePromise<Shape | undefined>;
 
 export type ShapeToolEvent = {
   project: Project;

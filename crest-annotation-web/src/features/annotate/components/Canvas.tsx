@@ -7,17 +7,17 @@ import React, {
 } from "react";
 import { Box } from "@mui/material";
 import Konva from "konva";
-import { Layer } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import AnnotationsLayer from "./AnnotationsLayer";
 import BackgroundImage from "./BackgroundImage";
-import InputStage from "./InputStage";
 import LabelsPopup from "./LabelsPopup";
 import ShapeRenderer from "./tools/Shape";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { Position } from "../../../types/Position";
-import { useAnnotationTools } from "../hooks";
+import { useAnnotationTools } from "../hooks/use-annotation-tools";
+import { useInputEvents } from "../hooks/use-input-events";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 import { Tool, selectActiveLabelId, selectActiveTool } from "../slice/tools";
 
@@ -108,18 +108,13 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     [labelPopupPlace]
   );
 
-  const {
-    activeShape,
-    handleClick,
-    handleMove,
-    handleDragStart,
-    handleDragMove,
-    handleDragEnd,
-  } = useAnnotationTools({
+  const { activeShape, gestureHandlers } = useAnnotationTools({
     cursorRef,
     onCancelLabel: cancelLabel,
     onRequestLabel: requestLabel,
   });
+
+  const events = useInputEvents(gestureHandlers);
 
   // allow to complete an annotation by selecting a label in the sidebar
   // (in case the popup has already been opened)
@@ -165,6 +160,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
 
   return (
     <Box
+      // apply style to (outer) box
+      // box should fill available space
       position="relative"
       display="flex"
       overflow="hidden"
@@ -187,28 +184,17 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
         />
       </div>
 
-      <InputStage
-        // apply style to (outer) box
-        // box should fill available space
-        sx={{
-          position: "relative",
-          display: "flex",
-          overflow: "hidden",
-          flex: "1 1",
-        }}
+      <Stage
+        ref={stageRef}
         // apply style to (inner) stage
         // stage should adapt to box size
         style={{ cursor: defaultCursor(), position: "absolute" }}
         width={boxRef.current?.clientWidth}
         height={boxRef.current?.clientHeight}
-        stageRef={stageRef}
+        // suppress default context menu
+        onContextMenu={(e) => e.evt.preventDefault()}
         // handle events
-        onGestureMove={handleMove}
-        onGestureDragStart={handleDragStart}
-        onGestureDragMove={handleDragMove}
-        onGestureDragEnd={handleDragEnd}
-        onGestureClick={handleClick}
-        // render layer with injected properties
+        {...events}
       >
         {imageUri && (
           <Layer>
@@ -226,7 +212,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
             />
           </Layer>
         )}
-      </InputStage>
+      </Stage>
     </Box>
   );
 };

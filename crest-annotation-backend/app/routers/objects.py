@@ -13,7 +13,7 @@ from ..dependencies.cache import Cache
 from ..models.objects import Object
 from .. import schemas
 
-from ..api import get_object_data_schema
+from ..api import get_object_image_uri
 
 router = APIRouter(
     prefix="/objects",
@@ -115,21 +115,27 @@ async def get_image_uri(
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    object_data = json.loads(data_object.object_data)
-    schema = get_object_data_schema(object_data)
-    data = schema(**object_data)
-    uri = data.get_image_uri(usage)
-
     # inject cache if enabled
     if env.image_cache:
-        uri = f"{env.image_cache_url}/{cache.encode(uri)}"
+        uri = f"{env.image_cache_url}/{cache.encode(object_id, usage)}"
+        return JSONResponse(uri)
 
-    return JSONResponse(uri)
+    return JSONResponse(get_object_image_uri(data_object, usage))
 
 
 @router.get("/cache/{encoded}")
-async def get_cached_image(encoded: str, cache: Cache = Depends(Cache)):
-    return FileResponse(cache.get(encoded))
+async def get_cached_image(
+    encoded: str, db: Session = Depends(get_db), cache: Cache = Depends(Cache)
+):
+    # lazily resolve missed object
+    def resolve(object_id: str, usage: schemas.ImageRequest):
+        data_object: Object = db.query(Object).filter_by(id=object_id).first()
+        if not data_object:
+            raise HTTPException(status_code=404, detail="Object not found")
+
+        return get_object_image_uri(data_object, usage)
+
+    return FileResponse(cache.get(encoded, resolve))
 
 
 @router.get("/annotations/{object_id}")

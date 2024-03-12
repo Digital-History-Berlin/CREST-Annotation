@@ -1,8 +1,23 @@
 import { Position } from "../types/Position";
 
-const debounceTimeout = 150;
-let previewDebounce: NodeJS.Timeout | undefined;
-let previewRunning = false;
+interface Debounce {
+  timeout: NodeJS.Timeout;
+  reject: () => void;
+}
+
+const previewDebounceTimeout = 150;
+let previewDebounce: Debounce | undefined = undefined;
+
+const cancelPreviewDebounce = () => {
+  if (previewDebounce) {
+    // cancel planned preview
+    clearTimeout(previewDebounce.timeout);
+    // reject the promise to ensure completion
+    previewDebounce.reject();
+    // reset the preview state
+    previewDebounce = undefined;
+  }
+};
 
 export const info = async (backend: string): Promise<Response> => {
   const response = await fetch(`${backend}/info`, {
@@ -20,9 +35,7 @@ export const prepare = async (
   algorithm: string,
   body: { url?: string }
 ): Promise<Response> => {
-  previewRunning = false;
-  // reset any previously scheduled tasks
-  clearTimeout(previewDebounce);
+  cancelPreviewDebounce();
 
   const response = await fetch(`${backend}/${algorithm}/prepare`, {
     body: JSON.stringify(body),
@@ -38,29 +51,30 @@ export const prepare = async (
 export const preview = (
   backend: string,
   algorithm: string,
-  body: { cursor: Position },
-  callback?: (response: Response) => void
-): void => {
-  if (previewRunning) return;
-  // reset any previously scheduled tasks
-  clearTimeout(previewDebounce);
+  body: { cursor: Position }
+): Promise<Response> => {
+  cancelPreviewDebounce();
 
   // schedule new preview
-  previewDebounce = setTimeout(async () => {
-    previewRunning = true;
-    try {
-      const response = await fetch(`${backend}/${algorithm}/preview`, {
-        body: JSON.stringify(body),
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch(`${backend}/${algorithm}/preview`, {
+          body: JSON.stringify(body),
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
 
-      // handle result
-      if (response.ok) callback?.(response);
-    } finally {
-      previewRunning = false;
-    }
-  }, debounceTimeout);
+        // handle result (will be ignored if already rejected)
+        if (response.ok) resolve(response);
+        else reject();
+      } finally {
+        previewDebounce = undefined;
+      }
+    }, previewDebounceTimeout);
+    // store the current timeout
+    previewDebounce = { reject, timeout };
+  });
 };
 
 export const run = async (
@@ -68,8 +82,7 @@ export const run = async (
   algorithm: string,
   body: { cursor: Position }
 ): Promise<Response> => {
-  // reset any previously scheduled tasks
-  clearTimeout(previewDebounce);
+  cancelPreviewDebounce();
 
   const response = await fetch(`${backend}/${algorithm}/run`, {
     body: JSON.stringify(body),

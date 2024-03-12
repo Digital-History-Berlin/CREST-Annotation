@@ -15,63 +15,52 @@ const onBegin: ShapeToolEventHandler = async ({ image }, config) => {
   await prepare(valid.backend, valid.algorithm, { url: image });
 };
 
-const onGestureMove: ShapeEventHandler = (
+const onGestureMove: ShapeEventHandler = async (
   shape,
   { transformed },
-  callback,
   config
 ) => {
   const valid = config as SegmentConfig;
 
   if (shape?.finished || !valid?.backend || !valid?.algorithm) return;
 
-  preview(
-    valid.backend,
-    valid.algorithm,
-    { cursor: transformed },
-    (response) => {
-      response
-        .json()
-        .then((data) =>
-          callback({
-            mask: data.mask,
-            width: data.mask[0].length,
-            height: data.mask.length,
-            dx: 0,
-            dy: 0,
-            tool: Tool.Segment,
-            finished: false,
-          })
-        )
-        .catch(console.log);
-    }
-  );
+  const body = { cursor: transformed };
+  const response = await preview(valid.backend, valid.algorithm, body);
+  const json = await response.json();
+
+  return {
+    mask: json.mask,
+    width: json.mask[0].length,
+    height: json.mask.length,
+    dx: 0,
+    dy: 0,
+    tool: Tool.Segment,
+    finished: false,
+  };
 };
 
-const onGestureClick: ShapeEventHandler = (
+const onGestureClick: ShapeEventHandler = async (
   shape,
   { transformed },
-  callback,
   config
 ) => {
   const valid = config as SegmentConfig;
 
   if (shape?.finished || !valid?.backend || !valid?.algorithm) return;
 
-  run(valid.backend, valid.algorithm, { cursor: transformed })
-    .then((response) => response.json())
-    .then((mask) =>
-      callback({
-        mask: mask.mask,
-        width: mask.mask[0].length,
-        height: mask.mask.length,
-        dx: 0,
-        dy: 0,
-        tool: Tool.Segment,
-        finished: true,
-      })
-    )
-    .catch(console.log);
+  const body = { cursor: transformed };
+  const response = await run(valid.backend, valid.algorithm, body);
+  const json = await response.json();
+
+  return {
+    mask: json.mask,
+    width: json.mask[0].length,
+    height: json.mask.length,
+    dx: 0,
+    dy: 0,
+    tool: Tool.Segment,
+    finished: true,
+  };
 };
 
 const SegmentTool: ShapeTool = {

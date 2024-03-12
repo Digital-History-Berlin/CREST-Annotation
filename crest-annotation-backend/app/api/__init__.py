@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter
 
 
@@ -27,6 +29,9 @@ from .import_objects_iiif3.dependencies import Iiif3ObjectData
 from .import_objects_iiif2.dependencies import Iiif2ObjectData
 
 
+from ..models.objects import Object
+
+
 def get_object_data_schema(object_data):
     """
     Get image resolver from identifier
@@ -41,3 +46,15 @@ def get_object_data_schema(object_data):
         return Iiif2ObjectData
 
     raise ModuleNotFoundError(name=id)
+
+
+def get_object_image_uri(data_object: Object, usage: schemas.ImageRequest):
+    """
+    Get image URI from object
+    """
+
+    object_data = json.loads(data_object.object_data)
+    schema = get_object_data_schema(object_data)
+    data = schema(**object_data)
+
+    return data.get_image_uri(usage)

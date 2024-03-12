@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ActionStreamProvider from "./components/ActionStreamProvider";
 import AnnotationsList from "./components/AnnotationsList";
 import AnnotationTools from "./components/AnnotationTools";
 import Canvas from "./components/Canvas";
@@ -285,7 +286,9 @@ const AnnotatePage = () => {
           />
         }
         render={({ data: imageUri }) => (
-          <Canvas projectId={projectId} imageUri={imageUri} />
+          <ActionStreamProvider>
+            <Canvas projectId={projectId} imageUri={imageUri} />
+          </ActionStreamProvider>
         )}
       />
     </Layout>
