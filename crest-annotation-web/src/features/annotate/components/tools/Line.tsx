@@ -1,9 +1,19 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
-import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import {
+  ShapeEventHandler,
+  ShapeGestureError,
+  ShapeProps,
+  ShapeTool,
+  assertTool,
+} from "./Types";
 import { GestureOverload } from "../../../../types/Events";
+import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Line as LineShape } from "../../tools/line";
+
+const validate = (shape: Shape | undefined) =>
+  assertTool<LineShape>(shape, Tool.Circle);
 
 const Line = ({ identifier, shape, shapeConfig, onClick }: ShapeProps) => {
   const line = shape as LineShape;
@@ -13,7 +23,7 @@ const Line = ({ identifier, shape, shapeConfig, onClick }: ShapeProps) => {
       {...shapeConfig}
       key={identifier}
       points={line.points}
-      closed={line.finished}
+      closed={line.closed}
       tension={0.5}
       lineCap="round"
       globalCompositeOperation="source-over"
@@ -26,36 +36,45 @@ const onGestureDragStart: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || shape) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  if (shape) throw new ShapeGestureError("Shape exists");
 
-  return {
-    points: [x, y],
-    tool: Tool.Pen,
-    finished: false,
-  };
+  return [
+    "proceed",
+    {
+      points: [x, y],
+      closed: false,
+      tool: Tool.Pen,
+    },
+  ];
 };
 
 const onGestureDragMove: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  const line = validate(shape);
 
-  const line = shape as LineShape;
-
-  return {
-    ...shape,
-    points: [...line.points, x, y],
-  };
+  return [
+    "proceed",
+    {
+      ...line,
+      points: [...line.points, x, y],
+    },
+  ];
 };
 
 const onGestureDragEnd: ShapeEventHandler = (shape) => {
-  if (!shape || shape.finished) return;
+  const line = validate(shape);
 
-  return {
-    ...shape,
-    finished: true,
-  };
+  return [
+    "resolve",
+    {
+      ...line,
+      close: true,
+    },
+  ];
 };
 
 const LineTool: ShapeTool = {

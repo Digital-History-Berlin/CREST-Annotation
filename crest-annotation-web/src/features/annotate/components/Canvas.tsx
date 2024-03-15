@@ -16,8 +16,12 @@ import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { Position } from "../../../types/Position";
-import { useAnnotationTools } from "../hooks/use-annotation-tools";
+import {
+  AnnotatedShape,
+  useAnnotationTools,
+} from "../hooks/use-annotation-tools";
 import { useInputEvents } from "../hooks/use-input-events";
+import { Shape } from "../slice/annotations";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 import { Tool, selectActiveLabelId, selectActiveTool } from "../slice/tools";
 
@@ -31,13 +35,15 @@ export const cursorMap = {
 };
 
 interface LabelPopup {
-  resolve: (label: Label) => void;
-  reject: (reason: string) => void;
-
   left?: number | string;
   right?: number | string;
   top?: number | string;
   bottom?: number | string;
+}
+
+interface LabelPromise {
+  resolve: (label: Label) => void;
+  reject: (reason: unknown) => void;
 }
 
 interface IProps {
@@ -54,6 +60,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const cursorRef = useRef<Position>({ x: 0, y: 0 });
+  const labelRef = useRef<LabelPromise>();
 
   const tool = useAppSelector(selectActiveTool);
   const transformation = useAppSelector(selectTransformation);
@@ -89,29 +96,32 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     };
   }, []);
 
-  const cancelLabel = useCallback(
-    (reason: string) => {
-      // discard ongoing label selection
-      labelPopup?.reject(reason);
-      // hide label popup
-      setLabelPopup(undefined);
-    },
-    [labelPopup]
-  );
+  const cancelLabel = useCallback((reason: unknown) => {
+    // discard ongoing label selection
+    labelRef.current?.reject(reason);
+    // hide label popup
+    setLabelPopup(undefined);
+  }, []);
 
   const requestLabel = useCallback(
-    () =>
+    (shape: Shape) =>
       // create a new promise that await the selection of a label
-      new Promise<Label>((resolve, reject) =>
-        setLabelPopup({ resolve, reject, ...labelPopupPlace() })
-      ),
-    [labelPopupPlace]
+      new Promise<AnnotatedShape>((resolve, reject) => {
+        if (activeLabel) return { shape, label: activeLabel };
+
+        setLabelPopup(labelPopupPlace());
+        labelRef.current = {
+          resolve: (label: Label) => resolve({ shape, label }),
+          reject,
+        };
+      }),
+    [labelPopupPlace, activeLabel]
   );
 
   const { activeShape, gestureHandlers } = useAnnotationTools({
+    requestLabel,
+    cancelLabel,
     cursorRef,
-    onCancelLabel: cancelLabel,
-    onRequestLabel: requestLabel,
   });
 
   const events = useInputEvents(gestureHandlers);
@@ -119,7 +129,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   // allow to complete an annotation by selecting a label in the sidebar
   // (in case the popup has already been opened)
   useEffect(() => {
-    if (labelPopup && activeLabel) labelPopup.resolve(activeLabel);
+    if (labelPopup && activeLabel) labelRef.current?.resolve(activeLabel);
     // this should explicitly only trigger when the active label changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLabel]);
@@ -179,8 +189,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       >
         <LabelsPopup
           projectId={projectId}
-          onSelect={labelPopup?.resolve}
-          onCancel={() => labelPopup?.reject("Popup closed")}
+          onSelect={(label: Label) => labelRef.current?.resolve(label)}
+          onCancel={() => labelRef.current?.reject("Popup closed")}
         />
       </div>
 

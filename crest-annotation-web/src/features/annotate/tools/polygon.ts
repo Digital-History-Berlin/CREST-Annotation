@@ -1,6 +1,5 @@
-import { BaseShape } from "./shape";
-
-export interface Polygon extends BaseShape {
+export interface Polygon {
   points: number[];
   preview: number[];
+  closed: boolean;
 }

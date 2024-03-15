@@ -3,7 +3,9 @@ import { ShapeConfig } from "konva/lib/Shape";
 import { Object as DataObject, Project } from "../../../../api/openApi";
 import { GestureEvent, GestureEvents } from "../../../../types/Events";
 import { MaybePromise } from "../../../../types/MaybePromise";
+import { ActionSequenceState } from "../../hooks/use-action-stream";
 import { Shape } from "../../slice/annotations";
+import { Tool } from "../../slice/tools";
 
 /// Callbacks provided to a shape component
 export type ShapeCallbacks = {
@@ -34,7 +36,7 @@ export type ShapeEventHandler = (
   shape: Shape | undefined,
   event: GestureEvent,
   config: unknown
-) => MaybePromise<Shape | undefined>;
+) => MaybePromise<ActionSequenceState<Shape>>;
 
 export type ShapeToolEvent = {
   project: Project;
@@ -52,3 +54,20 @@ export type ShapeTool = {
   component: (props: ShapeProps) => ReactElement;
   onBegin?: ShapeToolEventHandler;
 } & Partial<Record<keyof GestureEvents, ShapeEventHandler>>;
+
+/// A gesture handle received an invalid state
+export class ShapeGestureError extends Error {
+  public constructor(reason: string) {
+    super(`Failed to handle gesture: ${reason}`);
+  }
+}
+
+/// Helper to cast and validate a shape
+export const assertTool = <T>(
+  shape: Shape | undefined,
+  tool: Tool
+): T & { tool: Tool } => {
+  if (shape === undefined) throw new ShapeGestureError("Missing shape");
+  if (shape.tool !== tool) throw new ShapeGestureError("Incorrect shape");
+  return shape as unknown as T & { tool: Tool };
+};

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { SkipNext } from "@mui/icons-material";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -14,6 +14,7 @@ import { toolPaneMap } from "./components/configs/ToolPane";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
 import { activateTool } from "./epics";
+import { ActionStream } from "./hooks/use-action-stream";
 import {
   editAnnotation,
   selectEditing,
@@ -79,6 +80,9 @@ const AnnotatePage = () => {
     { objectId: objectId!, imageRequest: { height: 800 } },
     { skip: !objectId }
   );
+
+  // provide the action stream for the canvas
+  const stream = useMemo(() => new ActionStream(), []);
 
   const activeTool = useAppSelector(selectActiveTool);
   const activeState = useAppSelector(selectActiveState);
@@ -150,17 +154,23 @@ const AnnotatePage = () => {
   const updateTool = useCallback(
     (tool: Tool) => {
       if (object && project)
-        dispatch(
-          // @ts-expect-error dispatch has incorrect type
-          activateTool({
-            tool,
-            image,
-            object,
-            project,
-          })
+        // tool change discards the current action
+        stream.push(
+          () =>
+            dispatch(
+              // @ts-expect-error dispatch has incorrect type
+              activateTool({
+                tool,
+                image,
+                object,
+                project,
+              })
+            ),
+          undefined,
+          "tool change"
         );
     },
-    [dispatch, object, project, image]
+    [dispatch, object, project, image, stream]
   );
 
   // re-initialize the tool on changes
@@ -286,7 +296,7 @@ const AnnotatePage = () => {
           />
         }
         render={({ data: imageUri }) => (
-          <ActionStreamProvider>
+          <ActionStreamProvider stream={stream}>
             <Canvas projectId={projectId} imageUri={imageUri} />
           </ActionStreamProvider>
         )}

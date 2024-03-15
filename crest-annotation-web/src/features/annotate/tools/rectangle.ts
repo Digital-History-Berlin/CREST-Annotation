@@ -1,6 +1,4 @@
-import { BaseShape } from "./shape";
-
-export interface Rectangle extends BaseShape {
+export interface Rectangle {
   x: number;
   y: number;
   width: number;

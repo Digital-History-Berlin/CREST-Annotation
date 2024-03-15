@@ -2,11 +2,15 @@ import React, { useEffect, useState } from "react";
 import Konva from "konva";
 import { Group, Line } from "react-konva";
 import Anchor from "./Anchor";
-import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import { ShapeEventHandler, ShapeProps, ShapeTool, assertTool } from "./Types";
 import { GestureOverload } from "../../../../types/Events";
+import { ActionCanceledError } from "../../hooks/use-action-stream";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Polygon as PolygonShape } from "../../tools/polygon";
+
+const validate = (shape: Shape | undefined) =>
+  assertTool<PolygonShape>(shape, Tool.Polygon);
 
 const Polygon = ({
   identifier,
@@ -40,7 +44,7 @@ const Polygon = ({
       <Line
         {...shapeConfig}
         points={preview.points?.concat(preview.preview)}
-        closed={preview.finished}
+        closed={preview.closed}
         tension={0}
         lineCap="round"
         onClick={onClick}
@@ -70,43 +74,61 @@ const onPrimaryClick: ShapeEventHandler = (
 ) => {
   // start new shape
   if (!shape)
-    return {
-      points: [x, y],
-      preview: [x, y],
-      finished: false,
-      tool: Tool.Polygon,
-    };
+    return [
+      "proceed",
+      {
+        points: [x, y],
+        preview: [x, y],
+        closed: false,
+        tool: Tool.Polygon,
+      },
+    ];
 
-  if (shape.finished) return;
-
-  const polygon = shape as PolygonShape;
+  // proceed with current shape
+  const polygon = validate(shape);
 
   // finish on click near start
   const dx = polygon.points[0] - x;
   const dy = polygon.points[1] - y;
   const threshold = 5 / transformation.scale;
   if (dx * dx + dy * dy < threshold * threshold)
-    return {
-      ...shape,
-      finished: true,
-      preview: [],
-    };
+    return [
+      "resolve",
+      {
+        ...polygon,
+        closed: true,
+        preview: [],
+      },
+    ];
 
   // append new point
-  return {
-    ...shape,
-    points: [...polygon.points, x, y],
-  };
+  return [
+    "proceed",
+    {
+      ...polygon,
+      points: [...polygon.points, x, y],
+    },
+  ];
 };
 
 const onSecondaryClick: ShapeEventHandler = (shape) => {
-  if (!shape || shape.finished) return;
+  if (!shape) return ["ignore"];
+  const polygon = validate(shape);
 
-  return {
-    ...shape,
-    finished: true,
-    preview: [],
-  };
+  return [
+    "resolve",
+    {
+      ...polygon,
+      closed: true,
+      preview: [],
+    },
+  ];
+};
+const onTertiaryClick: ShapeEventHandler = (shape) => {
+  if (!shape) return ["ignore"];
+
+  // discard the polygon
+  return ["reject", new ActionCanceledError("User cancelled")];
 };
 
 const onGestureClick: ShapeEventHandler = (shape, event, config) => {
@@ -115,16 +137,24 @@ const onGestureClick: ShapeEventHandler = (shape, event, config) => {
       return onPrimaryClick(shape, event, config);
     case GestureOverload.Secondary:
       return onSecondaryClick(shape, event, config);
+    case GestureOverload.Tertiary:
+      return onTertiaryClick(shape, event, config);
+    default:
+      return ["ignore"];
   }
 };
 
 const onGestureMove: ShapeEventHandler = (shape, { transformed: { x, y } }) => {
-  if (!shape || shape.finished) return;
+  if (!shape) return ["ignore"];
+  const polygon = validate(shape);
 
-  return {
-    ...shape,
-    preview: [x, y],
-  };
+  return [
+    "proceed",
+    {
+      ...polygon,
+      preview: [x, y],
+    },
+  ];
 };
 
 const PolygonTool: ShapeTool = {

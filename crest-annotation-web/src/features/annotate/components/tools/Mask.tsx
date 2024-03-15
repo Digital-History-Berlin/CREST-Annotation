@@ -40,12 +40,12 @@ export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
     const id = context.createImageData(width, height);
     const d = id.data;
 
-    const foreground = shape.finished
-      ? hexToRgbA(color, 100)
-      : { red: 255, green: 255, blue: 255, alpha: 100 };
-    const background = shape.finished
-      ? { red: 0, green: 0, blue: 0, alpha: 0 }
-      : { red: 0, green: 0, blue: 0, alpha: 100 };
+    const foreground = mask.preview
+      ? { red: 255, green: 255, blue: 255, alpha: 100 }
+      : hexToRgbA(color, 100);
+    const background = mask.preview
+      ? { red: 0, green: 0, blue: 0, alpha: 100 }
+      : { red: 0, green: 0, blue: 0, alpha: 0 };
 
     console.log("(Re-)rendering mask...");
     for (let x = 0; x < width; x++)
@@ -66,7 +66,7 @@ export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
     console.log("Storing rendering...");
     context.putImageData(id, 0, 0);
     console.log("Rendering done");
-  }, [shape.finished, mask, color]);
+  }, [mask, color]);
 
   return (
     <Group key={identifier}>

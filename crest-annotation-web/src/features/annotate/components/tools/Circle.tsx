@@ -2,11 +2,20 @@ import React, { useEffect, useState } from "react";
 import Konva from "konva";
 import { Group, Circle as KonvaCircle } from "react-konva";
 import Anchor from "./Anchor";
-import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import {
+  ShapeEventHandler,
+  ShapeGestureError,
+  ShapeProps,
+  ShapeTool,
+  assertTool,
+} from "./Types";
 import { GestureOverload } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Circle as CircleShape } from "../../tools/circle";
+
+const validate = (shape: Shape | undefined) =>
+  assertTool<CircleShape>(shape, Tool.Circle);
 
 const Circle = ({
   identifier,
@@ -81,39 +90,39 @@ const onGestureDragStart: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || shape) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  if (shape) throw new ShapeGestureError("Shape exists");
 
   // create new shape
-  return {
-    x: x,
-    y: y,
-    radius: 0,
-    tool: Tool.Circle,
-  };
+  return [
+    "proceed",
+    {
+      x: x,
+      y: y,
+      radius: 0,
+      tool: Tool.Circle,
+    },
+  ];
 };
 
 const onGestureDragMove: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  const circle = validate(shape);
 
-  const circle = shape as CircleShape;
-
-  // update existing shape
-  return {
-    ...shape,
-    radius: Math.sqrt(Math.pow(x - circle.x, 2) + Math.pow(y - circle.y, 2)),
-  };
+  return [
+    "proceed",
+    {
+      ...circle,
+      radius: Math.sqrt(Math.pow(x - circle.x, 2) + Math.pow(y - circle.y, 2)),
+    },
+  ];
 };
 
 const onGestureDragEnd: ShapeEventHandler = (shape) => {
-  if (!shape || shape.finished) return;
-
-  return {
-    ...shape,
-    finished: true,
-  };
+  return ["resolve", validate(shape)];
 };
 
 const CircleTool: ShapeTool = {

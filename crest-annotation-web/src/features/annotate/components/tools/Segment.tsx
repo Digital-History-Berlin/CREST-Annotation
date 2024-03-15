@@ -1,5 +1,10 @@
 import { Mask } from "./Mask";
-import { ShapeEventHandler, ShapeTool, ShapeToolEventHandler } from "./Types";
+import {
+  ShapeEventHandler,
+  ShapeGestureError,
+  ShapeTool,
+  ShapeToolEventHandler,
+} from "./Types";
 import { prepare, preview, run } from "../../../../api/cvApi";
 import { SegmentConfig } from "../../slice/configs";
 import { Tool } from "../../slice/tools";
@@ -22,21 +27,25 @@ const onGestureMove: ShapeEventHandler = async (
 ) => {
   const valid = config as SegmentConfig;
 
-  if (shape?.finished || !valid?.backend || !valid?.algorithm) return;
+  if (!valid?.backend || !valid?.algorithm)
+    throw new ShapeGestureError("Invalid config");
 
   const body = { cursor: transformed };
   const response = await preview(valid.backend, valid.algorithm, body);
   const json = await response.json();
 
-  return {
-    mask: json.mask,
-    width: json.mask[0].length,
-    height: json.mask.length,
-    dx: 0,
-    dy: 0,
-    tool: Tool.Segment,
-    finished: false,
-  };
+  return [
+    "proceed",
+    {
+      mask: json.mask,
+      width: json.mask[0].length,
+      height: json.mask.length,
+      dx: 0,
+      dy: 0,
+      tool: Tool.Segment,
+      preview: true,
+    },
+  ];
 };
 
 const onGestureClick: ShapeEventHandler = async (
@@ -46,21 +55,25 @@ const onGestureClick: ShapeEventHandler = async (
 ) => {
   const valid = config as SegmentConfig;
 
-  if (shape?.finished || !valid?.backend || !valid?.algorithm) return;
+  if (!valid?.backend || !valid?.algorithm)
+    throw new ShapeGestureError("Invalid config");
 
   const body = { cursor: transformed };
   const response = await run(valid.backend, valid.algorithm, body);
   const json = await response.json();
 
-  return {
-    mask: json.mask,
-    width: json.mask[0].length,
-    height: json.mask.length,
-    dx: 0,
-    dy: 0,
-    tool: Tool.Segment,
-    finished: true,
-  };
+  return [
+    "resolve",
+    {
+      mask: json.mask,
+      width: json.mask[0].length,
+      height: json.mask.length,
+      dx: 0,
+      dy: 0,
+      tool: Tool.Segment,
+      preview: false,
+    },
+  ];
 };
 
 const SegmentTool: ShapeTool = {

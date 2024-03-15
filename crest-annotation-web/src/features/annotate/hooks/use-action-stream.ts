@@ -1,101 +1,150 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { MaybePromise } from "../../../types/MaybePromise";
 
-export type InvokeActionCallback<T> = () => MaybePromise<T>;
-
-export type BeginActionCallback<T> = (
-  resolve: (result: T) => void,
-  reject: (reason: unknown) => void
-) => MaybePromise<T>;
-
-export type ChainedActionCallback<T> = (
-  result: T,
-  resolve: (result: T) => void,
-  reject: (reason: unknown) => void
-) => MaybePromise<T>;
-
-export type InvokeActionParams<T> = {
-  resolved?: (result: T) => void;
-  rejected?: (reason: unknown) => void;
-  discarded?: () => void;
-  finalized?: () => void;
-  cancel?: (reason: string) => void;
-};
-
-export interface ActionStream {
-  isActive: (token: string) => boolean;
-  invoke: <T>(
-    callback: InvokeActionCallback<T>,
-    params: InvokeActionParams<T>
-  ) => string;
-  begin: <T>(
-    callback: BeginActionCallback<T>,
-    params: InvokeActionParams<T>
-  ) => ChainedAction<T>;
-  cancel: (token: string) => void;
+export class ActionCanceledError extends Error {
+  public constructor(reason: string, id?: string) {
+    super(`Action ${id} canceled: ${reason}`);
+  }
 }
 
-const notInitialized = () => {
-  throw new Error("Not initialized");
+export type ActionSequenceState<T> =
+  | ["ignore"]
+  | ["proceed", T]
+  | ["resolve", T]
+  | ["reject", unknown];
+
+export type ActionSequenceCallback<T> = (
+  value: T
+) => MaybePromise<ActionSequenceState<T>>;
+
+const throwNotStarted = () => {
+  throw new Error("Wrapper not started");
 };
 
 /**
- * Helper class that allows chaining promises within a single action
+ * Provides the ability to combine multiple action stream operations
  */
-export class ChainedAction<T> {
-  private _identifier = uuidv4();
-  // the promise that is returned to the caller
-  private _awaitable: Promise<T>;
-  // references to the promise callbacks
-  private _resolve: (result: T) => void = notInitialized;
-  private _reject: (reason: unknown) => void = notInitialized;
-  // the latest promise that was chained
-  private _latest?: Promise<T>;
+export class ActionSequence<T> {
+  private _resolve: (result: T) => void = throwNotStarted;
+  private _reject: (reason: unknown) => void = throwNotStarted;
 
-  public constructor(callback: BeginActionCallback<T>) {
-    this._awaitable = new Promise<T>((resolve, reject) => {
+  // internal stream to chain operations
+  private _stream?: Promise<ActionSequenceState<T>>;
+
+  private resolve(value: T): ActionSequenceState<T> {
+    this._notification?.(value);
+    this.debug("Resolved");
+    this._resolve(value);
+    return ["resolve", value];
+  }
+
+  private reject(reason: unknown): ActionSequenceState<T> {
+    this.debug("Rejected");
+    this._reject(reason);
+    return ["reject", reason];
+  }
+
+  private proceed(value: T): ActionSequenceState<T> {
+    this._notification?.(value);
+    return ["proceed", value];
+  }
+
+  private evaluate([state, value]: ActionSequenceState<T>) {
+    if (state === "ignore") return this.reject("Sequence error");
+    if (state === "resolve") return this.resolve(value);
+    if (state === "reject") return this.reject(value);
+    return this.proceed(value);
+  }
+
+  public constructor(
+    public initial: ActionSequenceState<T>,
+    public name?: string,
+    // receives value updates
+    private _notification?: (value: T) => void
+  ) {
+    this.debug("Created");
+    // prepare the initial state
+    this._stream = Promise.resolve(this.evaluate(this.initial));
+  }
+
+  /**
+   * Append an action to the sequence
+   */
+  public append(callback: ActionSequenceCallback<T>): void {
+    if (this._stream === undefined) return;
+
+    const proceed = async (state: ActionSequenceState<T>) => {
+      // if the stream is already resolved, ignore the callback
+      if (state[0] !== "proceed") return state;
+
+      const result = await callback(state[1]);
+      // if the callback resolves to ignore, keep previous state
+      return result[0] === "ignore" ? state : result;
+    };
+
+    this._stream = this._stream
+      .then(proceed)
+      // inject an exception handler to re-route to default rejection
+      .catch((reason): ActionSequenceState<T> => ["reject", reason])
+      .then((result) => this.evaluate(result));
+  }
+
+  /**
+   * Return the overall promise
+   */
+  public run(): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.debug("Run");
+      // allow execution of code outside of the promise itself
       this._resolve = resolve;
       this._reject = reject;
     });
-    // initial call without previous value
-    this._latest = Promise.resolve(
-      callback(
-        (result: T) => this.resolve(result),
-        (reason: unknown) => this.reject(reason)
-      )
-    );
   }
 
-  public chain(callback: ChainedActionCallback<T>): void {
-    // chain the callback to the latest promise
-    this._latest = this._latest?.then((result) =>
-      callback(
-        result,
-        (result: T) => this.resolve(result),
-        (reason: unknown) => this.reject(reason)
-      )
-    );
+  /**
+   * Cacnel the sequence
+   */
+  public cancel(reason: unknown) {
+    this.reject(reason);
   }
 
-  public awaitable(): Promise<T> {
-    return this._awaitable;
+  public debug(message: string) {
+    if (this.name) console.debug(`Sequence ${this.name}: ${message}`);
+  }
+}
+
+export type ActionStreamCallback<T> = () => MaybePromise<T>;
+export type CancellationCallback = (reason: string) => void;
+
+/**
+ * Encapsulates a single action stream operation
+ */
+export class ActionStreamOperation {
+  // debug name to enable logging
+  public name?: string;
+
+  public constructor(
+    private _cancellation?: CancellationCallback,
+    name?: string,
+    public id = uuidv4()
+  ) {
+    // generate a useful debug name
+    this.name = name && `${name} (${id.substring(0, 6)})`;
+    this.debug(`Created`);
   }
 
-  public resolve(result: T) {
-    console.info(`Chained action ${this._identifier} resolved`);
-    // mark internally as resolved
-    this._latest = undefined;
-    // mark externally as resolved
-    this._resolve(result);
+  public cancel(reason: string) {
+    this.debug(`Canceled (${reason})`);
+    this._cancellation?.(reason);
   }
 
-  public reject(reason: unknown) {
-    console.info(`Chained action ${this._identifier} rejected`);
-    // mark internally as rejected
-    this._latest = undefined;
-    // mark externally as rejected
-    this._reject(reason);
+  public debug(message: string) {
+    if (this.name) console.debug(`Action ${this.name}: ${message}`);
+  }
+
+  public debugName() {
+    return this.name || this.id;
   }
 }
 
@@ -109,91 +158,102 @@ export class ChainedAction<T> {
  * This approach discards every result, that arrives after the user
  * started another interaction.
  */
-export const useActionStream = (): ActionStream => {
-  // reference the current operation
-  const op = useRef<string>();
-  // reference to the current operations discard callback
-  const cancellation = useRef<(reason: string) => void>();
+export class ActionStream {
+  // current operation
+  private _op: ActionStreamOperation | undefined;
 
-  const isActive = useCallback((token: string) => op.current === token, []);
+  /**
+   * Check if the given operation is active
+   */
+  public active(token: string) {
+    return this._op?.id === token;
+  }
 
-  const cancel = useCallback((token?: string) => {
-    if (token ? op.current === token : op.current !== undefined) {
-      // another operation was still ongoing and will be discarded on completion
-      console.info(`Operation ${op.current} cancelled`);
-      // request cancellation if possible
-      cancellation.current?.("Operation cancelled");
+  /**
+   * Cancel the ongoing operation (or a specific operation)
+   */
+  public cancel(reason: string, token?: string) {
+    if (this._op && (!token || this._op?.id === token)) {
+      this._op.cancel(reason);
+      // reset the current operation
+      this._op = undefined;
     }
-  }, []);
+  }
 
-  const invoke = useCallback(
-    <T>(callback: InvokeActionCallback<T>, params: InvokeActionParams<T>) => {
-      const operationId = uuidv4();
+  /**
+   * Start a new operation and return the corresponding promise
+   */
+  public push<T>(
+    callback: ActionStreamCallback<T>,
+    cancellation?: CancellationCallback,
+    name?: string
+  ): Promise<T> {
+    // prepare the new operation
+    const op = new ActionStreamOperation(cancellation, name);
+    // cancel current operation
+    this.cancel("New operation");
+    // reference to new operation
+    this._op = op;
 
-      console.debug(`Operation ${operationId} invoked`);
-      if (op.current !== undefined) cancel();
+    // execute the operation
+    op.debug("Invoked");
+    return Promise.resolve()
+      .then(callback)
+      .then((result) => {
+        // If the operation is outdated, discard the promise using an exception.
+        // This happens if the operation does not provide its own cancellation,
+        // or if the cancellation does not actually reject the promise.
+        if (this._op?.id !== op.id)
+          throw new ActionCanceledError(
+            `Discarded from ${this._op?.debugName()}`,
+            op.debugName()
+          );
 
-      // execute the operation in asynchronous context
-      op.current = operationId;
-      cancellation.current = params?.cancel;
-      Promise.resolve(callback())
-        .then((result) => {
-          // operation completed in time
-          if (op.current === operationId) {
-            console.debug(`Operation ${operationId} completed`);
-            params.resolved?.(result);
-          }
-          // operation did not complete in time
-          else {
-            console.debug(`Operation ${operationId} discarded`);
-          }
-        })
-        .catch((error) => {
-          // operation did not complete (cancellation)
-          if (typeof error === "string") {
-            console.debug(`Operation ${operationId} cancelled: ${error}`);
-          }
-          // operation did not completed (unexpected failure)
-          else {
-            console.error(`Operation ${operationId} failed`);
-            params.rejected?.(error);
-          }
-        })
-        .finally(() => {
-          console.debug(`Operation ${operationId} finalized`);
-          // reset operation if active
-          if (op.current === operationId) {
-            op.current = undefined;
-            cancellation.current = undefined;
-          }
-          // custom cleanup if required
-          if (params.finalized) {
-            params.finalized();
-          }
-        });
+        // operation completed
+        op.debug("Resolved");
+        this._op = undefined;
+        return result;
+      })
+      .catch((error) => {
+        // inject an error handler for logging
+        if (error instanceof ActionCanceledError) op.debug(error.message);
 
-      // return operation id (this can happen before completion)
-      return operationId;
-    },
-    [cancel]
-  );
+        op.debug("Rejected");
+        if (this._op?.id === op.id)
+          // operation discarded
+          this._op = undefined;
 
-  const begin = useCallback(
-    <T>(callback: BeginActionCallback<T>, params: InvokeActionParams<T>) => {
-      console.info("Beginning chained action");
-      // create a promise that can be resolved on demand
-      const action = new ChainedAction<T>(callback);
-      // invoke the promise as a normal action
-      invoke(() => action.awaitable(), params);
-      // return a reference to the wrapped promise
-      return action;
-    },
-    [invoke]
-  );
+        // re-throw in any case to discard the result
+        throw error;
+      });
+  }
 
-  // invoke cancellation on unmount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => cancel, []);
+  /**
+   * Shorthand to start a new sequence
+   */
+  public begin<T>(sequence: ActionSequence<T>) {
+    return this.push(
+      () => sequence.run(),
+      (reason) => sequence.cancel(reason),
+      sequence.name
+    );
+  }
+}
 
-  return { isActive, invoke, begin, cancel };
+/// Convenience method to handle action stream exceptions
+export const swallowCancelation = (callback: (error: unknown) => void) => {
+  return (error?: unknown) => {
+    if (!(error instanceof ActionCanceledError)) callback(error);
+  };
 };
+
+/// Convenience method to handle action state manually
+export const swallowIgnore = <TState, TResult>(
+  callback: (state: ActionSequenceState<TState>) => TResult
+) => {
+  return (state: ActionSequenceState<TState>) => {
+    if (state[0] !== "ignore") callback(state);
+  };
+};
+
+export const useActionStream = () => useMemo(() => new ActionStream(), []);

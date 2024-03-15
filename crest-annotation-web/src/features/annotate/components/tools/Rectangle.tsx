@@ -3,11 +3,20 @@ import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Group, Rect as KonvaRectangle } from "react-konva";
 import Anchor from "./Anchor";
-import { ShapeEventHandler, ShapeProps, ShapeTool } from "./Types";
+import {
+  ShapeEventHandler,
+  ShapeGestureError,
+  ShapeProps,
+  ShapeTool,
+  assertTool,
+} from "./Types";
 import { GestureOverload } from "../../../../types/Events";
 import { Shape } from "../../slice/annotations";
 import { Tool } from "../../slice/tools";
 import { Rectangle as RectangleShape } from "../../tools/rectangle";
+
+const validate = (shape: Shape | undefined) =>
+  assertTool<RectangleShape>(shape, Tool.Rectangle);
 
 enum Edges {
   Left = 0,
@@ -147,39 +156,40 @@ const onGestureDragStart: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || shape) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  if (shape) throw new ShapeGestureError("Shape exists");
 
-  return {
-    x: x,
-    y: y,
-    width: 0,
-    height: 0,
-    tool: Tool.Rectangle,
-  };
+  return [
+    "proceed",
+    {
+      x: x,
+      y: y,
+      width: 0,
+      height: 0,
+      tool: Tool.Rectangle,
+    },
+  ];
 };
 
 const onGestureDragMove: ShapeEventHandler = (
   shape,
   { overload, transformed: { x, y } }
 ) => {
-  if (overload !== GestureOverload.Primary || !shape || shape.finished) return;
+  if (overload !== GestureOverload.Primary) return ["ignore"];
+  const rectangle = validate(shape);
 
-  const rectangle = shape as RectangleShape;
-
-  return {
-    ...shape,
-    width: x - rectangle.x,
-    height: y - rectangle.y,
-  };
+  return [
+    "proceed",
+    {
+      ...rectangle,
+      width: x - rectangle.x,
+      height: y - rectangle.y,
+    },
+  ];
 };
 
 const onGestureDragEnd: ShapeEventHandler = (shape) => {
-  if (!shape || shape.finished) return;
-
-  return {
-    ...shape,
-    finished: true,
-  };
+  return ["resolve", validate(shape)];
 };
 
 const RectangleTool: ShapeTool = {

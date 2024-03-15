@@ -1,16 +1,17 @@
 import { PropsWithChildren, createContext, useContext } from "react";
-import { ActionStream, useActionStream } from "../hooks/use-action-stream";
+import { ActionStream } from "../hooks/use-action-stream";
 
 export const InteractionContext = createContext<ActionStream | undefined>(
   undefined
 );
 
 /// Provides a single action stream that can be used from children
-const ActionStreamProvider = ({ children }: PropsWithChildren) => {
-  const actionStream = useActionStream();
-
+const ActionStreamProvider = ({
+  stream,
+  children,
+}: PropsWithChildren<{ stream: ActionStream }>) => {
   return (
-    <InteractionContext.Provider value={actionStream}>
+    <InteractionContext.Provider value={stream}>
       {children}
     </InteractionContext.Provider>
   );

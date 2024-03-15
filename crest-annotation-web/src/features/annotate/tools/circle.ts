@@ -1,6 +1,4 @@
-import { BaseShape } from "./shape";
-
-export interface Circle extends BaseShape {
+export interface Circle {
   x: number;
   y: number;
   radius: number;
