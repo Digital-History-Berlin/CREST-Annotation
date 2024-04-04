@@ -1,41 +1,20 @@
 import { v4 as uuidv4 } from "uuid";
-import { LineShape } from "../components/shapes/Line";
-import {
-  Operation,
-  OperationController,
-} from "../hooks/use-operation-controller";
+import { ToolThunk } from "../hooks/use-tool-controller";
+import { ToolboxThunk } from "../hooks/use-toolbox-controller";
 import { addAnnotation } from "../slice/annotations";
 import { setActiveTool } from "../slice/tools";
-import {
-  GestureEvent,
-  GestureIdentifier,
-  GestureOverload,
-} from "../types/events";
+import { GestureIdentifier, GestureOverload } from "../types/events";
 import { ShapeType } from "../types/shapes";
 import {
   ToolActivatePayload,
   ToolGesturePayload,
+  ToolGestureThunk,
   ToolLabelPayload,
-  ToolThunk,
-  ToolThunkCallbacks,
-  ToolThunkManage,
   ToolThunks,
 } from "../types/thunks";
 import { Tool } from "../types/tools";
 
-export interface PenOperation extends Operation {
-  shape: LineShape;
-  // additional operation state
-  finished?: boolean;
-}
-
-type PenGestureThunk = (
-  gesture: GestureEvent,
-  controller: OperationController<PenOperation>,
-  callbacks: ToolThunkCallbacks
-) => void;
-
-const activate: ToolThunkManage<ToolActivatePayload, PenOperation> = (
+const activate: ToolboxThunk<ToolActivatePayload> = (
   payload,
   { cancel },
   { dispatch }
@@ -45,66 +24,77 @@ const activate: ToolThunkManage<ToolActivatePayload, PenOperation> = (
   dispatch(setActiveTool(Tool.Pen));
 };
 
-const dragStart: PenGestureThunk = (
+const dragStart: ToolGestureThunk = (
   { overload, transformed: { x, y } },
   { begin }
 ) => {
   if (overload !== GestureOverload.Primary) return;
 
-  begin((id) => ({
-    id,
+  begin({
+    tool: Tool.Pen,
     // create new shape
     shape: {
       type: ShapeType.Line,
       points: [x, y],
       closed: false,
     },
-    finished: false,
-  }));
+    labeling: false,
+  });
 };
 
-const dragMove: PenGestureThunk = (
+const dragMove: ToolGestureThunk = (
   { overload, transformed: { x, y } },
-  { state, update }
+  { operation, state, update }
 ) => {
   if (overload !== GestureOverload.Primary) return;
-  if (state?.shape === undefined) throw new Error("Invalid state");
-  if (state.finished) return;
 
-  update({
-    ...state,
-    // change existing shape
-    shape: {
-      ...state.shape,
-      points: [...state.shape.points, x, y],
+  if (operation === undefined) throw new Error("Invalid operation");
+  if (state?.tool !== Tool.Pen) throw new Error("Invalid state");
+  if (state.labeling) return;
+
+  update(
+    {
+      ...state,
+      // change existing shape
+      shape: {
+        ...state.shape,
+        points: [...state.shape.points, x, y],
+      },
     },
-  });
+    operation
+  );
 };
 
-const dragEnd: PenGestureThunk = (
+const dragEnd: ToolGestureThunk = (
   gesture,
-  { state, update },
+  { operation, state, update },
   { requestLabel, cancelLabel }
 ) => {
-  if (state?.shape === undefined) throw new Error("Invalid state");
-  if (state.finished) return;
+  if (operation === undefined) throw new Error("Invalid operation");
+  if (state?.tool !== Tool.Pen) throw new Error("Invalid state");
+  if (state.labeling) return;
 
-  update({
-    ...state,
-    shape: state.shape,
-    finished: true,
-    // register label request cancellation
-    cancellation: cancelLabel,
-  });
+  update(
+    { ...state, labeling: true },
+    {
+      ...operation,
+      // register cleanup
+      cancellation: cancelLabel,
+      finalization: cancelLabel,
+    }
+  );
 
   requestLabel();
 };
 
-export const gesture: ToolThunk<ToolGesturePayload, PenOperation> = (
+export const gesture: ToolThunk<ToolGesturePayload> = (
   { gesture },
   controller,
   callbacks
 ) => {
+  if (gesture.identifier === GestureIdentifier.Click)
+    if (controller.state?.labeling) controller.cancel();
+
   if (gesture.identifier === GestureIdentifier.DragStart)
     return dragStart(gesture, controller, callbacks);
   if (gesture.identifier === GestureIdentifier.DragMove)
@@ -113,14 +103,15 @@ export const gesture: ToolThunk<ToolGesturePayload, PenOperation> = (
     return dragEnd(gesture, controller, callbacks);
 };
 
-export const label: ToolThunk<ToolLabelPayload, PenOperation> = (
+export const label: ToolThunk<ToolLabelPayload> = (
   { label },
-  { state, complete },
+  { operation, state, complete, cancel },
   { dispatch }
 ) => {
-  if (state?.shape === undefined) throw new Error("Invalid state");
+  if (state?.tool !== Tool.Pen) throw new Error("Invalid state");
+  if (label === undefined) return cancel();
 
-  complete(state);
+  complete(operation);
   // create a new annotation with shape
   dispatch(
     addAnnotation({
@@ -131,7 +122,7 @@ export const label: ToolThunk<ToolLabelPayload, PenOperation> = (
   );
 };
 
-export const penThunks: ToolThunks<PenOperation> = {
+export const penThunks: ToolThunks = {
   activate,
   gesture,
   label,

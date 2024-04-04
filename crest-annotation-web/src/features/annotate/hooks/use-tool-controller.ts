@@ -1,43 +1,48 @@
 import { useCallback, useMemo } from "react";
-import { Operation, OperationController } from "./use-operation-controller";
-import { useRegistry } from "./use-registry";
+import { ToolboxOperationState, useRegistry } from "./use-registry";
+import {
+  ToolboxCallbacks,
+  ToolboxController,
+  ToolboxOperationController,
+} from "./use-toolbox-controller";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { selectActiveTool } from "../slice/tools";
 import { GestureEvent } from "../types/events";
 import { Shape } from "../types/shapes";
-import { ToolThunkController, ToolThunkManager } from "../types/thunks";
-import { Tool } from "../types/tools";
 
-export const useToolManager = (options: {
-  controller: OperationController<Operation>;
-}): ToolThunkManager => {
-  const dispatch = useAppDispatch();
-  const registry = useRegistry();
-  const tools = useAppSelector((state) => state.tools);
-
-  const handleActivate = useCallback(
-    (tool: Tool) => {
-      console.debug("Activate tool: ", tool);
-
-      const config = tools[tool].config;
-      const thunks = registry.thunksRegistry[tool];
-      thunks?.activate?.({ config }, options.controller, { dispatch });
-    },
-    [dispatch, registry, options, tools]
-  );
-
-  return {
-    handleActivate,
-  };
-};
-
-/// Redirects actions to the correct tool thunks
-export const useToolController = (options: {
-  controller: OperationController<Operation>;
+export type ToolCallbacks = ToolboxCallbacks & {
   requestLabel: () => void;
   cancelLabel: () => void;
-}): ToolThunkController => {
+  emitShape: (shape: Shape) => void;
+};
+
+export type ToolThunk<P> = (
+  payload: P,
+  operation: ToolboxOperationController,
+  callbacks: ToolCallbacks
+) => void;
+
+export interface ToolController {
+  state: ToolboxOperationState;
+  /// Handle a gesture event
+  handleGesture: (gesture: GestureEvent) => void;
+  /// Handle a label selection
+  handleLabel: (label?: Label) => void;
+}
+
+/**
+ * Provide tool logic
+ *
+ * The tool controller provides methods to handle gestures and labels.
+ * It will delegate the events to the corresponding tool thunks.
+ */
+export const useToolController = (options: {
+  toolbox: ToolboxController;
+  requestLabel: () => void;
+  cancelLabel: () => void;
+}): ToolController => {
+  const { operation } = options.toolbox;
   const dispatch = useAppDispatch();
   const registry = useRegistry();
   const tool = useAppSelector(selectActiveTool);
@@ -58,23 +63,23 @@ export const useToolController = (options: {
   const handleGesture = useCallback(
     (gesture: GestureEvent) => {
       const thunks = registry.thunksRegistry[tool];
-      thunks?.gesture?.({ gesture }, options.controller, callbacks);
+      thunks?.gesture?.({ gesture }, operation, callbacks);
     },
-    [registry, tool, options, callbacks]
+    [registry, tool, operation, callbacks]
   );
 
   const handleLabel = useCallback(
-    () => (label: Label) => {
-      console.debug("Label received: ", tool);
+    (label?: Label) => {
+      console.debug("Label received: ", label);
 
       const thunks = registry.thunksRegistry[tool];
-      thunks?.label?.({ label }, options.controller, callbacks);
+      thunks?.label?.({ label }, operation, callbacks);
     },
-    [registry, tool, options, callbacks]
+    [registry, tool, operation, callbacks]
   );
 
   return {
-    state: options.controller.state,
+    state: operation.state,
     handleGesture,
     handleLabel,
   };

@@ -1,18 +1,18 @@
 import { Layer } from "react-konva";
 import { PreviewFC } from "../../types/tools";
-import { Circle, CircleShape } from "../shapes/Circle";
+import { Line, LineShape } from "../shapes/Line";
 
-export interface CircleToolState {
-  shape: CircleShape;
+export interface PenToolState {
+  shape: LineShape;
   // additional operation state
   labeling?: boolean;
 }
 
-export const CirclePreview: PreviewFC<CircleToolState> = ({ state }) => {
+export const PenPreview: PreviewFC<PenToolState> = ({ state }) => {
   return (
     <Layer>
       {state && (
-        <Circle
+        <Line
           identifier="__preview__"
           shapeConfig={{ stroke: "#ff0000" }}
           shape={state.shape}

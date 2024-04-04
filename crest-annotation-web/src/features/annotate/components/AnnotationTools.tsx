@@ -7,12 +7,12 @@ import {
   ToolbarDivider,
   ToolbarToggleButtonWithTooltip,
 } from "../../../components/ToolbarButton";
+import { ToolboxController } from "../hooks/use-toolbox-controller";
 import {
   selectActiveModifiers,
   selectActiveTool,
   toggleActiveModifier,
 } from "../slice/tools";
-import { ToolThunkManager } from "../types/thunks";
 import { Modifiers, Tool, ToolStatus } from "../types/tools";
 
 const tools = [
@@ -65,10 +65,10 @@ const modifiers = [
 ];
 
 interface IProps {
-  manager: ToolThunkManager;
+  toolbox: ToolboxController;
 }
 
-const AnnotationTools = ({ manager }: IProps) => {
+const AnnotationTools = ({ toolbox }: IProps) => {
   const dispatch = useAppDispatch();
   const theme = useTheme();
 
@@ -91,7 +91,7 @@ const AnnotationTools = ({ manager }: IProps) => {
           <ToolbarToggleButtonWithTooltip
             key={index}
             value={button.tool}
-            onClick={() => manager.handleActivate(button.tool)}
+            onClick={() => toolbox.handleActivate(button.tool)}
             selected={active}
             tooltip={button.tooltip}
           >

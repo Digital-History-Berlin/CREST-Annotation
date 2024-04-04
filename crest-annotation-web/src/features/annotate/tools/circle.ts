@@ -1,41 +1,20 @@
 import { v4 as uuidv4 } from "uuid";
-import { CircleShape } from "../components/shapes/Circle";
-import {
-  Operation,
-  OperationController,
-} from "../hooks/use-operation-controller";
+import { ToolThunk } from "../hooks/use-tool-controller";
+import { ToolboxThunk } from "../hooks/use-toolbox-controller";
 import { addAnnotation } from "../slice/annotations";
 import { setActiveTool } from "../slice/tools";
-import {
-  GestureEvent,
-  GestureIdentifier,
-  GestureOverload,
-} from "../types/events";
+import { GestureIdentifier, GestureOverload } from "../types/events";
 import { ShapeType } from "../types/shapes";
 import {
   ToolActivatePayload,
   ToolGesturePayload,
+  ToolGestureThunk,
   ToolLabelPayload,
-  ToolThunk,
-  ToolThunkCallbacks,
-  ToolThunkManage,
   ToolThunks,
 } from "../types/thunks";
 import { Tool } from "../types/tools";
 
-export interface CircleOperation extends Operation {
-  shape: CircleShape;
-  // additional operation state
-  finished: boolean;
-}
-
-type CircleGestureThunk = (
-  gesture: GestureEvent,
-  controller: OperationController<CircleOperation>,
-  callbacks: ToolThunkCallbacks
-) => void;
-
-const activate: ToolThunkManage<ToolActivatePayload, CircleOperation> = (
+const activate: ToolboxThunk<ToolActivatePayload> = (
   payload,
   { cancel },
   { dispatch }
@@ -45,14 +24,14 @@ const activate: ToolThunkManage<ToolActivatePayload, CircleOperation> = (
   dispatch(setActiveTool(Tool.Circle));
 };
 
-const dragStart: CircleGestureThunk = (
+const dragStart: ToolGestureThunk = (
   { overload, transformed: { x, y } },
   { begin }
 ) => {
   if (overload !== GestureOverload.Primary) return;
 
-  begin((id) => ({
-    id,
+  begin({
+    tool: Tool.Circle,
     // create new shape
     shape: {
       type: ShapeType.Circle,
@@ -60,54 +39,64 @@ const dragStart: CircleGestureThunk = (
       y: y,
       radius: 0,
     },
-    finished: false,
-  }));
+  });
 };
 
-const dragMove: CircleGestureThunk = (
+const dragMove: ToolGestureThunk = (
   { overload, transformed: { x, y } },
-  { state, update }
+  { operation, state, update }
 ) => {
   if (overload !== GestureOverload.Primary) return;
-  if (state?.shape === undefined) throw new Error("Invalid state");
-  if (state.finished) return;
 
-  update({
-    ...state,
-    // change existing shape
-    shape: {
-      ...state.shape,
-      radius: Math.sqrt(
-        Math.pow(x - state.shape.x, 2) + Math.pow(y - state.shape.y, 2)
-      ),
+  if (operation === undefined) throw new Error("Invalid operation");
+  if (state?.tool !== Tool.Circle) throw new Error("Invalid state");
+  if (state.labeling) return;
+
+  update(
+    {
+      ...state,
+      // change existing shape
+      shape: {
+        ...state.shape,
+        radius: Math.sqrt(
+          Math.pow(x - state.shape.x, 2) + Math.pow(y - state.shape.y, 2)
+        ),
+      },
     },
-  });
+    operation
+  );
 };
 
-const dragEnd: CircleGestureThunk = (
+const dragEnd: ToolGestureThunk = (
   gesture,
-  { state, update },
+  { operation, state, update },
   { requestLabel, cancelLabel }
 ) => {
-  if (state?.shape === undefined) throw new Error("Invalid state");
-  if (state.finished) return;
+  if (operation === undefined) throw new Error("Invalid operation");
+  if (state?.tool !== Tool.Circle) throw new Error("Invalid state");
+  if (state.labeling) return;
 
-  update({
-    ...state,
-    shape: state.shape,
-    finished: true,
-    // register label request cancellation
-    cancellation: cancelLabel,
-  });
+  update(
+    { ...state, labeling: true },
+    {
+      ...operation,
+      // register cleanup
+      cancellation: cancelLabel,
+      finalization: cancelLabel,
+    }
+  );
 
   requestLabel();
 };
 
-export const gesture: ToolThunk<ToolGesturePayload, CircleOperation> = (
+export const gesture: ToolThunk<ToolGesturePayload> = (
   { gesture },
   controller,
   callbacks
 ) => {
+  if (gesture.identifier === GestureIdentifier.Click)
+    if (controller.state?.labeling) controller.cancel();
+
   if (gesture.identifier === GestureIdentifier.DragStart)
     return dragStart(gesture, controller, callbacks);
   if (gesture.identifier === GestureIdentifier.DragMove)
@@ -116,14 +105,15 @@ export const gesture: ToolThunk<ToolGesturePayload, CircleOperation> = (
     return dragEnd(gesture, controller, callbacks);
 };
 
-export const label: ToolThunk<ToolLabelPayload, CircleOperation> = (
+export const label: ToolThunk<ToolLabelPayload> = (
   { label },
-  { state, complete },
+  { operation, state, complete, cancel },
   { dispatch }
 ) => {
-  if (state?.shape === undefined) throw new Error("Invalid state");
+  if (state?.tool !== Tool.Circle) throw new Error("Invalid state");
+  if (label === undefined) return cancel();
 
-  complete(state);
+  complete(operation);
   // create a new annotation with shape
   dispatch(
     addAnnotation({
@@ -134,7 +124,7 @@ export const label: ToolThunk<ToolLabelPayload, CircleOperation> = (
   );
 };
 
-export const circleThunks: ToolThunks<CircleOperation> = {
+export const circleThunks: ToolThunks = {
   activate,
   gesture,
   label,

@@ -16,11 +16,8 @@ import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { Position } from "../../../types/geometry";
 import { useInputEvents } from "../hooks/use-input-events";
-import {
-  Operation,
-  OperationController,
-} from "../hooks/use-operation-controller";
 import { useToolController } from "../hooks/use-tool-controller";
+import { ToolboxController } from "../hooks/use-toolbox-controller";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
 import { selectActiveLabelId } from "../slice/tools";
 import { GestureIdentifier } from "../types/events";
@@ -36,17 +33,12 @@ interface IProps {
   projectId?: string;
   imageUri?: string;
   annotationColor: string;
-  operations: OperationController<Operation>;
+  toolbox: ToolboxController;
 }
 
 const defaultProps = { annotationColor: "#D00000" };
 
-const Canvas = ({
-  projectId,
-  imageUri,
-  annotationColor,
-  operations,
-}: IProps) => {
+const Canvas = ({ projectId, imageUri, annotationColor, toolbox }: IProps) => {
   const dispatch = useAppDispatch();
 
   const boxRef = useRef<HTMLDivElement>(null);
@@ -90,7 +82,7 @@ const Canvas = ({
   }, []);
 
   const controller = useToolController({
-    controller: operations,
+    toolbox,
     requestLabel,
     cancelLabel,
   });
@@ -163,7 +155,7 @@ const Canvas = ({
         <LabelsPopup
           projectId={projectId}
           onSelect={controller.handleLabel}
-          onCancel={cancelLabel}
+          onCancel={controller.handleLabel}
         />
       </div>
 
@@ -186,7 +178,7 @@ const Canvas = ({
         )}
         <AnnotationsLayer onRequestCursor={changeCursor} />
         <PreviewLayer
-          operation={controller.state}
+          state={controller.state}
           transformation={transformation}
         />
       </Stage>

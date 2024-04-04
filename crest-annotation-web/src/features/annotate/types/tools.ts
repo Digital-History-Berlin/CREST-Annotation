@@ -1,6 +1,5 @@
 import { ReactElement } from "react";
 import { Transformation } from "../../../types/geometry";
-import { Operation } from "../hooks/use-operation-controller";
 
 export enum Tool {
   Edit = "Edit",
@@ -22,12 +21,10 @@ export enum ToolStatus {
 }
 
 /// Properties provided to a shape component
-export type PreviewProps<T extends Operation> = {
-  operation?: T;
+export type PreviewProps<T> = {
+  state?: T;
   transformation: Transformation;
 };
 
 /// Renders a shape component
-export type PreviewFC<T extends Operation> = (
-  props: PreviewProps<T>
-) => ReactElement;
+export type PreviewFC<T> = (props: PreviewProps<T>) => ReactElement;

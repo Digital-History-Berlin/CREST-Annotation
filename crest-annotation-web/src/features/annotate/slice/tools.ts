@@ -15,7 +15,7 @@ export interface ToolSlice<C> {
   config: C;
 }
 
-export interface ToolboxSlice {
+export interface ToolsSlice {
   [Tool.Pen]: ToolSlice<undefined>;
   [Tool.Circle]: ToolSlice<undefined>;
   [Tool.Rectangle]: ToolSlice<undefined>;
@@ -26,7 +26,7 @@ export interface ToolboxSlice {
   active: ActiveSlice;
 }
 
-const initialState: ToolboxSlice = {
+const initialState: ToolsSlice = {
   [Tool.Pen]: { status: ToolStatus.Ready, config: undefined },
   [Tool.Circle]: { status: ToolStatus.Ready, config: undefined },
   [Tool.Rectangle]: { status: ToolStatus.Ready, config: undefined },
@@ -117,5 +117,6 @@ export const selectActiveModifiers = (state: RootState) =>
   state.tools.active.modifiers;
 export const selectActiveLabelId = (state: RootState) =>
   state.tools.active.labelId;
+export const selectToolStates = (state: RootState) => state.tools;
 
 export default slice.reducer;

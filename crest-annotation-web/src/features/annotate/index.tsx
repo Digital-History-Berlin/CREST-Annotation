@@ -12,11 +12,7 @@ import Canvas from "./components/Canvas";
 import ConfigurationContainer from "./components/ConfigurationContainer";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
-import {
-  Operation,
-  useOperationController,
-} from "./hooks/use-operation-controller";
-import { useToolManager } from "./hooks/use-tool-controller";
+import { useToolboxController } from "./hooks/use-toolbox-controller";
 import {
   editAnnotation,
   selectEditing,
@@ -84,9 +80,7 @@ const AnnotatePage = () => {
   const activeLabelId = useAppSelector(selectActiveLabelId);
   const editingAnnotation = useAppSelector(selectEditing);
   const filters = useAppSelector(selectObjectFilters);
-
-  const controller = useOperationController<Operation>();
-  const manager = useToolManager({ controller });
+  const toolbox = useToolboxController();
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useGetRandomObjectMutation();
@@ -219,7 +213,7 @@ const AnnotatePage = () => {
       sx={{ display: "flex" }}
       header={
         <Toolbar
-          tools={<AnnotationTools manager={manager} />}
+          tools={<AnnotationTools toolbox={toolbox} />}
           actions={renderActions()}
         />
       }
@@ -254,11 +248,7 @@ const AnnotatePage = () => {
           />
         }
         render={({ data: imageUri }) => (
-          <Canvas
-            projectId={projectId}
-            imageUri={imageUri}
-            operations={controller}
-          />
+          <Canvas projectId={projectId} imageUri={imageUri} toolbox={toolbox} />
         )}
       />
     </Layout>
