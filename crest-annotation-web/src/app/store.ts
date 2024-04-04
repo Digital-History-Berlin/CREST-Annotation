@@ -10,7 +10,6 @@ import annotationsReducer, {
   annotateMiddleware,
 } from "../features/annotate/slice/annotations";
 import canvasReducer from "../features/annotate/slice/canvas";
-import configsReducer from "../features/annotate/slice/configs";
 import toolsReducer from "../features/annotate/slice/tools";
 
 const rootReducer = combineReducers({
@@ -18,7 +17,6 @@ const rootReducer = combineReducers({
   annotations: annotationsReducer,
   canvas: canvasReducer,
   tools: toolsReducer,
-  configs: configsReducer,
   [enhancedApi.reducerPath]: enhancedApi.reducer,
 });
 

@@ -11,28 +11,19 @@ import { Layer, Stage } from "react-konva";
 import AnnotationsLayer from "./AnnotationsLayer";
 import BackgroundImage from "./BackgroundImage";
 import LabelsPopup from "./LabelsPopup";
-import ShapeRenderer from "./tools/Shape";
+import PreviewLayer from "./PreviewLayer";
 import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
-import { Label } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
-import { Position } from "../../../types/Position";
-import {
-  AnnotatedShape,
-  useAnnotationTools,
-} from "../hooks/use-annotation-tools";
+import { Position } from "../../../types/geometry";
 import { useInputEvents } from "../hooks/use-input-events";
-import { Shape } from "../slice/annotations";
+import {
+  Operation,
+  OperationController,
+} from "../hooks/use-operation-controller";
+import { useToolController } from "../hooks/use-tool-controller";
 import { selectTransformation, updateTransformation } from "../slice/canvas";
-import { Tool, selectActiveLabelId, selectActiveTool } from "../slice/tools";
-
-export const cursorMap = {
-  [Tool.Pen]: undefined,
-  [Tool.Circle]: undefined,
-  [Tool.Rectangle]: undefined,
-  [Tool.Polygon]: undefined,
-  [Tool.Edit]: "pointer",
-  [Tool.Segment]: undefined,
-};
+import { selectActiveLabelId } from "../slice/tools";
+import { GestureIdentifier } from "../types/events";
 
 interface LabelPopup {
   left?: number | string;
@@ -41,29 +32,26 @@ interface LabelPopup {
   bottom?: number | string;
 }
 
-interface LabelPromise {
-  resolve: (label: Label) => void;
-  reject: (reason: unknown) => void;
-}
-
 interface IProps {
   projectId?: string;
   imageUri?: string;
   annotationColor: string;
+  operations: OperationController<Operation>;
 }
 
 const defaultProps = { annotationColor: "#D00000" };
 
-const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
+const Canvas = ({
+  projectId,
+  imageUri,
+  annotationColor,
+  operations,
+}: IProps) => {
   const dispatch = useAppDispatch();
 
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const cursorRef = useRef<Position>({ x: 0, y: 0 });
-  const labelRef = useRef<LabelPromise>();
-
-  const tool = useAppSelector(selectActiveTool);
-  const transformation = useAppSelector(selectTransformation);
 
   const { data: labels } = useGetProjectLabelsQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -81,59 +69,44 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
     [activeLabelId, labels]
   );
 
-  const labelPopupPlace = useCallback(() => {
+  const requestLabel = useCallback(() => {
     if (!stageRef.current) return;
 
-    // calculate a nice position
+    // display popup with nice position
     const { x, y } = cursorRef.current;
-    return {
+    setLabelPopup({
       left: x + 10,
       top: y <= stageRef.current.height() / 2 ? y : undefined,
       bottom:
         y > stageRef.current.height() / 2
           ? stageRef.current.height() - y
           : undefined,
-    };
+    });
   }, []);
 
-  const cancelLabel = useCallback((reason: unknown) => {
-    // discard ongoing label selection
-    labelRef.current?.reject(reason);
-    // hide label popup
+  const cancelLabel = useCallback(() => {
+    // close popup
     setLabelPopup(undefined);
   }, []);
 
-  const requestLabel = useCallback(
-    (shape: Shape) =>
-      // create a new promise that await the selection of a label
-      new Promise<AnnotatedShape>((resolve, reject) => {
-        if (activeLabel) return { shape, label: activeLabel };
-
-        setLabelPopup(labelPopupPlace());
-        labelRef.current = {
-          resolve: (label: Label) => resolve({ shape, label }),
-          reject,
-        };
-      }),
-    [labelPopupPlace, activeLabel]
-  );
-
-  const { activeShape, gestureHandlers } = useAnnotationTools({
+  const controller = useToolController({
+    controller: operations,
     requestLabel,
     cancelLabel,
-    cursorRef,
   });
 
-  const events = useInputEvents(gestureHandlers);
+  const events = useInputEvents({
+    handler: controller.handleGesture,
+    cursorRef,
+    // enable debugging for some of the gestures
+    debug: [
+      GestureIdentifier.Click,
+      GestureIdentifier.DragStart,
+      GestureIdentifier.DragEnd,
+    ],
+  });
 
-  // allow to complete an annotation by selecting a label in the sidebar
-  // (in case the popup has already been opened)
-  useEffect(() => {
-    if (labelPopup && activeLabel) labelRef.current?.resolve(activeLabel);
-    // this should explicitly only trigger when the active label changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLabel]);
-
+  const transformation = useAppSelector(selectTransformation);
   // update the zoom on change
   useEffect(() => {
     stageRef.current?.scale({
@@ -160,7 +133,7 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
   );
 
   // gets the default cursor that is shown when hovering the canvas
-  const defaultCursor = () => cursorMap[tool] || "crosshair";
+  const defaultCursor = () => /*cursorMap[tool] || */ "crosshair";
   // change the current cursor
   const changeCursor = (cursor: string | undefined) => {
     const container = stageRef.current?.container();
@@ -189,8 +162,8 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
       >
         <LabelsPopup
           projectId={projectId}
-          onSelect={(label: Label) => labelRef.current?.resolve(label)}
-          onCancel={() => labelRef.current?.reject("Popup closed")}
+          onSelect={controller.handleLabel}
+          onCancel={cancelLabel}
         />
       </div>
 
@@ -212,16 +185,10 @@ const Canvas = ({ projectId, imageUri, annotationColor }: IProps) => {
           </Layer>
         )}
         <AnnotationsLayer onRequestCursor={changeCursor} />
-        {activeShape && (
-          <Layer>
-            <ShapeRenderer
-              identifier="__active__"
-              shape={activeShape}
-              color={activeLabel?.color ?? annotationColor}
-              transformation={transformation}
-            />
-          </Layer>
-        )}
+        <PreviewLayer
+          operation={controller.state}
+          transformation={transformation}
+        />
       </Stage>
     </Box>
   );

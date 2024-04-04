@@ -8,14 +8,12 @@ import {
   ToolbarToggleButtonWithTooltip,
 } from "../../../components/ToolbarButton";
 import {
-  Modifiers,
-  Tool,
-  ToolState,
   selectActiveModifiers,
-  selectActiveState,
   selectActiveTool,
-  toggleModifier,
+  toggleActiveModifier,
 } from "../slice/tools";
+import { ToolThunkManager } from "../types/thunks";
+import { Modifiers, Tool, ToolStatus } from "../types/tools";
 
 const tools = [
   {
@@ -67,31 +65,33 @@ const modifiers = [
 ];
 
 interface IProps {
-  onActivate: (tool: Tool) => void;
+  manager: ToolThunkManager;
 }
 
-const AnnotationTools = ({ onActivate }: IProps) => {
+const AnnotationTools = ({ manager }: IProps) => {
   const dispatch = useAppDispatch();
   const theme = useTheme();
 
   const activeTool = useAppSelector(selectActiveTool);
-  const activeState = useAppSelector(selectActiveState);
   const activeModifiers = useAppSelector(selectActiveModifiers);
+  const toolStates = useAppSelector((state) => state.tools);
 
   return (
     <Stack direction="row">
       {tools.map((button, index) => {
         if (button.tool === undefined) return <ToolbarDivider key={index} />;
         const active = activeTool === button.tool;
-        const ready = !active || activeState === ToolState.Ready;
-        const loading = active && activeState === ToolState.Loading;
-        const failed = active && activeState === ToolState.Failed;
+
+        const { status } = toolStates[button.tool];
+        const ready = !active || status === ToolStatus.Ready;
+        const loading = active && status === ToolStatus.Loading;
+        const failed = active && status === ToolStatus.Failed;
 
         return (
           <ToolbarToggleButtonWithTooltip
             key={index}
             value={button.tool}
-            onClick={() => onActivate(button.tool)}
+            onClick={() => manager.handleActivate(button.tool)}
             selected={active}
             tooltip={button.tooltip}
           >
@@ -118,7 +118,7 @@ const AnnotationTools = ({ onActivate }: IProps) => {
           <ToolbarToggleButtonWithTooltip
             key={button.modifier}
             value={button.modifier}
-            onClick={() => dispatch(toggleModifier(button.modifier))}
+            onClick={() => dispatch(toggleActiveModifier(button.modifier))}
             selected={activeModifiers.includes(button.modifier)}
             tooltip={"Group Annotations"}
           >

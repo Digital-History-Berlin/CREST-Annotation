@@ -1,11 +1,21 @@
-import { Position } from "./Position";
-import { Transformation } from "./Transformation";
+import { Position, Transformation } from "../../../types/geometry";
 
 /**
- * Identifies the case for an overloaded gesture
+ * Identifies a gesture
  *
  * This abstracts for example from the mouse button or number of touches
  * in a way that should be compatible with different input methods.
+ */
+export enum GestureIdentifier {
+  Move,
+  DragStart,
+  DragMove,
+  DragEnd,
+  Click,
+}
+
+/**
+ * Identifies the case for an overloaded gesture
  *
  * Since the Wacom pen only has two buttons, pressing both buttons maps
  * to the tertiary action. This will correspond to the middle mouse button
@@ -39,19 +49,10 @@ export interface Positions {
 
 /// Gesture event with overloading
 export type GestureEvent = Positions & {
+  identifier: GestureIdentifier;
   overload: GestureOverload;
   // current transformation
   transformation: Transformation;
 };
 
-/// Interface containing common gestures
-export interface GestureEvents {
-  // indicates movement without buttons
-  onGestureMove: (event: GestureEvent) => void;
-  // indicates movement with buttons
-  onGestureDragStart: (event: GestureEvent) => void;
-  onGestureDragMove: (event: GestureEvent) => void;
-  onGestureDragEnd: (event: GestureEvent) => void;
-  // indicates single button event without movement
-  onGestureClick: (event: GestureEvent) => void;
-}
+export type GestureEventHandler = (event: GestureEvent) => void;

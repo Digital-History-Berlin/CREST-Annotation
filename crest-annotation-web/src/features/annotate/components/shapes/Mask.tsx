@@ -1,7 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { Group, Image } from "react-konva";
-import { ShapeProps } from "./Types";
-import { Mask as MaskShape } from "../../tools/mask";
+import { Shape, ShapeFC } from "../../types/shapes";
+
+export interface MaskShape extends Shape {
+  mask: number[][];
+  width: number;
+  height: number;
+  dx: number;
+  dy: number;
+  preview: boolean;
+  color: string;
+}
 
 const colorRegex =
   /#([a-fA-F0-9][a-fA-F0-9])([a-fA-F0-9][a-fA-F0-9])([a-fA-F0-9][a-fA-F0-9])/;
@@ -20,9 +29,7 @@ const hexToRgbA = (hex: string, alpha: number) => {
   return { red: 255, green: 255, blue: 255, alpha };
 };
 
-export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
-  const mask = shape as MaskShape;
-
+export const Mask: ShapeFC<MaskShape> = ({ identifier, shape, onClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>();
 
   useEffect(() => {
@@ -31,42 +38,42 @@ export const Mask = ({ identifier, shape, color, onClick }: ShapeProps) => {
       canvasRef.current = document.createElement("canvas");
     const context = canvasRef.current.getContext("2d");
 
-    if (!context || !mask.width || !mask.height) return;
+    if (!context || !shape.width || !shape.height) return;
 
-    const { width, height } = mask;
+    const { width, height } = shape;
     canvasRef.current.width = width;
     canvasRef.current.height = height;
 
     const id = context.createImageData(width, height);
     const d = id.data;
 
-    const foreground = mask.preview
+    const foreground = shape.preview
       ? { red: 255, green: 255, blue: 255, alpha: 100 }
-      : hexToRgbA(color, 100);
-    const background = mask.preview
+      : hexToRgbA(shape.color, 100);
+    const background = shape.preview
       ? { red: 0, green: 0, blue: 0, alpha: 100 }
       : { red: 0, green: 0, blue: 0, alpha: 0 };
 
     console.log("(Re-)rendering mask...");
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
-        d[x * 4 + y * width * 4 + 0] = mask.mask[y][x]
+        d[x * 4 + y * width * 4 + 0] = shape.mask[y][x]
           ? foreground.red
           : background.red;
-        d[x * 4 + y * width * 4 + 1] = mask.mask[y][x]
+        d[x * 4 + y * width * 4 + 1] = shape.mask[y][x]
           ? foreground.green
           : background.green;
-        d[x * 4 + y * width * 4 + 2] = mask.mask[y][x]
+        d[x * 4 + y * width * 4 + 2] = shape.mask[y][x]
           ? foreground.blue
           : background.blue;
-        d[x * 4 + y * width * 4 + 3] = mask.mask[y][x]
+        d[x * 4 + y * width * 4 + 3] = shape.mask[y][x]
           ? foreground.alpha
           : background.alpha;
       }
     console.log("Storing rendering...");
     context.putImageData(id, 0, 0);
     console.log("Rendering done");
-  }, [mask, color]);
+  }, [shape]);
 
   return (
     <Group key={identifier}>

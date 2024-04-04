@@ -1,5 +1,4 @@
-import { ActionCanceledError } from "../features/annotate/hooks/use-action-stream";
-import { Position } from "../types/Position";
+import { Position } from "../types/geometry";
 
 interface Debounce {
   timeout: NodeJS.Timeout;
@@ -68,7 +67,7 @@ export const preview = (
 
         // handle result (will be ignored if already rejected)
         if (response.ok) resolve(response);
-        else reject(new ActionCanceledError("Debounce discarded"));
+        else reject(new Error("Invalid response"));
       } finally {
         previewDebounce = undefined;
       }
@@ -76,7 +75,7 @@ export const preview = (
 
     // store the current timeout
     previewDebounce = {
-      reject: () => reject(new ActionCanceledError("Debounce canceled")),
+      reject: () => reject(new Error("Debounce canceled")),
       timeout,
     };
   });

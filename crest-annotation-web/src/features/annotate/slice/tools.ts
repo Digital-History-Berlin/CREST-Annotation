@@ -1,146 +1,121 @@
-import { AnyAction, PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { addAnnotation } from "./annotations";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Label } from "../../../api/openApi";
 import { RootState } from "../../../app/store";
+import { SegmentConfig } from "../tools/segment";
+import { Modifiers, Tool, ToolStatus } from "../types/tools";
 
-export enum Tool {
-  Edit = "Edit",
-  Pen = "Pen",
-  Circle = "Circle",
-  Rectangle = "Rectangle",
-  Polygon = "Polygon",
-  Segment = "Segment",
+export interface ActiveSlice {
+  tool: Tool;
+  modifiers: Modifiers[];
+  labelId?: string;
 }
 
-export enum Modifiers {
-  Group = "Group",
+export interface ToolSlice<C> {
+  status: ToolStatus;
+  config: C;
 }
 
-export enum ToolState {
-  Ready = "Ready",
-  Loading = "Loading",
-  Failed = " Failed",
+export interface ToolboxSlice {
+  [Tool.Pen]: ToolSlice<undefined>;
+  [Tool.Circle]: ToolSlice<undefined>;
+  [Tool.Rectangle]: ToolSlice<undefined>;
+  [Tool.Polygon]: ToolSlice<undefined>;
+  [Tool.Edit]: ToolSlice<undefined>;
+  [Tool.Segment]: ToolSlice<SegmentConfig>;
+
+  active: ActiveSlice;
 }
 
-export interface ToolsSlice {
-  activeTool: Tool;
-  activeState: ToolState;
-  activeModifiers: Modifiers[];
-  activeConfig?: unknown;
-  activeLabelId?: string;
-  // modifier specific data
-  groupAnnotationId?: string;
-}
+const initialState: ToolboxSlice = {
+  [Tool.Pen]: { status: ToolStatus.Ready, config: undefined },
+  [Tool.Circle]: { status: ToolStatus.Ready, config: undefined },
+  [Tool.Rectangle]: { status: ToolStatus.Ready, config: undefined },
+  [Tool.Polygon]: { status: ToolStatus.Ready, config: undefined },
+  [Tool.Edit]: { status: ToolStatus.Ready, config: undefined },
+  [Tool.Segment]: { status: ToolStatus.Ready, config: {} },
 
-const initialState: ToolsSlice = {
-  activeTool: Tool.Pen,
-  activeState: ToolState.Ready,
-  activeModifiers: [],
+  active: {
+    tool: Tool.Pen,
+    modifiers: [],
+    labelId: undefined,
+  },
+};
+
+// extend typings as needed
+type ConfigPayload = {
+  tool: Tool.Segment;
+  config: Partial<SegmentConfig>;
 };
 
 const except = <T>(items: T[], item: T) => items.filter((i) => i !== item);
-
-// actions that change the modifiers
-const isModifierMutation = (action: AnyAction) =>
-  ["tools/setModifiers", "tools/setModifier", "tools/toggleModifier"].includes(
-    action.type
-  );
-
-// actions that change the active label
-const isLabelChange = (action: AnyAction) =>
-  ["tools/setActiveLabel"].includes(action.type);
 
 export const slice = createSlice({
   name: "tools",
   initialState,
   reducers: {
-    setActiveTool: (
+    updateToolState: (
       state,
-      action: PayloadAction<{ tool: Tool; config: unknown; state: ToolState }>
+      action: PayloadAction<{ tool: Tool.Segment; status: ToolStatus }>
     ) => {
-      state.activeTool = action.payload.tool;
-      state.activeConfig = action.payload.config;
-      state.activeState = action.payload.state;
+      state[action.payload.tool] = {
+        ...state[action.payload.tool],
+        status: action.payload.status,
+      };
     },
-    updateActiveTool: (
-      state,
-      action: PayloadAction<{ config?: unknown; state?: ToolState }>
-    ) => {
-      // patch the state
-      state.activeConfig = action.payload.config || state.activeConfig;
-      state.activeState = action.payload.state || state.activeState;
+    updateToolConfig: (state, action: PayloadAction<ConfigPayload>) => {
+      state[action.payload.tool] = {
+        ...state[action.payload.tool],
+        config: {
+          // patch the configuration
+          ...state[action.payload.tool].config,
+          ...action.payload.config,
+        },
+      };
+    },
+    setActiveTool: (state, action: PayloadAction<Tool>) => {
+      state.active.tool = action.payload;
+    },
+    setActiveModifiers: (state, action: PayloadAction<Modifiers[]>) => {
+      state.active.modifiers = action.payload;
     },
     setActiveLabel: (state, action: PayloadAction<Label | undefined>) => {
-      state.activeLabelId = action.payload?.id;
+      state.active.labelId = action.payload?.id;
     },
-    setModifiers: (state, action: PayloadAction<Modifiers[]>) => {
-      state.activeModifiers = action.payload;
-    },
-    setModifier: (
+    setActiveModifier: (
       state,
       action: PayloadAction<{ modifier: Modifiers; state: boolean }>
     ) => {
-      const includes = state.activeModifiers.includes(action.payload.modifier);
+      const includes = state.active.modifiers.includes(action.payload.modifier);
       if (action.payload.state && !includes)
-        state.activeModifiers.push(action.payload.modifier);
+        state.active.modifiers.push(action.payload.modifier);
       if (!action.payload.state && includes)
-        state.activeModifiers = except(
-          state.activeModifiers,
+        state.active.modifiers = except(
+          state.active.modifiers,
           action.payload.modifier
         );
     },
-    toggleModifier: (state, action: PayloadAction<Modifiers>) => {
-      if (state.activeModifiers.includes(action.payload))
-        state.activeModifiers = except(state.activeModifiers, action.payload);
-      else state.activeModifiers.push(action.payload);
+    toggleActiveModifier: (state, action: PayloadAction<Modifiers>) => {
+      if (state.active.modifiers.includes(action.payload))
+        state.active.modifiers = except(state.active.modifiers, action.payload);
+      else state.active.modifiers.push(action.payload);
     },
-  },
-  extraReducers: (builder) => {
-    builder.addCase(addAnnotation, (state, action) => {
-      if (
-        state.activeModifiers.includes(Modifiers.Group) &&
-        !state.groupAnnotationId
-      )
-        // use new annotation for group
-        state.groupAnnotationId = action.payload.id;
-    });
-    builder.addMatcher(isLabelChange, (state) => {
-      if (state.groupAnnotationId) {
-        // deactivate group modifier on label change (if already in progress)
-        state.activeModifiers = except(state.activeModifiers, Modifiers.Group);
-        state.groupAnnotationId = undefined;
-      }
-    });
-    builder.addMatcher(isModifierMutation, (state) => {
-      if (!state.activeModifiers.includes(Modifiers.Group))
-        state.groupAnnotationId = undefined;
-    });
   },
 });
 
 export const {
+  updateToolState,
+  updateToolConfig,
   setActiveTool,
-  updateActiveTool,
+  setActiveModifiers,
   setActiveLabel,
-  setModifiers,
-  setModifier,
-  toggleModifier,
+  setActiveModifier,
+  toggleActiveModifier,
 } = slice.actions;
 
-// active tool
-export const selectActiveTool = (state: RootState) => state.tools.activeTool;
-export const selectActiveState = (state: RootState) => state.tools.activeState;
+export const selectActiveTool = (state: RootState) => state.tools.active.tool;
 export const selectActiveModifiers = (state: RootState) =>
-  state.tools.activeModifiers;
-
-// tool config
-export const selectActiveConfig = (state: RootState) =>
-  state.tools.activeConfig;
+  state.tools.active.modifiers;
 export const selectActiveLabelId = (state: RootState) =>
-  state.tools.activeLabelId;
-
-// modifier specific data
-export const selectGroupAnnotationId = (state: RootState) =>
-  state.tools.groupAnnotationId;
+  state.tools.active.labelId;
 
 export default slice.reducer;

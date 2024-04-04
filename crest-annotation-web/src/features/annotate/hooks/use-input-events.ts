@@ -1,92 +1,16 @@
-import { useCallback, useMemo, useRef } from "react";
+import { MutableRefObject, useCallback, useRef } from "react";
 import Konva from "konva";
 import { StageProps } from "react-konva";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import { Position } from "../../../types/geometry";
+import { selectTransformation, updateTransformation } from "../slice/canvas";
 import {
   GestureEvent,
-  GestureEvents,
+  GestureEventHandler,
+  GestureIdentifier,
   GestureOverload,
   Positions,
-} from "../../../types/Events";
-import { Position } from "../../../types/Position";
-import { selectTransformation, updateTransformation } from "../slice/canvas";
-
-// TODO: configure from environment or somewhere else
-// IMPORTANT: this must be constant during runtime
-// because this is a conditional for hooks
-const debugGestures = "single" as "none" | "single" | "all";
-
-export const useDebugGestures = ({
-  onGestureMove,
-  onGestureDragStart,
-  onGestureDragMove,
-  onGestureDragEnd,
-  onGestureClick,
-}: GestureEvents) => {
-  if (debugGestures === "none")
-    return {
-      gestureMove: onGestureMove,
-      gestureDragStart: onGestureDragStart,
-      gestureDragMove: onGestureDragMove,
-      gestureDragEnd: onGestureDragEnd,
-      gestureClick: onGestureClick,
-    };
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const gestureMove = useCallback(
-    (event: GestureEvent) => {
-      if (debugGestures === "all")
-        console.debug(`Gesture move ${event.overload}`);
-      onGestureMove(event);
-    },
-    [onGestureMove]
-  );
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const gestureDragStart = useCallback(
-    (event: GestureEvent) => {
-      console.debug(`Gesture drag start ${event.overload}`);
-      onGestureDragStart(event);
-    },
-    [onGestureDragStart]
-  );
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const gestureDragMove = useCallback(
-    (event: GestureEvent) => {
-      if (debugGestures === "all")
-        console.debug(`Gesture drag move ${event.overload}`);
-      onGestureDragMove(event);
-    },
-    [onGestureDragMove]
-  );
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const gestureDragEnd = useCallback(
-    (event: GestureEvent) => {
-      console.debug(`Gesture drag end ${event.overload}`);
-      onGestureDragEnd(event);
-    },
-    [onGestureDragEnd]
-  );
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const gestureClick = useCallback(
-    (event: GestureEvent) => {
-      console.debug(`Gesture click ${event.overload}`);
-      onGestureClick(event);
-    },
-    [onGestureClick]
-  );
-
-  return {
-    gestureMove,
-    gestureDragStart,
-    gestureDragMove,
-    gestureDragEnd,
-    gestureClick,
-  };
-};
+} from "../types/events";
 
 interface GestureState {
   clickButtons: number;
@@ -128,28 +52,55 @@ const mapButton = (button: number): number => {
   }
 };
 
+const identifierLog = (identifier: GestureIdentifier) => {
+  if (identifier === GestureIdentifier.Move) return "move";
+  if (identifier === GestureIdentifier.DragStart) return "drag-start";
+  if (identifier === GestureIdentifier.DragMove) return "drag-move";
+  if (identifier === GestureIdentifier.DragEnd) return "drag-end";
+  if (identifier === GestureIdentifier.Click) return "click";
+  return "unknown";
+};
+
+const eventLog = ({ identifier, overload }: GestureEvent) => {
+  return `Gesture ${identifierLog(identifier)} (${overload})`;
+};
+
 /**
+ * Provides event handlers for the stage component
+ *
  * Collects input from mouse and tablet/touch and unifies them into
  * a simplified interface. Internally extract zoom/pan events and
  * applies the corresponding transformation.
  *
- * Currently uses global transformation by default.
+ * The gestures are forwarded over a callback.
  */
-export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
+export const useInputEvents = ({
+  handler,
+  cursorRef,
+  debug,
+}: {
+  handler: GestureEventHandler;
+  cursorRef?: MutableRefObject<Position>;
+  debug?: GestureIdentifier[];
+}): StageProps => {
   const dispatch = useAppDispatch();
   // use global transformation
   const transformation = useAppSelector(selectTransformation);
   // state information for current gesture
   const state = useRef<GestureState>({ clickButtons: 0 });
 
-  // use debug gestures if enabled
-  const {
-    gestureMove,
-    gestureDragStart,
-    gestureDragMove,
-    gestureDragEnd,
-    gestureClick,
-  } = useDebugGestures(gestureHandlers);
+  // forward the event to the provided callback
+  const gesture = useCallback(
+    (event: GestureEvent) => {
+      // provide acccess to the latest cursor position
+      if (cursorRef) cursorRef.current = event.transformed;
+      // provide debug-trace to identify gestures
+      if (debug?.includes(event.identifier)) console.debug(eventLog(event));
+      // forward to the external handler
+      handler(event);
+    },
+    [handler, cursorRef, debug]
+  );
 
   // apply transformation to stage coordinates
   const transform = useCallback(
@@ -196,7 +147,8 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
 
       // move without buttons is handled separately
       if (!event.evt.buttons)
-        gestureMove({
+        gesture({
+          identifier: GestureIdentifier.Move,
           overload: GestureOverload.Primary,
           transformation,
           ...positions,
@@ -224,26 +176,25 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
 
       // check if drag was started
       if (!dragOverload && dragStart) {
-        gestureDragStart({ overload, transformation, ...dragStart });
+        gesture({
+          identifier: GestureIdentifier.DragStart,
+          overload,
+          transformation,
+          ...dragStart,
+        });
         state.current.dragOverload = overload;
       }
 
       // trigger default drag move event
       if (dragOverload)
-        gestureDragMove({
+        gesture({
+          identifier: GestureIdentifier.DragMove,
           overload: dragOverload,
           transformation,
           ...positions,
         });
     },
-    [
-      getPointerPositions,
-      dispatch,
-      transformation,
-      gestureMove,
-      gestureDragStart,
-      gestureDragMove,
-    ]
+    [getPointerPositions, gesture, dispatch, transformation]
   );
 
   const handleMouseUp = useCallback(
@@ -253,14 +204,16 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
 
       // gesture was a drag
       if (state.current.dragOverload)
-        gestureDragEnd({
+        gesture({
+          identifier: GestureIdentifier.DragEnd,
           overload: state.current.dragOverload,
           transformation,
           ...positions,
         });
       // gesture was a click
       if (state.current.clickButtons)
-        gestureClick({
+        gesture({
+          identifier: GestureIdentifier.Click,
           overload: mapOverload(state.current.clickButtons, event.evt.shiftKey),
           transformation,
           ...positions,
@@ -271,7 +224,7 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
       state.current.dragOverload = undefined;
       state.current.clickButtons = 0;
     },
-    [getPointerPositions, transformation, gestureDragEnd, gestureClick]
+    [getPointerPositions, gesture, transformation]
   );
 
   const handleTouchStart = useCallback(
@@ -292,7 +245,8 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
       const positions = getPointerPositions(event);
       if (!positions) return;
 
-      gestureDragMove({
+      gesture({
+        identifier: GestureIdentifier.DragMove,
         overload: GestureOverload.Primary,
         transformation,
         ...positions,
@@ -300,7 +254,7 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
       // touch move is always classified as primary gesture
       state.current.dragOverload = GestureOverload.Primary;
     },
-    [getPointerPositions, transformation, gestureDragMove]
+    [getPointerPositions, gesture, transformation]
   );
 
   const handleTouchEnd = useCallback(
@@ -311,14 +265,16 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
 
       // mouse was moved while buttons where down (drag ended)
       if (state.current.dragOverload)
-        gestureDragEnd({
+        gesture({
+          identifier: GestureIdentifier.DragEnd,
           overload: state.current.dragOverload,
           transformation,
           ...positions,
         });
       // mouse was not moved (gesture was a click)
       else
-        gestureClick({
+        gesture({
+          identifier: GestureIdentifier.Click,
           overload: mapOverload(state.current.clickButtons),
           transformation,
           ...positions,
@@ -327,7 +283,7 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
       // update states
       state.current.dragOverload = undefined;
     },
-    [getPointerPositions, transformation, gestureDragEnd, gestureClick]
+    [getPointerPositions, gesture, transformation]
   );
 
   const handleWheel = useCallback(
@@ -359,25 +315,14 @@ export const useInputEvents = (gestureHandlers: GestureEvents): StageProps => {
     [getPointerPositions, dispatch, transformation]
   );
 
-  return useMemo(
-    () => ({
-      onMouseDown: handleMouseDown,
-      onMouseMove: handleMouseMove,
-      onMouseUp: handleMouseUp,
-      onMouseLeave: handleMouseUp,
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd,
-      onWheel: handleWheel,
-    }),
-    [
-      handleMouseDown,
-      handleMouseMove,
-      handleMouseUp,
-      handleTouchStart,
-      handleTouchMove,
-      handleTouchEnd,
-      handleWheel,
-    ]
-  );
+  return {
+    onMouseDown: handleMouseDown,
+    onMouseMove: handleMouseMove,
+    onMouseUp: handleMouseUp,
+    onMouseLeave: handleMouseUp,
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+    onWheel: handleWheel,
+  };
 };

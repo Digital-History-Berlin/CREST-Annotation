@@ -4,21 +4,11 @@ import {
   PayloadAction,
   createSlice,
 } from "@reduxjs/toolkit";
-import { Tool } from "./tools";
 import { enhancedApi } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
 import { RootState } from "../../../app/store";
 import { pullAnnotations } from "../epics";
-import { Circle } from "../tools/circle";
-import { Line } from "../tools/line";
-import { Mask } from "../tools/mask";
-import { Polygon } from "../tools/polygon";
-import { Rectangle } from "../tools/rectangle";
-
-/// Combines all available shape types with meta fields
-export type Shape = (Rectangle | Circle | Line | Polygon | Mask) & {
-  tool: Tool;
-};
+import { Shape } from "../types/shapes";
 
 export interface Annotation {
   id: string;

@@ -1,15 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { shapeMap } from "./components/tools/Shape";
-import { ShapeToolEvent } from "./components/tools/Types";
 import { Annotation, updateAnnotations } from "./slice/annotations";
-import {
-  Tool,
-  ToolState,
-  setActiveTool,
-  updateActiveTool,
-} from "./slice/tools";
 import { enhancedApi } from "../../api/enhancedApi";
-import { AppDispatch, RootState } from "../../app/store";
 
 export const pullAnnotations = createAsyncThunk(
   "annotations/pullAnnotations",
@@ -41,38 +32,5 @@ export const pullAnnotations = createAsyncThunk(
     );
     // update the store
     dispatch(updateAnnotations(annotations));
-  }
-);
-
-export const activateTool = createAsyncThunk<
-  void,
-  { tool: Tool } & ShapeToolEvent,
-  { state: RootState; dispatch: AppDispatch }
->(
-  "annotations/activateTool",
-  async ({ tool, ...event }, { dispatch, getState }) => {
-    console.debug(`Selected tool ${tool}`);
-
-    // get the tools current configuration
-    const config = getState().configs[tool];
-
-    // asynchronously initialize the tool
-    const initializer = shapeMap[tool]?.onBegin;
-    if (initializer) {
-      dispatch(setActiveTool({ tool, config, state: ToolState.Loading }));
-
-      return Promise.resolve(initializer(event, config))
-        .then(() => {
-          dispatch(updateActiveTool({ state: ToolState.Ready }));
-          console.debug("Tool activated");
-        })
-        .catch((error) => {
-          dispatch(updateActiveTool({ state: ToolState.Failed }));
-          console.error("Failed to activate tool", error);
-        });
-    }
-
-    // synchronously activate the tool
-    dispatch(setActiveTool({ tool, config, state: ToolState.Ready }));
   }
 );

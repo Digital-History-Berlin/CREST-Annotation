@@ -1,5 +1,10 @@
-import { Mask } from "./mask";
+export type Algorithm = { id: string; name: string };
 
-export interface Segment extends Mask {
-  prepared: boolean;
+export interface SegmentConfig {
+  backend?: string;
+  state?: boolean;
+  algorithms?: Algorithm[];
+  algorithm?: string;
+  // algorithm specific config
+  details?: { [key: string]: unknown };
 }

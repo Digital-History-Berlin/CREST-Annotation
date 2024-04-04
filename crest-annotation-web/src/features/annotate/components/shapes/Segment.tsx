@@ -1,3 +1,5 @@
+export const segment = undefined;
+/*
 import { Mask } from "./Mask";
 import {
   ShapeEventHandler,
@@ -84,3 +86,4 @@ const SegmentTool: ShapeTool = {
 };
 
 export default SegmentTool;
+*/

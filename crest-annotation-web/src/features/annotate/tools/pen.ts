@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { CircleShape } from "../components/shapes/Circle";
+import { LineShape } from "../components/shapes/Line";
 import {
   Operation,
   OperationController,
@@ -23,29 +23,29 @@ import {
 } from "../types/thunks";
 import { Tool } from "../types/tools";
 
-export interface CircleOperation extends Operation {
-  shape: CircleShape;
+export interface PenOperation extends Operation {
+  shape: LineShape;
   // additional operation state
-  finished: boolean;
+  finished?: boolean;
 }
 
-type CircleGestureThunk = (
+type PenGestureThunk = (
   gesture: GestureEvent,
-  controller: OperationController<CircleOperation>,
+  controller: OperationController<PenOperation>,
   callbacks: ToolThunkCallbacks
 ) => void;
 
-const activate: ToolThunkManage<ToolActivatePayload, CircleOperation> = (
+const activate: ToolThunkManage<ToolActivatePayload, PenOperation> = (
   payload,
   { cancel },
   { dispatch }
 ) => {
   cancel();
   // tool can be activated immediately
-  dispatch(setActiveTool(Tool.Circle));
+  dispatch(setActiveTool(Tool.Pen));
 };
 
-const dragStart: CircleGestureThunk = (
+const dragStart: PenGestureThunk = (
   { overload, transformed: { x, y } },
   { begin }
 ) => {
@@ -55,16 +55,15 @@ const dragStart: CircleGestureThunk = (
     id,
     // create new shape
     shape: {
-      type: ShapeType.Circle,
-      x: x,
-      y: y,
-      radius: 0,
+      type: ShapeType.Line,
+      points: [x, y],
+      closed: false,
     },
     finished: false,
   }));
 };
 
-const dragMove: CircleGestureThunk = (
+const dragMove: PenGestureThunk = (
   { overload, transformed: { x, y } },
   { state, update }
 ) => {
@@ -77,14 +76,12 @@ const dragMove: CircleGestureThunk = (
     // change existing shape
     shape: {
       ...state.shape,
-      radius: Math.sqrt(
-        Math.pow(x - state.shape.x, 2) + Math.pow(y - state.shape.y, 2)
-      ),
+      points: [...state.shape.points, x, y],
     },
   });
 };
 
-const dragEnd: CircleGestureThunk = (
+const dragEnd: PenGestureThunk = (
   gesture,
   { state, update },
   { requestLabel, cancelLabel }
@@ -103,7 +100,7 @@ const dragEnd: CircleGestureThunk = (
   requestLabel();
 };
 
-export const gesture: ToolThunk<ToolGesturePayload, CircleOperation> = (
+export const gesture: ToolThunk<ToolGesturePayload, PenOperation> = (
   { gesture },
   controller,
   callbacks
@@ -116,7 +113,7 @@ export const gesture: ToolThunk<ToolGesturePayload, CircleOperation> = (
     return dragEnd(gesture, controller, callbacks);
 };
 
-export const label: ToolThunk<ToolLabelPayload, CircleOperation> = (
+export const label: ToolThunk<ToolLabelPayload, PenOperation> = (
   { label },
   { state, complete },
   { dispatch }
@@ -134,7 +131,7 @@ export const label: ToolThunk<ToolLabelPayload, CircleOperation> = (
   );
 };
 
-export const circleThunks: ToolThunks<CircleOperation> = {
+export const penThunks: ToolThunks<PenOperation> = {
   activate,
   gesture,
   label,

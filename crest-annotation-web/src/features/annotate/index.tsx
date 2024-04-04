@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { SkipNext } from "@mui/icons-material";
 import { Link, Stack, useTheme } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,25 +6,24 @@ import { useNavigate, useParams } from "react-router-dom";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import FinishedIcon from "@mui/icons-material/Check";
 import SettingsIcon from "@mui/icons-material/Settings";
-import ActionStreamProvider from "./components/ActionStreamProvider";
 import AnnotationsList from "./components/AnnotationsList";
 import AnnotationTools from "./components/AnnotationTools";
 import Canvas from "./components/Canvas";
-import { toolPaneMap } from "./components/configs/ToolPane";
+import ConfigurationContainer from "./components/ConfigurationContainer";
 import EditAnnotationDialog from "./components/EditAnnotationDialog";
 import LabelsExplorer from "./components/LabelsExplorer";
-import { activateTool } from "./epics";
-import { ActionStream } from "./hooks/use-action-stream";
+import {
+  Operation,
+  useOperationController,
+} from "./hooks/use-operation-controller";
+import { useToolManager } from "./hooks/use-tool-controller";
 import {
   editAnnotation,
   selectEditing,
   setObjectId,
 } from "./slice/annotations";
 import {
-  Tool,
-  ToolState,
   selectActiveLabelId,
-  selectActiveState,
   selectActiveTool,
   setActiveLabel,
 } from "./slice/tools";
@@ -60,7 +59,7 @@ const AnnotatePage = () => {
 
   const { projectId, objectId } = useParams();
 
-  const { currentData: project } = useGetProjectQuery(
+  const { currentData: _ } = useGetProjectQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     { projectId: projectId! },
     { skip: !projectId }
@@ -81,14 +80,13 @@ const AnnotatePage = () => {
     { skip: !objectId }
   );
 
-  // provide the action stream for the canvas
-  const stream = useMemo(() => new ActionStream(), []);
-
   const activeTool = useAppSelector(selectActiveTool);
-  const activeState = useAppSelector(selectActiveState);
   const activeLabelId = useAppSelector(selectActiveLabelId);
   const editingAnnotation = useAppSelector(selectEditing);
   const filters = useAppSelector(selectObjectFilters);
+
+  const controller = useOperationController<Operation>();
+  const manager = useToolManager({ controller });
 
   const [getRandom, { isError: randomError }] =
     enhancedApi.useGetRandomObjectMutation();
@@ -151,37 +149,6 @@ const AnnotatePage = () => {
       navigateRandom(projectId, { ...filters, annotated, offset: 0 });
   };
 
-  const updateTool = useCallback(
-    (tool: Tool) => {
-      if (object && project)
-        // tool change discards the current action
-        stream.push(
-          () =>
-            dispatch(
-              // @ts-expect-error dispatch has incorrect type
-              activateTool({
-                tool,
-                image,
-                object,
-                project,
-              })
-            ),
-          undefined,
-          "tool change"
-        );
-    },
-    [dispatch, object, project, image, stream]
-  );
-
-  // re-initialize the tool on changes
-  // (the callback itself tracks the changes)
-  useEffect(
-    () => updateTool(activeTool),
-    // do not respond to tool changes itself
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [updateTool]
-  );
-
   const renderActions = () => (
     <Stack direction="row">
       <StateSelect annotated={filters.annotated} onChange={changeState} />
@@ -235,25 +202,16 @@ const AnnotatePage = () => {
   // TODO: maybe move this into a component to avoid tool and state dependency
   // this is tricky though, because if there is no tool pane, the whole sidebar should be hidden
   const renderRight = () => {
-    const ConfigPane = toolPaneMap[activeTool];
-
-    if (ConfigPane)
-      return (
-        <Stack
-          sx={{
-            width: "440px",
-            borderLeft: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <ConfigPane
-            loading={activeState === ToolState.Loading}
-            onUpdate={updateTool}
-          />
-        </Stack>
-      );
-
-    // hide sidebar if not required
-    return undefined;
+    return (
+      <Stack
+        sx={{
+          width: "440px",
+          borderLeft: `1px solid ${theme.palette.divider}`,
+        }}
+      >
+        <ConfigurationContainer tool={activeTool} loading={false} />
+      </Stack>
+    );
   };
 
   return (
@@ -261,7 +219,7 @@ const AnnotatePage = () => {
       sx={{ display: "flex" }}
       header={
         <Toolbar
-          tools={<AnnotationTools onActivate={updateTool} />}
+          tools={<AnnotationTools manager={manager} />}
           actions={renderActions()}
         />
       }
@@ -296,9 +254,11 @@ const AnnotatePage = () => {
           />
         }
         render={({ data: imageUri }) => (
-          <ActionStreamProvider stream={stream}>
-            <Canvas projectId={projectId} imageUri={imageUri} />
-          </ActionStreamProvider>
+          <Canvas
+            projectId={projectId}
+            imageUri={imageUri}
+            operations={controller}
+          />
         )}
       />
     </Layout>

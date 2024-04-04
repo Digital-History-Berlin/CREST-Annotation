@@ -1,25 +1,12 @@
 import React from "react";
 import { alpha } from "@mui/material";
-import CircleTool from "./Circle";
-import LineTool from "./Line";
-import PolygonTool from "./Polygon";
-import RectangleTool from "./Rectangle";
-import SegmentTool from "./Segment";
-import { ShapeProps } from "./Types";
-import { Transformation } from "../../../../types/Transformation";
-import { Tool } from "../../slice/tools";
+import { Transformation } from "../../../types/geometry";
+import { useRegistry } from "../hooks/use-registry";
+import { Shape as DataShape, ShapeProps } from "../types/shapes";
 
-export const shapeMap = {
-  [Tool.Pen]: LineTool,
-  [Tool.Circle]: CircleTool,
-  [Tool.Rectangle]: RectangleTool,
-  [Tool.Polygon]: PolygonTool,
-  [Tool.Edit]: undefined,
-  [Tool.Segment]: SegmentTool,
-};
-
-export type IProps = ShapeProps & {
+export type IProps = ShapeProps<DataShape> & {
   transformation: Transformation;
+  color: string;
 };
 
 /**
@@ -31,18 +18,16 @@ export type IProps = ShapeProps & {
  */
 const Shape = ({
   shape,
-  color,
   selected,
   editable,
   transparent,
+  color,
   transformation,
   ...props
 }: IProps) => {
-  const annotationTool = shape?.tool;
-  if (annotationTool === undefined) return null;
-
-  const Component = shapeMap[annotationTool]?.component;
-  if (!Component) return null;
+  const { shapeRegistry } = useRegistry();
+  const Component = shapeRegistry[shape.type];
+  if (Component === undefined) return null;
 
   // properties passed to shape
   const shapeConfig = {
@@ -61,7 +46,6 @@ const Shape = ({
     <Component
       {...props}
       shape={shape}
-      color={color}
       editable={editable}
       shapeConfig={shapeConfig}
       editingPointConfig={editingPointConfig}
