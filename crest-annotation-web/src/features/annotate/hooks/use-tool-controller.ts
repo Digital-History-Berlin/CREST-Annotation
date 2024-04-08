@@ -1,30 +1,21 @@
-import { useCallback, useMemo } from "react";
-import { ToolboxOperationState, useRegistry } from "./use-registry";
-import {
-  ToolboxCallbacks,
-  ToolboxController,
-  ToolboxOperationController,
-} from "./use-toolbox-controller";
+import { useCallback, useMemo, useState } from "react";
+import Konva from "konva";
 import { Label } from "../../../api/openApi";
-import { useAppDispatch, useAppSelector } from "../../../app/hooks";
-import { selectActiveTool } from "../slice/tools";
+import { useAppDispatch } from "../../../app/hooks";
+import { Position } from "../../../types/geometry";
+import { processGesture, processLabel } from "../slice/toolbox";
 import { GestureEvent } from "../types/events";
-import { Shape } from "../types/shapes";
+import { ToolApi } from "../types/thunks";
 
-export type ToolCallbacks = ToolboxCallbacks & {
-  requestLabel: () => void;
-  cancelLabel: () => void;
-  emitShape: (shape: Shape) => void;
-};
-
-export type ToolThunk<P> = (
-  payload: P,
-  operation: ToolboxOperationController,
-  callbacks: ToolCallbacks
-) => void;
+export interface LabelPopup {
+  left?: number | string;
+  right?: number | string;
+  top?: number | string;
+  bottom?: number | string;
+}
 
 export interface ToolController {
-  state: ToolboxOperationState;
+  labelPopup?: LabelPopup;
   /// Handle a gesture event
   handleGesture: (gesture: GestureEvent) => void;
   /// Handle a label selection
@@ -37,49 +28,62 @@ export interface ToolController {
  * The tool controller provides methods to handle gestures and labels.
  * It will delegate the events to the corresponding tool thunks.
  */
-export const useToolController = (options: {
-  toolbox: ToolboxController;
-  requestLabel: () => void;
-  cancelLabel: () => void;
+export const useToolController = ({
+  stageRef,
+  cursorRef,
+}: {
+  stageRef: React.RefObject<Konva.Stage>;
+  cursorRef: React.RefObject<Position>;
 }): ToolController => {
-  const { operation } = options.toolbox;
   const dispatch = useAppDispatch();
-  const registry = useRegistry();
-  const tool = useAppSelector(selectActiveTool);
 
-  // callbacks for tool thunks
-  const callbacks = useMemo(
-    () => ({
-      requestLabel: options.requestLabel,
-      cancelLabel: options.cancelLabel,
-      emitShape: (shape: Shape) => {
-        return shape;
-      },
-      dispatch,
-    }),
-    [options, dispatch]
-  );
+  const [labelPopup, setLabelPopup] = useState<LabelPopup>();
+
+  const toolApi: ToolApi = useMemo(() => {
+    const requestLabel = () => {
+      if (!stageRef.current || !cursorRef.current) return;
+
+      console.debug("Request label");
+      // display popup with nice position
+      const { x, y } = cursorRef.current;
+      setLabelPopup({
+        left: x + 10,
+        top: y <= stageRef.current.height() / 2 ? y : undefined,
+        bottom:
+          y > stageRef.current.height() / 2
+            ? stageRef.current.height() - y
+            : undefined,
+      });
+    };
+
+    const cancelLabel = () => {
+      console.debug("Cancel label request");
+      // close popup
+      setLabelPopup(undefined);
+    };
+
+    return {
+      requestLabel,
+      cancelLabel,
+    };
+  }, [stageRef, cursorRef]);
 
   const handleGesture = useCallback(
     (gesture: GestureEvent) => {
-      const thunks = registry.thunksRegistry[tool];
-      thunks?.gesture?.({ gesture }, operation, callbacks);
+      dispatch(processGesture({ gesture, toolApi }));
     },
-    [registry, tool, operation, callbacks]
+    [dispatch, toolApi]
   );
 
   const handleLabel = useCallback(
     (label?: Label) => {
-      console.debug("Label received: ", label);
-
-      const thunks = registry.thunksRegistry[tool];
-      thunks?.label?.({ label }, operation, callbacks);
+      dispatch(processLabel({ label, toolApi }));
     },
-    [registry, tool, operation, callbacks]
+    [dispatch, toolApi]
   );
 
   return {
-    state: operation.state,
+    labelPopup,
     handleGesture,
     handleLabel,
   };

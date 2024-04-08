@@ -3,9 +3,10 @@ import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
 import { Group, Rect as KonvaRectangle } from "react-konva";
 import Anchor from "./Anchor";
-import { Shape, ShapeFC } from "../../types/shapes";
+import { ShapeFC, ShapeType } from "../../types/shapes";
 
-export interface RectangleShape extends Shape {
+export interface RectangleShape {
+  type: ShapeType.Rectangle;
   x: number;
   y: number;
   width: number;

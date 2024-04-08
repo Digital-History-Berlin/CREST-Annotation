@@ -2,9 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import Konva from "konva";
 import { Group, Line } from "react-konva";
 import Anchor from "./Anchor";
-import { Shape, ShapeFC } from "../../types/shapes";
+import { ShapeFC, ShapeType } from "../../types/shapes";
 
-export interface PolygonShape extends Shape {
+export interface PolygonShape {
+  type: ShapeType.Polygon;
   points: number[];
   closed: boolean;
 }

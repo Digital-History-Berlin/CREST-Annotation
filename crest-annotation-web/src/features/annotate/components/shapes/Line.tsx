@@ -1,8 +1,9 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
-import { Shape, ShapeFC } from "../../types/shapes";
+import { ShapeFC, ShapeType } from "../../types/shapes";
 
-export interface LineShape extends Shape {
+export interface LineShape {
+  type: ShapeType.Line;
   /// Flattened array of 2D-coordinates in the form [x1, y1, x2, y2, ...]
   points: number[];
   closed: boolean;

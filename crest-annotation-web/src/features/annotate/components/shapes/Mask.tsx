@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { Group, Image } from "react-konva";
-import { Shape, ShapeFC } from "../../types/shapes";
+import { ShapeFC, ShapeType } from "../../types/shapes";
 
-export interface MaskShape extends Shape {
+export interface MaskShape {
+  type: ShapeType.Mask;
   mask: number[][];
   width: number;
   height: number;

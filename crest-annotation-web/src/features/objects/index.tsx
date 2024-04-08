@@ -34,8 +34,8 @@ const ObjectsPage = () => {
   );
 
   const objectsQuery = useGetObjectsQuery(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       projectId: projectId!,
       page: page,
       size: 12,

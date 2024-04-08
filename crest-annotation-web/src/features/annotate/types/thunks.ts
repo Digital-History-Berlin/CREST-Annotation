@@ -1,12 +1,26 @@
 import { GestureEvent } from "./events";
 import { Label } from "../../../api/openApi";
-import { ToolCallbacks, ToolThunk } from "../hooks/use-tool-controller";
-import {
-  ToolboxOperationController,
-  ToolboxThunk,
-} from "../hooks/use-toolbox-controller";
+import { AppDispatch, RootState } from "../../../app/store";
 
-export type ToolActivatePayload = { config: unknown };
+export type ToolboxThunkApi = {
+  dispatch: AppDispatch;
+  getState: () => RootState;
+};
+
+export type ToolboxThunk<P> = (payload: P, thunkApi: ToolboxThunkApi) => void;
+
+export type ToolApi = {
+  requestLabel: () => void;
+  cancelLabel: () => void;
+};
+
+export type ToolThunk<P> = (
+  payload: P,
+  thunkApi: ToolboxThunkApi,
+  toolApi: ToolApi
+) => void;
+
+export type ToolActivatePayload = void;
 export type ToolConfigurePayload = { config: unknown };
 export type ToolGesturePayload = { gesture: GestureEvent };
 export type ToolLabelPayload = { label: Label | undefined };
@@ -17,9 +31,3 @@ export type ToolThunks = {
   gesture?: ToolThunk<ToolGesturePayload>;
   label?: ToolThunk<ToolLabelPayload>;
 };
-
-export type ToolGestureThunk = (
-  gesture: GestureEvent,
-  controller: ToolboxOperationController,
-  callbacks: ToolCallbacks
-) => void;

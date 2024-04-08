@@ -10,13 +10,15 @@ import annotationsReducer, {
   annotateMiddleware,
 } from "../features/annotate/slice/annotations";
 import canvasReducer from "../features/annotate/slice/canvas";
-import toolsReducer from "../features/annotate/slice/tools";
+import operationReducer from "../features/annotate/slice/operation";
+import toolboxReducer from "../features/annotate/slice/toolbox";
 
 const rootReducer = combineReducers({
   global: globalReducer,
   annotations: annotationsReducer,
   canvas: canvasReducer,
-  tools: toolsReducer,
+  operation: operationReducer,
+  toolbox: toolboxReducer,
   [enhancedApi.reducerPath]: enhancedApi.reducer,
 });
 
@@ -30,8 +32,8 @@ export const store = configureStore({
     }).concat(enhancedApi.middleware, annotateMiddleware),
 });
 
-export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof rootReducer>;
+export type AppDispatch = typeof store.dispatch;
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
   RootState,

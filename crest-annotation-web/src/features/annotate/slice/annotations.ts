@@ -1,13 +1,14 @@
 import {
-  AnyAction,
+  Action,
   Middleware,
   PayloadAction,
+  createAsyncThunk,
   createSlice,
 } from "@reduxjs/toolkit";
 import { enhancedApi } from "../../../api/enhancedApi";
-import { Label } from "../../../api/openApi";
+import { Object as DataObject, Label, Project } from "../../../api/openApi";
+import { useAppSelector } from "../../../app/hooks";
 import { RootState } from "../../../app/store";
-import { pullAnnotations } from "../epics";
 import { Shape } from "../types/shapes";
 
 export interface Annotation {
@@ -28,16 +29,16 @@ export interface AnnotationsSlice {
   // existing annotation that is being edited
   editing: Annotation | null;
   // required for middleware
-  objectId: string | null;
-  projectId: string | null;
+  project: Project | null;
+  object: DataObject | null;
 }
 
 const initialState: AnnotationsSlice = {
   annotations: [],
   latestChange: null,
   editing: null,
-  objectId: null,
-  projectId: null,
+  project: null,
+  object: null,
 };
 
 const replaceAnnotation = (
@@ -51,11 +52,12 @@ const replaceAnnotation = (
 
 // actions that will trigger the annotations middleware,
 // which will update the annotations on the server side
-const isServerMutation = (action: AnyAction) =>
+export const isServerMutation = (action: Action) =>
   [
     "annotations/addAnnotation",
     "annotations/addShape",
     "annotations/updateShape",
+    "annotations/doneEditAnnotation",
     "annotations/updateAnnotation",
     "annotations/deleteAnnotation",
     "annotations/lockAnnotation",
@@ -65,19 +67,26 @@ const isServerMutation = (action: AnyAction) =>
   ].includes(action.type);
 
 // actions that change the object or project
-const isObjectChange = (action: AnyAction) =>
-  ["annotations/setObjectId"].includes(action.type);
+export const isObjectChange = (action: Action) =>
+  ["annotations/updateObject"].includes(action.type);
 
+/**
+ * Contains the created annotations for the current object
+ *
+ * Provides a middleware which whill automatically synchronize
+ * annotations with the backend. For this to work, the current
+ * project/object needs to be known.
+ */
 export const slice = createSlice({
   name: "annotations",
   initialState,
   reducers: {
-    setObjectId: (
+    updateObject: (
       state,
-      action: PayloadAction<{ objectId: string; projectId: string } | null>
+      action: PayloadAction<{ object: DataObject; project: Project } | null>
     ) => {
-      state.objectId = action.payload?.objectId || null;
-      state.projectId = action.payload?.projectId || null;
+      state.object = action.payload?.object || null;
+      state.project = action.payload?.project || null;
     },
     updateAnnotations: (state, action: PayloadAction<Annotation[]>) => {
       state.annotations = action.payload;
@@ -121,9 +130,21 @@ export const slice = createSlice({
           : annotation
       );
     },
-    editAnnotation: (state, action: PayloadAction<Annotation | null>) => {
+    startEditAnnotation: (state, action: PayloadAction<Annotation>) => {
       // start editing annotation (show dialog)
       state.editing = action.payload;
+    },
+    cancelEditAnnotation: (state) => {
+      // cancel editing annotation (hide dialog)
+      state.editing = null;
+    },
+    doneEditAnnotation: (state, action: PayloadAction<Label>) => {
+      if (state.editing)
+        // update the label of the editing annotation
+        state.annotations = replaceAnnotation(state, state.editing.id, {
+          label: action.payload,
+        });
+      state.editing = null;
     },
     updateAnnotation: (state, action: PayloadAction<Annotation>) => {
       state.annotations = state.annotations.map((annotation) =>
@@ -184,12 +205,14 @@ export const slice = createSlice({
 });
 
 export const {
-  setObjectId,
+  updateObject,
   updateAnnotations,
   addAnnotation,
   addShape,
   updateShape,
-  editAnnotation,
+  startEditAnnotation,
+  cancelEditAnnotation,
+  doneEditAnnotation,
   updateAnnotation,
   deleteAnnotation,
   selectAnnotation,
@@ -201,10 +224,16 @@ export const {
   showAnnotation,
 } = slice.actions;
 
-export const selectObjectId = (state: RootState) => state.annotations.objectId;
-export const selectEditing = (state: RootState) => state.annotations.editing;
-export const selectAnnotations = (state: RootState) =>
-  state.annotations.annotations;
+export const useAnnotationProject = (): Project =>
+  // safe to use from within annotation components
+  // (index blocks rendering if not set)
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  useAppSelector((state) => state.annotations.project!);
+export const useAnnotationObject = (): DataObject =>
+  // safe to use from within annotation components
+  // (index blocks rendering if not set)
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  useAppSelector((state) => state.annotations.object!);
 
 export default slice.reducer;
 
@@ -218,29 +247,74 @@ const toJson = (annotations: Annotation[]): string => {
   );
 };
 
+const pullAnnotations = createAsyncThunk(
+  "annotations/pullAnnotations",
+  async (
+    { objectId, projectId }: { objectId: string; projectId: string },
+    { dispatch }
+  ) => {
+    // re-fetch the annotations
+    const json = await dispatch(
+      enhancedApi.endpoints.getAnnotations.initiate(
+        { objectId: objectId },
+        { forceRefetch: true }
+      )
+    ).unwrap();
+    // request the labels for hydration
+    const labels = await dispatch(
+      enhancedApi.endpoints.getProjectLabels.initiate({
+        projectId: projectId,
+      })
+    ).unwrap();
+    // map labels to their identifiers
+    const lookup = Object.fromEntries(labels.map((label) => [label.id, label]));
+    // hydrate the annotations
+    const annotations: Annotation[] = JSON.parse(json).map(
+      (annotation: Annotation) => ({
+        ...annotation,
+        label: annotation.label && lookup[annotation.label.id],
+      })
+    );
+    // update the store
+    dispatch(updateAnnotations(annotations));
+  }
+);
+
 // automatically push and pull annotations
-export const annotateMiddleware: Middleware<void, RootState> =
+// eslint-disable-next-line @typescript-eslint/ban-types
+export const annotateMiddleware: Middleware<{}, RootState> =
   (store) => (next) => (action) => {
     next(action);
 
-    const state = store.getState();
+    if (!action || typeof action !== "object" || !("type" in action))
+      // ignore unexpected actions
+      return;
 
+    const state = store.getState();
     // track and push modifications to the backend
-    if (isServerMutation(action) && state.annotations.objectId)
+    if (isServerMutation(action as Action) && state.annotations.object)
       store.dispatch(
-        // @ts-expect-error dispatch has incorrect type
+        // @ts-expect-error circular dependency
         enhancedApi.endpoints.storeAnnotations.initiate({
-          objectId: state.annotations.objectId,
+          objectId: state.annotations.object.id,
           body: toJson(state.annotations.annotations),
         })
       );
 
     // pull notifications from the backend
-    if (
-      isObjectChange(action) &&
-      action.payload.objectId &&
-      action.payload.projectId
-    )
-      // @ts-expect-error dispatch has incorrect type
-      store.dispatch(pullAnnotations(action.payload));
+    if (isObjectChange(action as Action)) {
+      const { payload } = action as PayloadAction<{
+        object: DataObject;
+        project: Project;
+      } | null>;
+
+      if (payload?.project && payload.object)
+        store.dispatch(
+          // @ts-expect-error circular dependency
+          pullAnnotations({
+            projectId: payload.project.id,
+            objectId: payload.object.id,
+          })
+        );
+    }
   };

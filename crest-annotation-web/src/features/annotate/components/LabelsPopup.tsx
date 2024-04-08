@@ -59,7 +59,8 @@ const LabelsPopup = ({ projectId, onSelect, onCancel }: IProps) => {
             {onCancel && (
               <ListItem disablePadding>
                 <ListItemButton
-                  onClick={onCancel}
+                  // discard the arguments
+                  onClick={() => onCancel()}
                   sx={{ justifyContent: "center" }}
                 >
                   <CancelIcon color="error" sx={{ width: "20px" }} />

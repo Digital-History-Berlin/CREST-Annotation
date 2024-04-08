@@ -17,31 +17,26 @@ import { Label } from "../../../api/openApi";
 import Dot from "../../../components/Dot";
 import Loader from "../../../components/Loader";
 import SidebarContainer from "../../../components/SidebarContainer";
+import { useAnnotationProject } from "../slice/annotations";
 
 interface IProps {
-  projectId?: string;
   selected?: string;
   onSelect?: (label: Label) => void;
 }
 
-const defaultProps = {};
-
-const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
+const LabelsExplorer = ({ selected, onSelect }: IProps) => {
   const theme = useTheme();
+  const project = useAnnotationProject();
 
   // first label is currently active
   const [stack, setStack] = useState<Label[]>([]);
   const [view, setView] = useState("list");
 
-  const labelsQuery = useGetProjectLabelsQuery(
-    {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      projectId: projectId!,
-      starred: view === "starred" ? true : undefined,
-      grouped: view === "list",
-    },
-    { skip: !projectId }
-  );
+  const labelsQuery = useGetProjectLabelsQuery({
+    projectId: project.id,
+    starred: view === "starred" ? true : undefined,
+    grouped: view === "list",
+  });
 
   const pushLabel = (label: Label) => {
     setStack([label, ...stack]);
@@ -93,6 +88,8 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
 
   const activeParent = stack.length ? stack[0] : undefined;
 
+  // TODO: render the navigation in parent component
+  // this component should not render as sidebar container
   return (
     <SidebarContainer
       title={activeParent?.name ?? "Labels"}
@@ -103,15 +100,11 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
         emptyPlaceholder={
           <div>
             This project contains no (starred) labels. Go to the{" "}
-            <Link href={`/project/${projectId}`}>project settings</Link> to
+            <Link href={`/project/${project.id}`}>project settings</Link> to
             create some and start annotating!
           </div>
         }
-        disabledPlaceholder={"No project selected"}
-        query={{
-          ...labelsQuery,
-          isDisabled: !projectId,
-        }}
+        query={labelsQuery}
         render={({ data: labels }) => {
           const activeLabels =
             view === "list" && activeParent ? activeParent.children : labels;
@@ -150,7 +143,5 @@ const LabelsExplorer = ({ projectId, selected, onSelect }: IProps) => {
     </SidebarContainer>
   );
 };
-
-LabelsExplorer.defaultProps = defaultProps;
 
 export default LabelsExplorer;

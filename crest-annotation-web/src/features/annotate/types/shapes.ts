@@ -39,4 +39,6 @@ export type ShapeProps<T extends Shape> = {
 } & ShapeCallbacks;
 
 /// Renders a shape component
-export type ShapeFC<T extends Shape> = (props: ShapeProps<T>) => ReactElement;
+export type ShapeFC<T extends Shape = Shape> = (
+  props: ShapeProps<T>
+) => ReactElement;

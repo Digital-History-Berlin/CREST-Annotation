@@ -16,7 +16,7 @@ interface IProps<T> {
   disabledPlaceholder?: ReactNode;
 }
 
-const CenterContainer = styled(Container)(({ theme }) => ({
+export const CenterContainer = styled(Container)(({ theme }) => ({
   "&": {
     display: "flex",
     justifyContent: "center",
