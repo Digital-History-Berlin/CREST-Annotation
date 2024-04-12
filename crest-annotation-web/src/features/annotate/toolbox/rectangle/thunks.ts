@@ -1,16 +1,20 @@
 import { RectangleToolOperation } from "./types";
 import { ShapeType } from "../../types/shapes";
 import { ToolThunks } from "../../types/thunks";
-import { Tool } from "../../types/toolbox";
+import { Tool, ToolGroup } from "../../types/toolbox";
 import {
   AtomicDragToolEndThunk,
   AtomicDragToolMoveThunk,
   AtomicDragToolStartThunk,
   createAtomicDragTool,
 } from "../atomic-drag-tool";
-import { createActivate, createLabel } from "../custom-tool";
+import {
+  createActivateThunk,
+  createLabelThunk,
+  createToolSelectors,
+} from "../custom-tool";
 
-const activate = createActivate({ tool: Tool.Rectangle });
+const activate = createActivateThunk({ tool: Tool.Rectangle });
 
 const start: AtomicDragToolStartThunk<RectangleToolOperation> = ({
   transformed: { x, y },
@@ -52,10 +56,20 @@ export const gesture = createAtomicDragTool({
   end,
 });
 
-export const label = createLabel({ operation: "tool/rectangle" });
+export const label = createLabelThunk({ operation: "tool/rectangle" });
 
 export const rectangleThunks: ToolThunks = {
   activate,
   gesture,
   label,
 };
+
+export const rectangleSelectors = createToolSelectors({
+  tool: Tool.Rectangle,
+  group: ToolGroup.Shape,
+  icon: {
+    name: "mdi:vector-square",
+    style: { fontSize: "25px" },
+    tooltip: "Rectangle",
+  },
+});

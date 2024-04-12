@@ -11,15 +11,16 @@ import {
 } from "../../types/events";
 import { ShapeType } from "../../types/shapes";
 import { ToolGesturePayload, ToolThunks } from "../../types/thunks";
-import { Tool } from "../../types/toolbox";
+import { Tool, ToolGroup } from "../../types/toolbox";
 import {
   AtomicToolThunk,
-  createActivate,
-  createAtomic,
-  createLabel,
+  createActivateThunk,
+  createLabelThunk,
+  createToolSelectors,
+  createToolThunk,
 } from "../custom-tool";
 
-const activate = createActivate({ tool: Tool.Polygon });
+const activate = createActivateThunk({ tool: Tool.Polygon });
 
 const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
   gesture,
@@ -28,6 +29,9 @@ const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
   { requestLabel, cancelLabel }
 ) => {
   if (operation === undefined) return;
+  // discard if polygon is too small
+  if (operation.state.shape.points.length < 6)
+    return dispatch(operationCancel());
 
   // complete ongoing polygon
   dispatch(
@@ -119,7 +123,10 @@ const move: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
     })
   );
 };
-export const gesture = createAtomic<ToolGesturePayload, PolygonToolOperation>(
+export const gesture = createToolThunk<
+  ToolGesturePayload,
+  PolygonToolOperation
+>(
   { operation: "tool/polygon" },
   ({ gesture }, operation, thunkApi, toolApi) => {
     if (
@@ -147,10 +154,20 @@ export const gesture = createAtomic<ToolGesturePayload, PolygonToolOperation>(
   }
 );
 
-export const label = createLabel({ operation: "tool/polygon" });
+export const label = createLabelThunk({ operation: "tool/polygon" });
 
 export const polygonThunks: ToolThunks = {
   activate,
   gesture,
   label,
 };
+
+export const polygonSelectors = createToolSelectors({
+  tool: Tool.Polygon,
+  group: ToolGroup.Shape,
+  icon: {
+    name: "mdi:vector-polygon-variant",
+    style: { fontSize: "25px" },
+    tooltip: "Polygon",
+  },
+});

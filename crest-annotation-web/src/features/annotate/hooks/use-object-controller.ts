@@ -8,7 +8,9 @@ import {
   useAnnotationProject,
 } from "../slice/annotations";
 
-/// Toolbox to manage object state
+/**
+ * Provides tools to manage object state
+ */
 export const useObjectController = () => {
   const { navigateRandom } = useNavigateRandom();
 

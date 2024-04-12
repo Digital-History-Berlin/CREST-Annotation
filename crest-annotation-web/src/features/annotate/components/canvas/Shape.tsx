@@ -32,7 +32,11 @@ const Shape = ({
 
   // properties passed to editing points
   const editingPointConfig = {
-    radius: 5 / transformation.scale,
+    fill: color,
+    radius: 4 / transformation.scale,
+    // invisible stroke to increase hitbox
+    stroke: alpha(color, 0.0),
+    strokeWidth: 8 / transformation.scale,
   };
 
   return (

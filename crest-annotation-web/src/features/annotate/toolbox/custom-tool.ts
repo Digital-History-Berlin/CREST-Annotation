@@ -12,11 +12,12 @@ import {
   ToolActivatePayload,
   ToolApi,
   ToolLabelPayload,
+  ToolSelectors,
   ToolThunk,
   ToolboxThunk,
   ToolboxThunkApi,
 } from "../types/thunks";
-import { Tool } from "../types/toolbox";
+import { Tool, ToolGroup, ToolIcon, ToolStatus } from "../types/toolbox";
 
 export type AtomicToolThunk<P, O> = (
   payload: P,
@@ -25,8 +26,8 @@ export type AtomicToolThunk<P, O> = (
   toolApi: ToolApi
 ) => void;
 
-// create a (synchronous) thunk with immediate state access
-export const createAtomic =
+// create a bare tool thunk with immediate state access
+export const createToolThunk =
   <P, O extends RootOperation>(
     options: { operation: O["type"] },
     thunk: AtomicToolThunk<P, O>
@@ -43,17 +44,27 @@ export const createAtomic =
     thunk(payload, operation, thunkApi, toolApi);
   };
 
+export type ToolActivationThunk = (thunkApi: ToolboxThunkApi) => void;
+
 // creates the standard tool activation thunk
-export const createActivate =
-  (options: { tool: Tool }): ToolboxThunk<ToolActivatePayload> =>
-  (payload, { dispatch }) => {
+export const createActivateThunk =
+  (
+    options: { tool: Tool },
+    thunk?: ToolActivationThunk
+  ): ToolboxThunk<ToolActivatePayload> =>
+  (payload, thunkApi) => {
+    const { dispatch } = thunkApi;
+
     dispatch(operationCancel());
-    // tool can be activated
+    // tool is activated immediately
     dispatch(setToolboxTool(options.tool));
+
+    // run additional logic (if any)
+    thunk?.(thunkApi);
   };
 
 //  creates the standard labeling thunk
-export const createLabel =
+export const createLabelThunk =
   <T extends RootOperationType>(options: {
     operation: T;
   }): ToolThunk<ToolLabelPayload> =>
@@ -80,3 +91,18 @@ export const createLabel =
       })
     );
   };
+
+// create default tool selectors
+export const createToolSelectors = (options: {
+  tool: Tool;
+  group: ToolGroup;
+  icon: ToolIcon;
+}): ToolSelectors => {
+  return {
+    info: () => ({
+      status: ToolStatus.Ready,
+      group: options.group,
+      icon: options.icon,
+    }),
+  };
+};

@@ -7,14 +7,7 @@ import { ToolApi } from "../types/thunks";
 import { Modifiers, Tool } from "../types/toolbox";
 
 export interface ToolboxSlice {
-  tools: {
-    [Tool.Pen]: unknown;
-    [Tool.Circle]: unknown;
-    [Tool.Rectangle]: unknown;
-    [Tool.Polygon]: unknown;
-    [Tool.Edit]: unknown;
-    [Tool.Segment]: unknown;
-  };
+  tools: Record<Tool, unknown>;
   // active selection
   selection: {
     tool: Tool;
@@ -30,7 +23,8 @@ const initialState: ToolboxSlice = {
     [Tool.Rectangle]: undefined,
     [Tool.Polygon]: undefined,
     [Tool.Edit]: undefined,
-    [Tool.Segment]: undefined,
+    [Tool.Cv]: undefined,
+    [Tool.Onnx]: undefined,
   },
   // active selection
   selection: {
@@ -111,7 +105,7 @@ export const {
 
 export default slice.reducer;
 
-const useOperationTool = (state: RootState) => {
+const getOperationTool = (state: RootState) => {
   const {
     toolbox: { selection },
     operation: { current },
@@ -119,7 +113,7 @@ const useOperationTool = (state: RootState) => {
 
   // proceed with operation tool if available
   return current?.type.startsWith("tool/")
-    ? (current.state as { tool: Tool }).tool
+    ? current.state.tool
     : selection.tool;
 };
 
@@ -139,7 +133,7 @@ export const processGesture = createAsyncThunk<
   { gesture: GestureEvent; toolApi: ToolApi },
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/processGesture", async ({ gesture, toolApi }, api) => {
-  const tool = useOperationTool(api.getState());
+  const tool = getOperationTool(api.getState());
   const thunks = thunksRegistry[tool];
   return thunks?.gesture?.({ gesture }, api, toolApi);
 });
@@ -151,7 +145,7 @@ export const processLabel = createAsyncThunk<
 >("toolbox/processLabel", async ({ label, toolApi }, api) => {
   console.debug("Process label: ", label);
 
-  const tool = useOperationTool(api.getState());
+  const tool = getOperationTool(api.getState());
   const thunks = thunksRegistry[tool];
   return thunks?.label?.({ label }, api, toolApi);
 });

@@ -1,4 +1,5 @@
 import { GestureEvent } from "./events";
+import { ToolInfo } from "./toolbox";
 import { Label } from "../../../api/openApi";
 import { AppDispatch, RootState } from "../../../app/store";
 
@@ -30,4 +31,10 @@ export type ToolThunks = {
   configure?: ToolThunk<ToolConfigurePayload>;
   gesture?: ToolThunk<ToolGesturePayload>;
   label?: ToolThunk<ToolLabelPayload>;
+};
+
+export type ToolInfoSelector<S> = (state: S) => ToolInfo;
+
+export type ToolSelectors<S = unknown> = {
+  info: ToolInfoSelector<S>;
 };

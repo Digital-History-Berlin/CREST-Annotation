@@ -1,17 +1,20 @@
 import { FC } from "react";
 import { Preview as CirclePreview } from "./circle/Preview";
-import { circleThunks } from "./circle/thunks";
+import { circleSelectors, circleThunks } from "./circle/thunks";
 import { CircleToolOperation } from "./circle/types";
+import { Configuration as CvConfiguration } from "./cv/Configuration";
+import { editSelectors, editThunks } from "./edit/thunks";
+import { onnxSelectors, onnxThunks } from "./onnx/thunks";
+import { OnnxToolOperation } from "./onnx/types";
 import { Preview as PenPreview } from "./pen/Preview";
-import { penThunks } from "./pen/thunks";
+import { penSelectors, penThunks } from "./pen/thunks";
 import { PenToolOperation } from "./pen/types";
 import { Preview as PolygonPreview } from "./polygon/Preview";
-import { polygonThunks } from "./polygon/thunks";
+import { polygonSelectors, polygonThunks } from "./polygon/thunks";
 import { PolygonToolOperation } from "./polygon/types";
 import { Preview as RectanglePreview } from "./rectangle/Preview";
-import { rectangleThunks } from "./rectangle/thunks";
+import { rectangleSelectors, rectangleThunks } from "./rectangle/thunks";
 import { RectangleToolOperation } from "./rectangle/types";
-import { Configuration as SegmentConfiguration } from "./segment/Configuration";
 import { Circle } from "../components/shapes/Circle";
 import { Line } from "../components/shapes/Line";
 import { Mask } from "../components/shapes/Mask";
@@ -19,7 +22,7 @@ import { Polygon } from "../components/shapes/Polygon";
 import { Rectangle } from "../components/shapes/Rectangle";
 import { PreviewFC } from "../types/preview";
 import { ShapeFC, ShapeType } from "../types/shapes";
-import { ToolThunks } from "../types/thunks";
+import { ToolSelectors, ToolThunks } from "../types/thunks";
 import { Tool } from "../types/toolbox";
 
 /**
@@ -49,7 +52,8 @@ export const previewRegistry: Record<Tool, PreviewFC | undefined> = {
   [Tool.Rectangle]: RectanglePreview as PreviewFC,
   [Tool.Polygon]: PolygonPreview as PreviewFC,
   [Tool.Edit]: undefined,
-  [Tool.Segment]: undefined,
+  [Tool.Cv]: undefined,
+  [Tool.Onnx]: undefined,
 };
 
 /**
@@ -64,7 +68,8 @@ export const configPaneRegistry: Record<Tool, FC | undefined> = {
   [Tool.Rectangle]: undefined,
   [Tool.Polygon]: undefined,
   [Tool.Edit]: undefined,
-  [Tool.Segment]: SegmentConfiguration,
+  [Tool.Cv]: CvConfiguration,
+  [Tool.Onnx]: undefined,
 };
 
 /// Cursor for different tools
@@ -74,7 +79,8 @@ export const defaultCursorMap: Record<Tool, string | undefined> = {
   [Tool.Rectangle]: undefined,
   [Tool.Polygon]: undefined,
   [Tool.Edit]: "pointer",
-  [Tool.Segment]: undefined,
+  [Tool.Cv]: undefined,
+  [Tool.Onnx]: undefined,
 };
 /**
  * Thunks map for different tools
@@ -87,13 +93,25 @@ export const thunksRegistry: Record<Tool, ToolThunks | undefined> = {
   [Tool.Circle]: circleThunks,
   [Tool.Rectangle]: rectangleThunks,
   [Tool.Polygon]: polygonThunks,
-  [Tool.Edit]: undefined,
-  [Tool.Segment]: undefined,
+  [Tool.Edit]: editThunks,
+  [Tool.Cv]: undefined,
+  [Tool.Onnx]: onnxThunks,
+};
+
+export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
+  [Tool.Pen]: penSelectors,
+  [Tool.Circle]: circleSelectors,
+  [Tool.Rectangle]: rectangleSelectors,
+  [Tool.Polygon]: polygonSelectors,
+  [Tool.Edit]: editSelectors,
+  [Tool.Cv]: undefined,
+  [Tool.Onnx]: onnxSelectors as ToolSelectors,
 };
 
 /// Combination of available tool operation
 export type ToolboxOperation =
-  | CircleToolOperation
   | PenToolOperation
+  | CircleToolOperation
+  | RectangleToolOperation
   | PolygonToolOperation
-  | RectangleToolOperation;
+  | OnnxToolOperation;

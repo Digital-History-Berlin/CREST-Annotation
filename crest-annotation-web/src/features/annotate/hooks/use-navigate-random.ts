@@ -8,7 +8,9 @@ import {
   updateObjectFilters,
 } from "../../../app/slice";
 
-// navigate to a random object
+/**
+ * Navigate to a random object
+ */
 export const useNavigateRandom = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();

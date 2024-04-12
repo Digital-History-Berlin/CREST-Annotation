@@ -1,4 +1,4 @@
-import { createAtomic } from "./custom-tool";
+import { createToolThunk } from "./custom-tool";
 import {
   RootOperation,
   operationBegin,
@@ -31,7 +31,7 @@ export const createAtomicDragTool = <O extends RootOperation>(options: {
   move: AtomicDragToolMoveThunk<O>;
   end: AtomicDragToolEndThunk<O>;
 }): ToolThunk<ToolGesturePayload> =>
-  createAtomic<ToolGesturePayload, O>(
+  createToolThunk<ToolGesturePayload, O>(
     { operation: options.operation },
     ({ gesture }, operation, { dispatch }, { requestLabel, cancelLabel }) => {
       if (gesture.identifier === GestureIdentifier.Click)

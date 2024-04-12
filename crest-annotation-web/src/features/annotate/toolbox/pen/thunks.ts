@@ -1,16 +1,20 @@
 import { PenToolOperation } from "./types";
 import { ShapeType } from "../../types/shapes";
 import { ToolThunks } from "../../types/thunks";
-import { Tool } from "../../types/toolbox";
+import { Tool, ToolGroup } from "../../types/toolbox";
 import {
   AtomicDragToolEndThunk,
   AtomicDragToolMoveThunk,
   AtomicDragToolStartThunk,
   createAtomicDragTool,
 } from "../atomic-drag-tool";
-import { createActivate, createLabel } from "../custom-tool";
+import {
+  createActivateThunk,
+  createLabelThunk,
+  createToolSelectors,
+} from "../custom-tool";
 
-const activate = createActivate({ tool: Tool.Pen });
+const activate = createActivateThunk({ tool: Tool.Pen });
 
 const start: AtomicDragToolStartThunk<PenToolOperation> = ({
   transformed: { x, y },
@@ -53,10 +57,20 @@ export const gesture = createAtomicDragTool({
   end,
 });
 
-export const label = createLabel({ operation: "tool/pen" });
+export const label = createLabelThunk({ operation: "tool/pen" });
 
 export const penThunks: ToolThunks = {
   activate,
   gesture,
   label,
 };
+
+export const penSelectors = createToolSelectors({
+  tool: Tool.Pen,
+  group: ToolGroup.Shape,
+  icon: {
+    name: "majesticons:edit-pen-4-line",
+    style: { fontSize: "22px" },
+    tooltip: "Pen",
+  },
+});
