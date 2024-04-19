@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { modelData } from "./helpers/onnxModelAPI";
 import { handleImageScale } from "./helpers/scaleHelper";
 import { cvPrepare, cvRun } from "../../../../../api/cvApi";
+import { Debouncer } from "../../../../../types/debounce";
 import { MaskShape } from "../../../components/shapes/Mask";
 import { addAnnotation } from "../../../slice/annotations";
 import {
@@ -40,6 +41,8 @@ import {
 // TODO check if import works
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ort = require("onnxruntime-web");
+
+const debouncer = new Debouncer(150);
 
 interface OperationPayload {
   gesture: GestureEvent;
@@ -214,6 +217,9 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
 
     if (gesture.identifier === GestureIdentifier.Move) {
       if (!operation?.state.labeling) {
+        thunkApi.dispatch(operationCancel(operation));
+        debouncer.cancel();
+
         const clicks = [{ ...gesture.transformed, clickType: 1 }];
         try {
           if (!model || !tensor || !modelScale) return;
@@ -230,7 +236,8 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
             const time = performance.now();
             console.log("Running model...");
             // Run the SAM ONNX model with the feeds returned from modelData()
-            model.run(feeds).then((results) => {
+            debouncer.debounce(async () => {
+              const results = await model.run(feeds);
               const output = results[model.outputNames[0]];
               thunkApi.dispatch(
                 operationBegin({
