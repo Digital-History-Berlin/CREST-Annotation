@@ -1,5 +1,11 @@
 import { Position } from "../types/geometry";
 
+export class DebounceCancelError extends Error {
+  constructor() {
+    super("Debounce canceled");
+  }
+}
+
 interface Debounce {
   timeout: NodeJS.Timeout;
   reject: () => void;
@@ -19,7 +25,7 @@ const cancelPreviewDebounce = () => {
   }
 };
 
-export const info = async (backend: string): Promise<Response> => {
+export const cvInfo = async (backend: string): Promise<Response> => {
   const response = await fetch(`${backend}/info`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
@@ -30,7 +36,7 @@ export const info = async (backend: string): Promise<Response> => {
   return response;
 };
 
-export const prepare = async (
+export const cvPrepare = async (
   backend: string,
   algorithm: string,
   body: { url?: string }
@@ -48,7 +54,7 @@ export const prepare = async (
   return response;
 };
 
-export const preview = (
+export const cvPreview = (
   backend: string,
   algorithm: string,
   body: { cursor: Position }
@@ -59,6 +65,7 @@ export const preview = (
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(async () => {
       try {
+        console.log("CV preview...");
         const response = await fetch(`${backend}/${algorithm}/preview`, {
           body: JSON.stringify(body),
           method: "POST",
@@ -75,19 +82,20 @@ export const preview = (
 
     // store the current timeout
     previewDebounce = {
-      reject: () => reject(new Error("Debounce canceled")),
+      reject: () => reject(new DebounceCancelError()),
       timeout,
     };
   });
 };
 
-export const run = async (
+export const cvRun = async (
   backend: string,
   algorithm: string,
   body: { cursor: Position }
 ): Promise<Response> => {
   cancelPreviewDebounce();
 
+  console.log("CV run...");
   const response = await fetch(`${backend}/${algorithm}/run`, {
     body: JSON.stringify(body),
     method: "POST",

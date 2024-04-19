@@ -18,6 +18,7 @@ const initialState: OperationSlice = {
 };
 
 const debug = (message: string, operation: RootOperation) =>
+  !operation.silence &&
   console.debug(`${message}: ${operation.id.substring(0, 6)}`);
 
 export const slice = createSlice({
@@ -37,14 +38,14 @@ export default slice.reducer;
 
 export const operationCancel = createAsyncThunk<
   void,
-  void,
+  RootOperation | void,
   { state: RootState; dispatch: AppDispatch }
->("operation/cancel", (_, { dispatch, getState }) => {
+>("operation/cancel", (payload, { dispatch, getState }) => {
   const {
     operation: { current },
   } = getState();
 
-  if (current === undefined) return;
+  if (current === undefined || (payload && payload.id !== current.id)) return;
   // trigger cancellation within current context
   current.cancellation?.();
 
@@ -53,7 +54,7 @@ export const operationCancel = createAsyncThunk<
 });
 
 export const operationBegin = createAsyncThunk<
-  void,
+  RootOperation,
   Omit<RootOperation, "id">,
   { state: RootState; dispatch: AppDispatch }
 >("operation/begin", async (payload, { dispatch }) => {
@@ -62,6 +63,8 @@ export const operationBegin = createAsyncThunk<
   const operation = { ...payload, id: uuidv4() } as RootOperation;
   debug("Begin operation", operation);
   dispatch(slice.actions.updateOperation(operation));
+
+  return operation;
 });
 
 export const operationUpdate = createAsyncThunk<

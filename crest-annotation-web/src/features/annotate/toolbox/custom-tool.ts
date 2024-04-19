@@ -2,15 +2,16 @@ import { v4 as uuidv4 } from "uuid";
 import { addAnnotation } from "../slice/annotations";
 import {
   RootOperation,
-  RootOperationType,
   isOperationOfType,
   operationCancel,
   operationComplete,
 } from "../slice/operation";
 import { setToolboxTool } from "../slice/toolbox";
+import { Shape } from "../types/shapes";
 import {
   ToolActivatePayload,
   ToolApi,
+  ToolConfigurePayload,
   ToolLabelPayload,
   ToolSelectors,
   ToolThunk,
@@ -44,13 +45,16 @@ export const createToolThunk =
     thunk(payload, operation, thunkApi, toolApi);
   };
 
-export type ToolActivationThunk = (thunkApi: ToolboxThunkApi) => void;
+export type ToolActivationThunk<C = unknown> = (
+  config: C,
+  thunkApi: ToolboxThunkApi
+) => void;
 
 // creates the standard tool activation thunk
 export const createActivateThunk =
-  (
+  <C = unknown>(
     options: { tool: Tool },
-    thunk?: ToolActivationThunk
+    thunk?: ToolActivationThunk<C>
   ): ToolboxThunk<ToolActivatePayload> =>
   (payload, thunkApi) => {
     const { dispatch } = thunkApi;
@@ -60,13 +64,35 @@ export const createActivateThunk =
     dispatch(setToolboxTool(options.tool));
 
     // run additional logic (if any)
-    thunk?.(thunkApi);
+    if (thunk) {
+      const {
+        toolbox: { tools },
+      } = thunkApi.getState();
+      // provide default config
+      thunk?.(tools[options.tool] as C, thunkApi);
+    }
+  };
+
+export type ToolConfigurationThunk<C> = (
+  config: C,
+  thunkApi: ToolboxThunkApi
+) => void;
+
+// creates the standard tool configuration thunk
+export const createConfigureThunk =
+  <C>(thunk: ToolConfigurationThunk<C>): ToolboxThunk<ToolConfigurePayload> =>
+  ({ config }, thunkApi) => {
+    const { dispatch } = thunkApi;
+
+    dispatch(operationCancel());
+    // run configuration logic
+    thunk(config as C, thunkApi);
   };
 
 //  creates the standard labeling thunk
 export const createLabelThunk =
-  <T extends RootOperationType>(options: {
-    operation: T;
+  <T extends Extract<RootOperation, { state: { shape: Shape } }>>(options: {
+    operation: T["type"];
   }): ToolThunk<ToolLabelPayload> =>
   ({ label }, { dispatch, getState }) => {
     if (label === undefined)

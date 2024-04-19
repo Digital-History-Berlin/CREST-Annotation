@@ -31,6 +31,7 @@ export interface AnnotationsSlice {
   // required for middleware
   project: Project | null;
   object: DataObject | null;
+  image: string | null;
 }
 
 const initialState: AnnotationsSlice = {
@@ -39,6 +40,7 @@ const initialState: AnnotationsSlice = {
   editing: null,
   project: null,
   object: null,
+  image: null,
 };
 
 const replaceAnnotation = (
@@ -83,10 +85,15 @@ export const slice = createSlice({
   reducers: {
     updateObject: (
       state,
-      action: PayloadAction<{ object: DataObject; project: Project } | null>
+      action: PayloadAction<{
+        object: DataObject;
+        project: Project;
+        image: string;
+      } | null>
     ) => {
       state.object = action.payload?.object || null;
       state.project = action.payload?.project || null;
+      state.image = action.payload?.image || null;
     },
     updateAnnotations: (state, action: PayloadAction<Annotation[]>) => {
       state.annotations = action.payload;
@@ -234,6 +241,11 @@ export const useAnnotationObject = (): DataObject =>
   // (index blocks rendering if not set)
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   useAppSelector((state) => state.annotations.object!);
+export const useAnnotationImage = (): string =>
+  // safe to use from within annotation components
+  // (index blocks rendering if not set)
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  useAppSelector((state) => state.annotations.image!);
 
 export default slice.reducer;
 

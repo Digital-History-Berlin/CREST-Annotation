@@ -25,7 +25,9 @@ export type AtomicDragToolEndThunk<T extends RootOperation> = (
 ) => T["state"];
 
 // creates a gesture thunk that uses a single drag gesture to emit a shape
-export const createAtomicDragTool = <O extends RootOperation>(options: {
+export const createAtomicDragTool = <
+  O extends Extract<RootOperation, { state: { labeling?: boolean } }>
+>(options: {
   operation: O["type"];
   start: AtomicDragToolStartThunk<O>;
   move: AtomicDragToolMoveThunk<O>;
@@ -37,7 +39,7 @@ export const createAtomicDragTool = <O extends RootOperation>(options: {
       if (gesture.identifier === GestureIdentifier.Click)
         if (operation?.state.labeling)
           // labeling process is can be canceled by clicking
-          return dispatch(operationCancel());
+          return dispatch(operationCancel(operation));
 
       if (gesture.identifier === GestureIdentifier.DragStart) {
         // start a new process when drag gestures begins
@@ -53,7 +55,7 @@ export const createAtomicDragTool = <O extends RootOperation>(options: {
       if (gesture.identifier === GestureIdentifier.DragMove) {
         if (operation === undefined) return;
         if (gesture.overload !== GestureOverload.Primary)
-          return dispatch(operationCancel());
+          return dispatch(operationCancel(operation));
 
         // resume with ongoing drag gesture
         return dispatch(
@@ -67,7 +69,7 @@ export const createAtomicDragTool = <O extends RootOperation>(options: {
       if (gesture.identifier === GestureIdentifier.DragEnd) {
         if (operation === undefined) return;
         if (gesture.overload !== GestureOverload.Primary)
-          return dispatch(operationCancel());
+          return dispatch(operationCancel(operation));
 
         // complete ongoing drag gesture
         dispatch(

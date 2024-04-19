@@ -93,7 +93,7 @@ export const useInputEvents = ({
   const gesture = useCallback(
     (event: GestureEvent) => {
       // provide acccess to the latest cursor position
-      if (cursorRef) cursorRef.current = event.transformed;
+      if (cursorRef) cursorRef.current = event.absolute;
       // provide debug-trace to identify gestures
       if (debug?.includes(event.identifier)) console.debug(eventLog(event));
       // forward to the external handler

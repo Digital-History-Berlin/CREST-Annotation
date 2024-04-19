@@ -3,9 +3,10 @@ import { Preview as CirclePreview } from "./circle/Preview";
 import { circleSelectors, circleThunks } from "./circle/thunks";
 import { CircleToolOperation } from "./circle/types";
 import { Configuration as CvConfiguration } from "./cv/Configuration";
+import { Preview as CvPreview } from "./cv/Preview";
+import { cvSelectors, cvThunks } from "./cv/thunks";
+import { CvToolOperation } from "./cv/types";
 import { editSelectors, editThunks } from "./edit/thunks";
-import { onnxSelectors, onnxThunks } from "./onnx/thunks";
-import { OnnxToolOperation } from "./onnx/types";
 import { Preview as PenPreview } from "./pen/Preview";
 import { penSelectors, penThunks } from "./pen/thunks";
 import { PenToolOperation } from "./pen/types";
@@ -52,8 +53,7 @@ export const previewRegistry: Record<Tool, PreviewFC | undefined> = {
   [Tool.Rectangle]: RectanglePreview as PreviewFC,
   [Tool.Polygon]: PolygonPreview as PreviewFC,
   [Tool.Edit]: undefined,
-  [Tool.Cv]: undefined,
-  [Tool.Onnx]: undefined,
+  [Tool.Cv]: CvPreview as PreviewFC,
 };
 
 /**
@@ -69,7 +69,6 @@ export const configPaneRegistry: Record<Tool, FC | undefined> = {
   [Tool.Polygon]: undefined,
   [Tool.Edit]: undefined,
   [Tool.Cv]: CvConfiguration,
-  [Tool.Onnx]: undefined,
 };
 
 /// Cursor for different tools
@@ -80,7 +79,6 @@ export const defaultCursorMap: Record<Tool, string | undefined> = {
   [Tool.Polygon]: undefined,
   [Tool.Edit]: "pointer",
   [Tool.Cv]: undefined,
-  [Tool.Onnx]: undefined,
 };
 /**
  * Thunks map for different tools
@@ -94,8 +92,7 @@ export const thunksRegistry: Record<Tool, ToolThunks | undefined> = {
   [Tool.Rectangle]: rectangleThunks,
   [Tool.Polygon]: polygonThunks,
   [Tool.Edit]: editThunks,
-  [Tool.Cv]: undefined,
-  [Tool.Onnx]: onnxThunks,
+  [Tool.Cv]: cvThunks,
 };
 
 export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
@@ -104,8 +101,7 @@ export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
   [Tool.Rectangle]: rectangleSelectors,
   [Tool.Polygon]: polygonSelectors,
   [Tool.Edit]: editSelectors,
-  [Tool.Cv]: undefined,
-  [Tool.Onnx]: onnxSelectors as ToolSelectors,
+  [Tool.Cv]: cvSelectors as ToolSelectors,
 };
 
 /// Combination of available tool operation
@@ -114,4 +110,4 @@ export type ToolboxOperation =
   | CircleToolOperation
   | RectangleToolOperation
   | PolygonToolOperation
-  | OnnxToolOperation;
+  | CvToolOperation;

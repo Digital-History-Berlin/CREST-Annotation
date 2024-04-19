@@ -3,7 +3,7 @@ import { Label } from "../../../api/openApi";
 import { AppDispatch, RootState } from "../../../app/store";
 import { thunksRegistry } from "../toolbox";
 import { GestureEvent } from "../types/events";
-import { ToolApi } from "../types/thunks";
+import { ToolApi, ToolboxThunkApi } from "../types/thunks";
 import { Modifiers, Tool } from "../types/toolbox";
 
 export interface ToolboxSlice {
@@ -24,7 +24,6 @@ const initialState: ToolboxSlice = {
     [Tool.Polygon]: undefined,
     [Tool.Edit]: undefined,
     [Tool.Cv]: undefined,
-    [Tool.Onnx]: undefined,
   },
   // active selection
   selection: {
@@ -44,7 +43,7 @@ export const slice = createSlice({
       state,
       action: PayloadAction<{ tool: Tool; state: unknown }>
     ) => {
-      state.tools[action.payload.tool] = state;
+      state.tools[action.payload.tool] = action.payload.state;
     },
     updateToolboxSelection: (
       state,
@@ -117,6 +116,21 @@ const getOperationTool = (state: RootState) => {
     : selection.tool;
 };
 
+type PartialAppThunkApi = {
+  dispatch: AppDispatch;
+  getState: () => RootState;
+};
+
+const toolboxApi = (
+  { dispatch, getState }: PartialAppThunkApi,
+  tool: Tool
+): ToolboxThunkApi => ({
+  dispatch,
+  getState,
+  // shorthand to retrieve the tool info (config)
+  getInfo: <I>() => getState().toolbox.tools[tool] as I,
+});
+
 export const activateTool = createAsyncThunk<
   void,
   { tool: Tool },
@@ -125,7 +139,20 @@ export const activateTool = createAsyncThunk<
   console.debug("Activate tool: ", tool);
 
   const thunks = thunksRegistry[tool];
-  return thunks?.activate?.(undefined, api);
+  const toolbox = toolboxApi(api, tool);
+  return thunks?.activate?.(undefined, toolbox);
+});
+
+export const configureTool = createAsyncThunk<
+  void,
+  { tool: Tool; config: unknown },
+  { state: RootState; dispatch: AppDispatch }
+>("toolbox/activateTool", async ({ tool, config }, api) => {
+  console.debug("Configure tool: ", tool, config);
+
+  const thunks = thunksRegistry[tool];
+  const toolbox = toolboxApi(api, tool);
+  return thunks?.configure?.({ config }, toolbox);
 });
 
 export const processGesture = createAsyncThunk<
@@ -135,7 +162,8 @@ export const processGesture = createAsyncThunk<
 >("toolbox/processGesture", async ({ gesture, toolApi }, api) => {
   const tool = getOperationTool(api.getState());
   const thunks = thunksRegistry[tool];
-  return thunks?.gesture?.({ gesture }, api, toolApi);
+  const toolbox = toolboxApi(api, tool);
+  return thunks?.gesture?.({ gesture }, toolbox, toolApi);
 });
 
 export const processLabel = createAsyncThunk<
@@ -147,5 +175,6 @@ export const processLabel = createAsyncThunk<
 
   const tool = getOperationTool(api.getState());
   const thunks = thunksRegistry[tool];
-  return thunks?.label?.({ label }, api, toolApi);
+  const toolbox = toolboxApi(api, tool);
+  return thunks?.label?.({ label }, toolbox, toolApi);
 });

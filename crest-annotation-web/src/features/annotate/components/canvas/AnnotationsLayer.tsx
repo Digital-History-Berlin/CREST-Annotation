@@ -56,6 +56,7 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
 
       return (
         <ComponentShape
+          key={`${annotation.id}.${index}`}
           identifier={`${annotation.id}.${index}`}
           shape={shape}
           color={annotation.label?.color ?? "#f00"}

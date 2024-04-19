@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Group, Image } from "react-konva";
 import { ShapeFC, ShapeType } from "../../types/shapes";
 
@@ -10,7 +10,6 @@ export interface MaskShape {
   dx: number;
   dy: number;
   preview: boolean;
-  color: string;
 }
 
 const colorRegex =
@@ -30,8 +29,14 @@ const hexToRgbA = (hex: string, alpha: number) => {
   return { red: 255, green: 255, blue: 255, alpha };
 };
 
-export const Mask: ShapeFC<MaskShape> = ({ identifier, shape, onClick }) => {
+export const Mask: ShapeFC<MaskShape> = ({
+  identifier,
+  shape,
+  solidColor,
+  onClick,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>();
+  const [imageKey, setImageKey] = useState(0);
 
   useEffect(() => {
     if (!canvasRef.current)
@@ -39,7 +44,7 @@ export const Mask: ShapeFC<MaskShape> = ({ identifier, shape, onClick }) => {
       canvasRef.current = document.createElement("canvas");
     const context = canvasRef.current.getContext("2d");
 
-    if (!context || !shape.width || !shape.height) return;
+    if (!context || !shape.width || !shape.height || !solidColor) return;
 
     const { width, height } = shape;
     canvasRef.current.width = width;
@@ -50,12 +55,12 @@ export const Mask: ShapeFC<MaskShape> = ({ identifier, shape, onClick }) => {
 
     const foreground = shape.preview
       ? { red: 255, green: 255, blue: 255, alpha: 100 }
-      : hexToRgbA(shape.color, 100);
+      : hexToRgbA(solidColor, 100);
     const background = shape.preview
       ? { red: 0, green: 0, blue: 0, alpha: 100 }
       : { red: 0, green: 0, blue: 0, alpha: 0 };
 
-    console.log("(Re-)rendering mask...");
+    console.log(`(Re-)rendering mask...`);
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
         d[x * 4 + y * width * 4 + 0] = shape.mask[y][x]
@@ -74,13 +79,15 @@ export const Mask: ShapeFC<MaskShape> = ({ identifier, shape, onClick }) => {
     console.log("Storing rendering...");
     context.putImageData(id, 0, 0);
     console.log("Rendering done");
-  }, [shape]);
+    // enforce component re-render
+    setImageKey((value) => value + 1);
+  }, [shape, solidColor]);
 
   return (
     <Group key={identifier}>
       <Image
         listening={false}
-        key={identifier}
+        key={`${identifier}-${imageKey}`}
         image={canvasRef.current}
         onClick={onClick}
         x={0}

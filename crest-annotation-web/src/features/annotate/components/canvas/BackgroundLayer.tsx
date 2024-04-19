@@ -1,23 +1,24 @@
-import { Layer } from "react-konva";
-import BackgroundImage from "./BackgroundImage";
-import { useGetImageUriQuery } from "../../../../api/enhancedApi";
-import { useAnnotationObject } from "../../slice/annotations";
+import { useEffect } from "react";
+import { Image as KonvaImage, Layer } from "react-konva";
+import useImage from "use-image";
+import { useAnnotationImage } from "../../slice/annotations";
 
 interface IProps {
   onResize?: (width: number, height: number) => void;
 }
 
 const BackgroundLayer = ({ onResize }: IProps) => {
-  const object = useAnnotationObject();
+  const source = useAnnotationImage();
+  const [image] = useImage(source);
 
-  const { data, isLoading, isError } = useGetImageUriQuery({
-    objectId: object.id,
-    imageRequest: { height: 800 },
-  });
+  useEffect(() => {
+    // forward to parent component
+    if (image?.width && image.height) onResize?.(image.width, image.height);
+  }, [image?.width, image?.height, onResize]);
 
   return (
     <Layer>
-      {data && <BackgroundImage imageUri={data} onResize={onResize} />}
+      <KonvaImage image={image} />
     </Layer>
   );
 };

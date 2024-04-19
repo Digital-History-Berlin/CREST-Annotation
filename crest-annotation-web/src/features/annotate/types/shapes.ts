@@ -15,6 +15,9 @@ export type Shape = {
   type: ShapeType;
 };
 
+/// A shape with unknown properties
+export type UnknownShape = Shape & { [key: string]: unknown };
+
 /// Callbacks provided to a shape component
 export type ShapeCallbacks = {
   // shape wants to change the cursor appearance
@@ -36,6 +39,8 @@ export type ShapeProps<T extends Shape> = {
   // properties passed to Konva components
   shapeConfig?: ShapeConfig;
   editingPointConfig?: ShapeConfig;
+  // solid color for some shapes
+  solidColor?: string;
 } & ShapeCallbacks;
 
 /// Renders a shape component

@@ -1,19 +1,16 @@
 import { Layer } from "react-konva";
-import { CircleToolState } from "./types";
+import { CvToolState } from "./types";
 import Shape from "../../components/canvas/Shape";
 import { PreviewFC } from "../../types/preview";
 
-export const Preview: PreviewFC<CircleToolState> = ({
-  state,
-  transformation,
-}) => {
+export const Preview: PreviewFC<CvToolState> = ({ state, transformation }) => {
   return (
     <Layer>
-      {state && (
+      {state?.shape && (
         <Shape
-          identifier="__preview__"
+          identifier={`__preview__`}
           shape={state.shape}
-          color="#ff0000"
+          color="#f00"
           transformation={transformation}
         />
       )}

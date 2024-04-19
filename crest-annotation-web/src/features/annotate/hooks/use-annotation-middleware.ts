@@ -3,6 +3,7 @@ import {
   useGetObjectQuery,
   useGetProjectQuery,
 } from "../../../api/enhancedApi";
+import { useGetImageUriQuery } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { updateObject } from "../slice/annotations";
 import { operationCancel } from "../slice/operation";
@@ -34,41 +35,61 @@ export const useAnnotationMiddleware = ({
     { objectId: objectId! },
     { skip: !objectId }
   );
+  const { currentData: remoteImage } = useGetImageUriQuery(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    { objectId: objectId!, imageRequest: { height: 800 } },
+    { skip: !objectId }
+  );
 
   const localProject = useAppSelector((state) => state.annotations.project);
   const localObject = useAppSelector((state) => state.annotations.object);
+  const localImage = useAppSelector((state) => state.annotations.image);
 
   const valid = useMemo(() => {
-    // state is incomplete
-    if (!localProject || !localObject) return false;
-    // state is outdated
-    if (localProject !== remoteProject || localObject !== remoteObject)
+    if (!localProject || !localObject || !localImage)
+      // state is incomplete
       return false;
+
+    if (
+      localProject !== remoteProject ||
+      localObject !== remoteObject ||
+      localImage !== remoteImage
+    )
+      // state is outdated
+      return false;
+
     // state is valid
     return true;
-  }, [localProject, remoteProject, localObject, remoteObject]);
+  }, [
+    localProject,
+    remoteProject,
+    localObject,
+    remoteObject,
+    localImage,
+    remoteImage,
+  ]);
 
   useEffect(
     () => {
       // redirect because of missing project
-      if (!projectId) redirect(undefined);
+      if (!projectId) return redirect(undefined);
       // redirect because of missing object
-      else if (!objectId) redirect(projectId);
-      // update project and object
-      else if (remoteProject && remoteObject) {
+      if (!objectId) return redirect(projectId);
+      // update local state once data is available
+      if (remoteProject && remoteObject && remoteImage) {
         dispatch(
           updateObject({
             project: remoteProject,
             object: remoteObject,
+            image: remoteImage,
           })
         );
         // ensure ongoing operation is canceled when object changes
         dispatch(operationCancel());
       }
     },
-    // update on project or object change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [remoteProject, remoteObject]
+    [remoteProject, remoteObject, remoteImage]
   );
 
   return { valid };

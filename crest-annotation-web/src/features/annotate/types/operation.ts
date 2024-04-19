@@ -17,6 +17,7 @@ export interface Operation<T extends string, S> {
   // operation meta data
   name?: string;
   progress?: number;
+  silence?: boolean;
   // user state data
   state: S;
   // callbacks for cleanup

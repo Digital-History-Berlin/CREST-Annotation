@@ -31,7 +31,7 @@ const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
   if (operation === undefined) return;
   // discard if polygon is too small
   if (operation.state.shape.points.length < 6)
-    return dispatch(operationCancel());
+    return dispatch(operationCancel(operation));
 
   // complete ongoing polygon
   dispatch(
@@ -83,7 +83,7 @@ const primaryClick: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
 
   if (operation.state.labeling)
     // labeling process is can be canceled by clicking
-    return thunkApi.dispatch(operationCancel());
+    return thunkApi.dispatch(operationCancel(operation));
 
   // finish on click near start
   const dx = operation.state.shape.points[0] - x;
@@ -123,6 +123,7 @@ const move: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
     })
   );
 };
+
 export const gesture = createToolThunk<
   ToolGesturePayload,
   PolygonToolOperation
@@ -142,7 +143,7 @@ export const gesture = createToolThunk<
         case GestureOverload.Secondary:
           return closePolygon(gesture, operation, thunkApi, toolApi);
         case GestureOverload.Tertiary:
-          return thunkApi.dispatch(operationCancel());
+          return thunkApi.dispatch(operationCancel(operation));
       }
     }
 

@@ -46,6 +46,7 @@ const Shape = ({
       editable={editable}
       shapeConfig={shapeConfig}
       editingPointConfig={editingPointConfig}
+      solidColor={color}
     />
   );
 };

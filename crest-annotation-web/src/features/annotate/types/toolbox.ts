@@ -1,21 +1,19 @@
 export enum Tool {
   // edit existing shapes
   Edit = "Edit",
-  // simple shape tools
+  // basic tools
   Pen = "Pen",
   Circle = "Circle",
   Rectangle = "Rectangle",
   Polygon = "Polygon",
-  // open-cv backend with inference running on the backend
+  // computer vision backend
   Cv = "Cv",
-  // open-cv backend with ONNX frontend inference
-  Onnx = "Onnx",
 }
 
 export enum ToolGroup {
   Edit = "Edit",
   Shape = "Shape",
-  Backend = "Backend",
+  Cv = "Cv",
 }
 
 export enum ToolStatus {

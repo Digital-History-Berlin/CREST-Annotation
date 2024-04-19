@@ -6,6 +6,7 @@ import { AppDispatch, RootState } from "../../../app/store";
 export type ToolboxThunkApi = {
   dispatch: AppDispatch;
   getState: () => RootState;
+  getInfo: <I>() => I;
 };
 
 export type ToolboxThunk<P> = (payload: P, thunkApi: ToolboxThunkApi) => void;
@@ -28,7 +29,7 @@ export type ToolLabelPayload = { label: Label | undefined };
 
 export type ToolThunks = {
   activate?: ToolboxThunk<ToolActivatePayload>;
-  configure?: ToolThunk<ToolConfigurePayload>;
+  configure?: ToolboxThunk<ToolConfigurePayload>;
   gesture?: ToolThunk<ToolGesturePayload>;
   label?: ToolThunk<ToolLabelPayload>;
 };

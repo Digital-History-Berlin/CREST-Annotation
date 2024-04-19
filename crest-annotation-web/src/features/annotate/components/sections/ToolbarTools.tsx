@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback } from "react";
+import React, { CSSProperties, Fragment, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { PriorityHigh } from "@mui/icons-material";
 import { CircularProgress, Stack, useTheme } from "@mui/material";
@@ -11,7 +11,7 @@ import { useToolInfo } from "../../hooks/use-tool-info";
 import { activateTool, toggleToolboxModifier } from "../../slice/toolbox";
 import { Modifiers, Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
 
-const groupsInfo = [ToolGroup.Edit, ToolGroup.Shape, ToolGroup.Backend];
+const groupsInfo = [ToolGroup.Edit, ToolGroup.Shape, ToolGroup.Cv];
 
 const modifiersInfo = [
   {
@@ -48,7 +48,7 @@ const ToolbarTools = () => {
   return (
     <Stack direction="row">
       {groupsInfo.map((group, i) => (
-        <>
+        <Fragment key={i}>
           {info
             .filter((info) => info.group === group)
             .map((info) => {
@@ -84,8 +84,8 @@ const ToolbarTools = () => {
                 </ToolbarToggleButtonWithTooltip>
               );
             })}
-          <ToolbarDivider key={i} />
-        </>
+          <ToolbarDivider />
+        </Fragment>
       ))}
       {modifiersInfo.map((button) => {
         return (
