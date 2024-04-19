@@ -1,4 +1,10 @@
 import { Operation } from "../../types/operation";
+import { PreviewFC } from "../../types/preview";
+import {
+  ToolGesturePayload,
+  ToolLabelPayload,
+  ToolThunk,
+} from "../../types/thunks";
 import { Tool, ToolStatus } from "../../types/toolbox";
 
 export type Algorithm = { id: string; name: string };
@@ -8,13 +14,18 @@ export interface CvToolConfig {
   state: boolean;
   algorithms: Algorithm[];
   algorithm: string;
-  // algorithm specific config
-  details: { [key: string]: unknown };
+  // allow custom properties
+  [key: string]: unknown;
 }
 
 export interface CvToolInfo {
   status: ToolStatus;
   config?: CvToolConfig;
+  // custom tool interface
+  interface?: string;
+  preview?: PreviewFC;
+  gesture?: ToolThunk<ToolGesturePayload>;
+  label?: ToolThunk<ToolLabelPayload>;
 }
 
 export interface CvToolState {

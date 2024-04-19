@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { Preview as CirclePreview } from "./circle/Preview";
 import { circleSelectors, circleThunks } from "./circle/thunks";
 import { CircleToolOperation } from "./circle/types";
 import { Configuration as CvConfiguration } from "./cv/Configuration";
@@ -7,15 +6,14 @@ import { Preview as CvPreview } from "./cv/Preview";
 import { cvSelectors, cvThunks } from "./cv/thunks";
 import { CvToolOperation } from "./cv/types";
 import { editSelectors, editThunks } from "./edit/thunks";
-import { Preview as PenPreview } from "./pen/Preview";
 import { penSelectors, penThunks } from "./pen/thunks";
 import { PenToolOperation } from "./pen/types";
 import { Preview as PolygonPreview } from "./polygon/Preview";
 import { polygonSelectors, polygonThunks } from "./polygon/thunks";
 import { PolygonToolOperation } from "./polygon/types";
-import { Preview as RectanglePreview } from "./rectangle/Preview";
 import { rectangleSelectors, rectangleThunks } from "./rectangle/thunks";
 import { RectangleToolOperation } from "./rectangle/types";
+import { ShapePreview } from "./ShapePreview";
 import { Circle } from "../components/shapes/Circle";
 import { Line } from "../components/shapes/Line";
 import { Mask } from "../components/shapes/Mask";
@@ -48,9 +46,9 @@ export const shapeRegistry: Record<ShapeType, ShapeFC | undefined> = {
  * i.e. if the tool provides additional UI.
  */
 export const previewRegistry: Record<Tool, PreviewFC | undefined> = {
-  [Tool.Pen]: PenPreview as PreviewFC,
-  [Tool.Circle]: CirclePreview as PreviewFC,
-  [Tool.Rectangle]: RectanglePreview as PreviewFC,
+  [Tool.Pen]: ShapePreview as PreviewFC,
+  [Tool.Circle]: ShapePreview as PreviewFC,
+  [Tool.Rectangle]: ShapePreview as PreviewFC,
   [Tool.Polygon]: PolygonPreview as PreviewFC,
   [Tool.Edit]: undefined,
   [Tool.Cv]: CvPreview as PreviewFC,

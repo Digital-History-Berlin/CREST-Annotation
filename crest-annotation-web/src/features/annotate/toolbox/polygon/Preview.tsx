@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { Layer } from "react-konva";
 import { PolygonToolState } from "./types";
-import { Polygon } from "../../components/shapes/Polygon";
+import Shape from "../../components/canvas/Shape";
 import { PreviewFC } from "../../types/preview";
 
-export const Preview: PreviewFC<PolygonToolState> = ({ state }) => {
+export const Preview: PreviewFC<PolygonToolState> = ({
+  state,
+  transformation,
+}) => {
   const shape = useMemo(() => {
     if (state === undefined) return undefined;
     if (state.preview === undefined) return state.shape;
@@ -19,10 +22,11 @@ export const Preview: PreviewFC<PolygonToolState> = ({ state }) => {
   return (
     <Layer>
       {shape && (
-        <Polygon
+        <Shape
           identifier="__preview__"
-          shapeConfig={{ stroke: "#ff0000" }}
           shape={shape}
+          color="#ff0000"
+          transformation={transformation}
         />
       )}
     </Layer>

@@ -75,25 +75,9 @@ const SegmentTool: ShapeTool = {
 
 export default SegmentTool;
 */
-import { v4 as uuidv4 } from "uuid";
-import { CvToolConfig, CvToolInfo, CvToolOperation } from "./types";
-import {
-  DebounceCancelError,
-  cvPrepare,
-  cvPreview,
-} from "../../../../api/cvApi";
-import { MaskShape } from "../../components/shapes/Mask";
-import { addAnnotation } from "../../slice/annotations";
-import {
-  isOperationOfType,
-  operationBegin,
-  operationCancel,
-  operationComplete,
-  operationUpdate,
-} from "../../slice/operation";
+import { CvToolConfig, CvToolInfo } from "./types";
+import { cvPrepare } from "../../../../api/cvApi";
 import { updateToolState } from "../../slice/toolbox";
-import { GestureIdentifier } from "../../types/events";
-import { ShapeType } from "../../types/shapes";
 import {
   ToolGesturePayload,
   ToolLabelPayload,
@@ -103,11 +87,7 @@ import {
   ToolboxThunkApi,
 } from "../../types/thunks";
 import { Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
-import {
-  createActivateThunk,
-  createConfigureThunk,
-  createToolThunk,
-} from "../custom-tool";
+import { createActivateThunk, createConfigureThunk } from "../custom-tool";
 
 const initialize = (
   config: CvToolConfig | undefined,
@@ -135,12 +115,28 @@ const initialize = (
 
   // begin initializing the tool
   dispatchStatus(ToolStatus.Loading);
-  cvPrepare(config.backend, config.algorithm, {
-    url: image,
-  })
-    .then(() => {
+  const body = { url: image };
+  cvPrepare(config.backend, config.algorithm, body)
+    .then(async () => {
+      // TODO: select the correct interface here
+      const interfaceName = "generic-single-mask";
+      const { gesture, label } = await import(`./${interfaceName}/thunks`);
+      const { Preview } = await import(`./${interfaceName}/Preview`);
       console.log("Tool initialized successfully");
-      dispatchStatus(ToolStatus.Ready);
+      dispatch(
+        updateToolState({
+          tool: Tool.Cv,
+          // ensure the config is preserved
+          state: {
+            status: ToolStatus.Ready,
+            config,
+            interface: interfaceName,
+            preview: Preview,
+            gesture,
+            label,
+          },
+        })
+      );
     })
     .catch((error) => {
       console.log("Tool initialization failed", error);
@@ -152,133 +148,16 @@ const activate = createActivateThunk({ tool: Tool.Cv }, initialize);
 
 const configure = createConfigureThunk(initialize);
 
-export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
-  { operation: "tool/cv" },
-  (
-    { gesture },
-    operation,
-    { dispatch, getInfo },
-    { requestLabel, cancelLabel }
-  ) => {
-    const info = getInfo<CvToolInfo | undefined>();
-    const config = info?.config;
-    if (!config) return;
+const gesture: ToolThunk<ToolGesturePayload> = (payload, thunkApi, toolApi) => {
+  const info = thunkApi.getInfo<CvToolInfo | undefined>();
+  // forward to tool interface
+  info?.gesture?.(payload, thunkApi, toolApi);
+};
 
-    if (gesture.identifier === GestureIdentifier.Move) {
-      if (operation?.state.labeling) return;
-
-      dispatch(
-        operationBegin({
-          type: "tool/cv",
-          state: { tool: Tool.Cv, shape: undefined },
-          silence: true,
-        })
-      )
-        .unwrap()
-        .then(async (operation) => {
-          try {
-            const body = { cursor: gesture.transformed };
-            const response = await cvPreview(
-              config.backend,
-              config.algorithm,
-              body
-            );
-            const json = await response.json();
-
-            dispatch(
-              operationUpdate({
-                id: operation.id,
-                type: "tool/cv",
-                state: {
-                  tool: Tool.Cv,
-                  shape: {
-                    type: ShapeType.Mask,
-                    mask: json.mask,
-                    width: json.mask[0].length,
-                    height: json.mask.length,
-                    dx: 0,
-                    dy: 0,
-                    preview: true,
-                  },
-                },
-              })
-            );
-          } catch (error) {
-            if (!(error instanceof DebounceCancelError)) console.log(error);
-            // cancel operation on error
-            dispatch(operationCancel(operation));
-          }
-        });
-    }
-
-    if (gesture.identifier === GestureIdentifier.Click) {
-      if (operation?.state.labeling)
-        // labeling process is can be canceled by clicking
-        return dispatch(operationCancel(operation));
-
-      const body = { cursor: gesture.transformed };
-      cvPreview(config.backend, config.algorithm, body)
-        .then((response) => response.json())
-        .then((json) => {
-          dispatch(
-            operationBegin({
-              type: "tool/cv",
-              state: {
-                tool: Tool.Cv,
-                shape: {
-                  type: ShapeType.Mask,
-                  mask: json.mask,
-                  width: json.mask[0].length,
-                  height: json.mask.length,
-                  dx: 0,
-                  dy: 0,
-                  preview: true,
-                },
-                labeling: true,
-              },
-              // register cleanup
-              cancellation: cancelLabel,
-              finalization: cancelLabel,
-            })
-          );
-
-          // request a label for the shape
-          requestLabel();
-        });
-    }
-  }
-);
-
-export const label: ToolThunk<ToolLabelPayload> = (
-  { label },
-  { dispatch, getState }
-) => {
-  if (label === undefined)
-    // cancel operation if labeling was canceled
-    return dispatch(operationCancel());
-
-  const {
-    operation: { current },
-  } = getState();
-
-  if (!isOperationOfType<CvToolOperation>(current, "tool/cv"))
-    // no shape to label
-    return;
-
-  dispatch(operationComplete(current));
-  // create a new annotation with shape
-  dispatch(
-    addAnnotation({
-      id: uuidv4(),
-      shapes: [
-        {
-          ...current.state.shape,
-          preview: false,
-        } as MaskShape,
-      ],
-      label,
-    })
-  );
+const label: ToolThunk<ToolLabelPayload> = (payload, thunkApi, toolApi) => {
+  const info = thunkApi.getInfo<CvToolInfo | undefined>();
+  // forward to tool interface
+  info?.label?.(payload, thunkApi, toolApi);
 };
 
 export const cvThunks: ToolThunks = {

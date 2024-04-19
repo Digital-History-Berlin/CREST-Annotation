@@ -1,13 +1,17 @@
 import { Layer } from "react-konva";
-import { CvToolState } from "./types";
-import { Mask } from "../../../components/shapes/Mask";
-import { PreviewFC } from "../../types/preview";
+import Shape from "../../../components/canvas/Shape";
+import { MaskShape } from "../../../components/shapes/Mask";
+import { PreviewFC } from "../../../types/preview";
+import { CvToolState } from "../types";
 
-export const Preview: PreviewFC<CvToolState> = ({ state, transformation }) => {
+export const Preview: PreviewFC<CvToolState & { shape: MaskShape }> = ({
+  state,
+  transformation,
+}) => {
   return (
     <Layer>
       {state?.shape && (
-        <Mask
+        <Shape
           identifier={`__preview__`}
           shape={state.shape}
           color="#f00"
