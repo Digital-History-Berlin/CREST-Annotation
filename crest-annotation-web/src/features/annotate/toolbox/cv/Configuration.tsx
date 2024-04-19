@@ -10,12 +10,20 @@ import {
   Typography,
 } from "@mui/material";
 import Check from "@mui/icons-material/Check";
-import { CvToolConfig, CvToolInfo } from "./types";
+import { cvActivateAlgorithm } from "./thunks";
+import { Algorithm, CvBackendConfig, CvToolInfo } from "./types";
 import { cvInfo } from "../../../../api/cvApi";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import { configureTool } from "../../slice/toolbox";
-import { Tool } from "../../types/toolbox";
+import { updateToolState } from "../../slice/toolbox";
+import { Tool, ToolStatus } from "../../types/toolbox";
 
+/**
+ * Basic configuration for the CV tool
+ *
+ * It allows to select the backend and the algorithm.
+ * Once the algorithm is selected, the pane will be
+ * hidden in favor of the algorithm's configuration.
+ */
 export const Configuration = () => {
   const dispatch = useAppDispatch();
 
@@ -23,51 +31,78 @@ export const Configuration = () => {
     (state) => state.toolbox.tools[Tool.Cv] as CvToolInfo | undefined
   );
 
-  const [state, setState] = useState<Partial<CvToolConfig>>(info?.config || {});
+  const [state, setState] = useState<Partial<CvBackendConfig>>(
+    info?.backend || {}
+  );
 
-  // update state when config changes
+  const [algorithm, setAlgorithm] = useState(info?.algorithm);
+
   useEffect(() => {
-    if (info?.config) setState(info.config);
+    if (info?.backend)
+      // override component state from store
+      setState(info.backend);
     else
       setState({
-        // restore from local storage if not specified
-        backend: localStorage.getItem("cv-backend") || undefined,
+        // restore from local storage
+        url: localStorage.getItem("cv-backend") || undefined,
       });
   }, [info]);
 
+  const activateBackend = useCallback(
+    (url: string, data: { algorithms: Algorithm[] }) => {
+      console.log("Backend available");
+      dispatch(
+        updateToolState({
+          tool: Tool.Cv,
+          state: {
+            // tool is not ready yet
+            status: ToolStatus.Failed,
+            backend: { url: url, state: true, algorithms: data.algorithms },
+          } as CvToolInfo,
+        })
+      );
+      // persist the backend URL in local storage
+      localStorage.setItem("cv-backend", url);
+    },
+    [dispatch]
+  );
+
+  const resetBackend = useCallback(
+    (url: string, error: unknown) => {
+      console.log("Backend not available", error);
+      dispatch(
+        updateToolState({
+          tool: Tool.Cv,
+          state: {
+            // tool is not ready yet
+            status: ToolStatus.Failed,
+            backend: undefined,
+          } as CvToolInfo,
+        })
+      );
+      // clear the backend URL in local storage
+      localStorage.removeItem("cv-backend");
+    },
+    [dispatch]
+  );
+
   // fetch available algorithms when backend is specified
   const validateBackend = useCallback(() => {
-    const backend = state.backend;
-    if (backend)
-      cvInfo(backend)
+    const url = state.url;
+    if (url)
+      cvInfo(url)
         .then((response) => response.json())
-        .then((data) => {
-          console.log("Backend available");
-          setState({
-            backend: backend,
-            state: true,
-            algorithms: data.algorithms,
-          });
-          // persist the backend URL in local storage
-          localStorage.setItem("cv-backend", backend);
-        })
-        .catch((error) => {
-          console.log("Backend not available", error);
-          setState({
-            backend: backend,
-            state: false,
-            algorithms: undefined,
-          });
-          // clear the backend URL in local storage
-          localStorage.removeItem("cv-backend");
-        });
-  }, [state.backend]);
+        .then((data) => activateBackend(url, data))
+        .catch((error) => resetBackend(url, error));
+  }, [activateBackend, resetBackend, state.url]);
 
   const applyChanges = useCallback(() => {
-    console.log("Applying changes");
-    // activate changes
-    dispatch(configureTool({ tool: Tool.Cv, config: state }));
-  }, [dispatch, state]);
+    const details = state.algorithms?.find((a) => a.id === algorithm);
+    if (details === undefined)
+      return console.log(`Unknown algorithm ${algorithm}`);
+    // activate the algorithm
+    dispatch(cvActivateAlgorithm({ algorithm: details }));
+  }, [dispatch, state, algorithm]);
 
   return (
     <Stack padding={2} spacing={2}>
@@ -76,9 +111,12 @@ export const Configuration = () => {
           fullWidth
           variant="filled"
           label="Backend"
-          value={state.backend || ""}
+          value={state.url || ""}
           onChange={(e) =>
-            setState((current) => ({ ...current, backend: e.target.value }))
+            setState((current) => ({
+              ...current,
+              url: e.target.value,
+            }))
           }
         />
         <IconButton onClick={validateBackend}>
@@ -106,10 +144,8 @@ export const Configuration = () => {
             variant="filled"
             label="Algorithm"
             select
-            value={state.algorithm || ""}
-            onChange={(e) =>
-              setState((current) => ({ ...current, algorithm: e.target.value }))
-            }
+            value={algorithm || ""}
+            onChange={(e) => setAlgorithm(e.target.value)}
           >
             {state.algorithms.map((algorithm) => (
               <MenuItem key={algorithm.id} value={algorithm.id}>
@@ -118,7 +154,7 @@ export const Configuration = () => {
             ))}
           </TextField>
           <Button onClick={applyChanges} variant="contained">
-            Apply
+            Load algorithm
           </Button>
         </>
       )}

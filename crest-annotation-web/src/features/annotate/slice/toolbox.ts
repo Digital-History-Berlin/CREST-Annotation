@@ -45,6 +45,19 @@ export const slice = createSlice({
     ) => {
       state.tools[action.payload.tool] = action.payload.state;
     },
+    patchToolState: (
+      state,
+      action: PayloadAction<{ tool: Tool; patch: unknown }>
+    ) => {
+      const current = state.tools[action.payload.tool];
+      const patch = action.payload.patch;
+      // partial update (if possible)
+      if (typeof current === "object" && typeof patch === "object")
+        state.tools[action.payload.tool] = {
+          ...current,
+          ...patch,
+        };
+    },
     updateToolboxSelection: (
       state,
       action: PayloadAction<{
@@ -94,6 +107,7 @@ export const slice = createSlice({
 
 export const {
   updateToolState,
+  patchToolState,
   updateToolboxSelection,
   setToolboxTool,
   setToolboxLabel,

@@ -4,35 +4,30 @@ import numpy as np
 import cv2
 
 from urllib import request
-from fastapi import Body
+from fastapi import Body, Depends
 from fastapi.responses import Response
 
-from segment_anything import SamPredictor, sam_model_registry
+from segment_anything import SamPredictor
 
-from app.environment import env
 from app.schemas.common import Position
+from app.dependencies.facebook_sam import get_sam_model
 from . import router
 
-# TODO: this will initialize SAM on startup
-# maybe implement some lazy loading
-sam = sam_model_registry[env.sam_model_type](checkpoint=env.sam_checkpoint)
 
-if env.sam_device:
-    # if no device is specified leave on CPU
-    sam.to(device=env.sam_device)
-
-predictor = SamPredictor(sam)
+# cached SAM predictor
+predictor = None
 cache_index = None
 
 
 @router.post("/prepare")
-async def prepare(url: str | None = Body(embed=True)):
+async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)):
+    global predictor
     global cache_index
-    
-    if(cache_index == url):
-        logging.info('Image cached')
+
+    if cache_index == url:
+        logging.info("Image cached")
         return
-    
+
     if url:
         logging.info("Loading image...")
         response = request.urlopen(url)
@@ -41,10 +36,13 @@ async def prepare(url: str | None = Body(embed=True)):
     else:
         raise Exception("Invalid request")
 
+    if predictor is None:
+        logging.info("Creating predictor")
+        predictor = SamPredictor(sam)
+
     np_data = np.asarray(py_data, dtype=np.uint8)
     cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
     predictor.set_image(cv_data)
-
     cache_index = url
 
 

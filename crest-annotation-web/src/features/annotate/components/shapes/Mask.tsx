@@ -46,6 +46,7 @@ export const Mask: ShapeFC<MaskShape> = ({
 
     if (!context || !shape.width || !shape.height || !solidColor) return;
 
+    const time = performance.now();
     const { width, height } = shape;
     canvasRef.current.width = width;
     canvasRef.current.height = height;
@@ -60,7 +61,6 @@ export const Mask: ShapeFC<MaskShape> = ({
       ? { red: 0, green: 0, blue: 0, alpha: 100 }
       : { red: 0, green: 0, blue: 0, alpha: 0 };
 
-    console.log(`(Re-)rendering mask...`);
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
         d[x * 4 + y * width * 4 + 0] = shape.mask[y][x]
@@ -76,9 +76,11 @@ export const Mask: ShapeFC<MaskShape> = ({
           ? foreground.alpha
           : background.alpha;
       }
-    console.log("Storing rendering...");
+
     context.putImageData(id, 0, 0);
-    console.log("Rendering done");
+    const duration = performance.now() - time;
+    console.log(`Rendering done in ${duration} ms`);
+
     // enforce component re-render
     setImageKey((value) => value + 1);
   }, [shape, solidColor]);

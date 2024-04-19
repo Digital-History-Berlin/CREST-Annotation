@@ -37,7 +37,7 @@ export const useAnnotationMiddleware = ({
   );
   const { currentData: remoteImage } = useGetImageUriQuery(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { objectId: objectId!, imageRequest: { height: 800 } },
+    { objectId: objectId!, imageRequest: { height: 1024 } },
     { skip: !objectId }
   );
 

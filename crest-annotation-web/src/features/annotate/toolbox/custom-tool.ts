@@ -45,16 +45,16 @@ export const createToolThunk =
     thunk(payload, operation, thunkApi, toolApi);
   };
 
-export type ToolActivationThunk<C = unknown> = (
-  config: C,
+export type ToolActivationThunk<I = unknown> = (
+  info: I,
   thunkApi: ToolboxThunkApi
 ) => void;
 
 // creates the standard tool activation thunk
 export const createActivateThunk =
-  <C = unknown>(
+  <I = unknown>(
     options: { tool: Tool },
-    thunk?: ToolActivationThunk<C>
+    thunk?: ToolActivationThunk<I>
   ): ToolboxThunk<ToolActivatePayload> =>
   (payload, thunkApi) => {
     const { dispatch } = thunkApi;
@@ -69,24 +69,33 @@ export const createActivateThunk =
         toolbox: { tools },
       } = thunkApi.getState();
       // provide default config
-      thunk?.(tools[options.tool] as C, thunkApi);
+      thunk?.(tools[options.tool] as I, thunkApi);
     }
   };
 
-export type ToolConfigurationThunk<C> = (
+export type ToolConfigurationThunk<I, C> = (
+  info: I,
   config: C,
   thunkApi: ToolboxThunkApi
 ) => void;
 
 // creates the standard tool configuration thunk
 export const createConfigureThunk =
-  <C>(thunk: ToolConfigurationThunk<C>): ToolboxThunk<ToolConfigurePayload> =>
+  <I, C>(
+    options: { tool: Tool },
+    thunk: ToolConfigurationThunk<I, C>
+  ): ToolboxThunk<ToolConfigurePayload> =>
   ({ config }, thunkApi) => {
     const { dispatch } = thunkApi;
 
     dispatch(operationCancel());
+
+    const {
+      toolbox: { tools },
+    } = thunkApi.getState();
     // run configuration logic
-    thunk(config as C, thunkApi);
+    // provide default config
+    thunk(tools[options.tool] as I, config as C, thunkApi);
   };
 
 //  creates the standard labeling thunk

@@ -15,6 +15,7 @@ from .routers import common
 # TODO: automatically import routers
 from .algorithms import example_segment
 from .algorithms import facebook_sam
+from .algorithms import facebook_sam_onnx
 
 
 app = FastAPI()
@@ -35,3 +36,4 @@ app.include_router(common.router)
 # TODO: automatically include routers
 app.include_router(example_segment.router)
 app.include_router(facebook_sam.router)
+app.include_router(facebook_sam_onnx.router)

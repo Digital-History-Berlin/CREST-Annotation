@@ -14,8 +14,21 @@ async def info():
             # TODO: add more meta data if needed
             "algorithms": [
                 # TODO: automatically gather algorithms
-                {"id": "facebook-sam", "name": "Segment Anything (Meta AI)"},
-                {"id": "example-segment", "name": "Square (Example)"},
+                {
+                    "id": "facebook-sam-onnx",
+                    "name": "Segment Anything (Meta AI) + ONNX",
+                    "frontend": "sam-onnx",
+                },
+                {
+                    "id": "facebook-sam",
+                    "name": "Segment Anything (Meta AI)",
+                    "frontend": "generic-single-mask",
+                },
+                {
+                    "id": "example-segment",
+                    "name": "Square (Example)",
+                    "frontend": "generic-single-mask",
+                },
             ]
         }
     )

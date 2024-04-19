@@ -2,7 +2,6 @@ import { FC } from "react";
 import { circleSelectors, circleThunks } from "./circle/thunks";
 import { CircleToolOperation } from "./circle/types";
 import { Configuration as CvConfiguration } from "./cv/Configuration";
-import { Preview as CvPreview } from "./cv/Preview";
 import { cvSelectors, cvThunks } from "./cv/thunks";
 import { CvToolOperation } from "./cv/types";
 import { editSelectors, editThunks } from "./edit/thunks";
@@ -51,7 +50,7 @@ export const previewRegistry: Record<Tool, PreviewFC | undefined> = {
   [Tool.Rectangle]: ShapePreview as PreviewFC,
   [Tool.Polygon]: PolygonPreview as PreviewFC,
   [Tool.Edit]: undefined,
-  [Tool.Cv]: CvPreview as PreviewFC,
+  [Tool.Cv]: undefined,
 };
 
 /**

@@ -1,170 +1,17 @@
-/*
-import { Mask } from "./Mask";
-import {
-  ShapeEventHandler,
-  ShapeGestureError,
-  ShapeTool,
-  ShapeToolEventHandler,
-} from "./Types";
-import { prepare, preview, run } from "../../../../api/cvApi";
-import { SegmentConfig } from "../../slice/configs";
-import { Tool } from "../../slice/tools";
-
-const onGestureMove: ShapeEventHandler = async (
-  shape,
-  { transformed },
-  config
-) => {
-  const valid = config as SegmentConfig;
-
-  if (!valid?.backend || !valid?.algorithm)
-    throw new ShapeGestureError("Invalid config");
-
-  const body = { cursor: transformed };
-  const response = await preview(valid.backend, valid.algorithm, body);
-  const json = await response.json();
-
-  return [
-    "proceed",
-    {
-      mask: json.mask,
-      width: json.mask[0].length,
-      height: json.mask.length,
-      dx: 0,
-      dy: 0,
-      tool: Tool.Segment,
-      preview: true,
-    },
-  ];
-};
-
-const onGestureClick: ShapeEventHandler = async (
-  shape,
-  { transformed },
-  config
-) => {
-  const valid = config as SegmentConfig;
-
-  if (!valid?.backend || !valid?.algorithm)
-    throw new ShapeGestureError("Invalid config");
-
-  const body = { cursor: transformed };
-  const response = await run(valid.backend, valid.algorithm, body);
-  const json = await response.json();
-
-  return [
-    "resolve",
-    {
-      mask: json.mask,
-      width: json.mask[0].length,
-      height: json.mask.length,
-      dx: 0,
-      dy: 0,
-      tool: Tool.Segment,
-      preview: false,
-    },
-  ];
-};
-
-const SegmentTool: ShapeTool = {
-  component: Mask,
-  onBegin,
-  onGestureMove,
-  onGestureClick,
-};
-
-export default SegmentTool;
-*/
-import { CvToolConfig, CvToolInfo } from "./types";
-import { cvPrepare } from "../../../../api/cvApi";
-import { updateToolState } from "../../slice/toolbox";
-import {
-  ToolGesturePayload,
-  ToolLabelPayload,
-  ToolSelectors,
-  ToolThunk,
-  ToolThunks,
-  ToolboxThunkApi,
-} from "../../types/thunks";
+import { createAsyncThunk } from "@reduxjs/toolkit";
+import { Configuration as DefaultConfiguration } from "./Configuration";
+import { Algorithm, CvToolInfo } from "./types";
+import { configPaneRegistry, previewRegistry, thunksRegistry } from "..";
+import { AppDispatch, RootState } from "../../../../app/store";
+import { activateTool, patchToolState } from "../../slice/toolbox";
+import { ToolSelectors } from "../../types/thunks";
 import { Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
-import { createActivateThunk, createConfigureThunk } from "../custom-tool";
+import { createActivateThunk } from "../custom-tool";
 
-const initialize = (
-  config: CvToolConfig | undefined,
-  { dispatch, getState }: ToolboxThunkApi
-) => {
-  const dispatchStatus = (status: ToolStatus) => {
-    dispatch(
-      updateToolState({
-        tool: Tool.Cv,
-        // ensure the config is preserved
-        state: { status, config },
-      })
-    );
-  };
+const activate = createActivateThunk({ tool: Tool.Cv });
 
-  const {
-    annotations: { project, object, image },
-  } = getState();
-
-  if (!project || !object || !image || !config) {
-    console.log("Tool is not configured properly");
-    // initialization not possible
-    return dispatchStatus(ToolStatus.Failed);
-  }
-
-  // begin initializing the tool
-  dispatchStatus(ToolStatus.Loading);
-  const body = { url: image };
-  cvPrepare(config.backend, config.algorithm, body)
-    .then(async () => {
-      // TODO: select the correct interface here
-      const interfaceName = "generic-single-mask";
-      const { gesture, label } = await import(`./${interfaceName}/thunks`);
-      const { Preview } = await import(`./${interfaceName}/Preview`);
-      console.log("Tool initialized successfully");
-      dispatch(
-        updateToolState({
-          tool: Tool.Cv,
-          // ensure the config is preserved
-          state: {
-            status: ToolStatus.Ready,
-            config,
-            interface: interfaceName,
-            preview: Preview,
-            gesture,
-            label,
-          },
-        })
-      );
-    })
-    .catch((error) => {
-      console.log("Tool initialization failed", error);
-      dispatchStatus(ToolStatus.Failed);
-    });
-};
-
-const activate = createActivateThunk({ tool: Tool.Cv }, initialize);
-
-const configure = createConfigureThunk(initialize);
-
-const gesture: ToolThunk<ToolGesturePayload> = (payload, thunkApi, toolApi) => {
-  const info = thunkApi.getInfo<CvToolInfo | undefined>();
-  // forward to tool interface
-  info?.gesture?.(payload, thunkApi, toolApi);
-};
-
-const label: ToolThunk<ToolLabelPayload> = (payload, thunkApi, toolApi) => {
-  const info = thunkApi.getInfo<CvToolInfo | undefined>();
-  // forward to tool interface
-  info?.label?.(payload, thunkApi, toolApi);
-};
-
-export const cvThunks: ToolThunks = {
+export const cvThunks = {
   activate,
-  configure,
-  gesture,
-  label,
 };
 
 export const cvSelectors: ToolSelectors<CvToolInfo | undefined> = {
@@ -178,3 +25,63 @@ export const cvSelectors: ToolSelectors<CvToolInfo | undefined> = {
     },
   }),
 };
+
+// activate the given algorithm and inject it into the toolbox
+export const cvActivateAlgorithm = createAsyncThunk<
+  void,
+  { algorithm: Algorithm },
+  { state: RootState; dispatch: AppDispatch }
+>("toolbox/cv/activateAlgorithm", async ({ algorithm }, { dispatch }) => {
+  const { id, frontend } = algorithm;
+  console.log(`Activate algorithm ${id} with frontend ${frontend}`);
+
+  try {
+    // import the required modules
+    const { Preview } = await import(`./${frontend}/Preview`);
+    const { Configuration } = await import(`./${frontend}/Configuration`);
+    const thunks = await import(`./${frontend}/thunks`);
+
+    // inject the tool into the toolbox
+    // (this will not trigger re-rendering)
+    previewRegistry[Tool.Cv] = Preview;
+    configPaneRegistry[Tool.Cv] = Configuration ?? DefaultConfiguration;
+    thunksRegistry[Tool.Cv] = {
+      activate: thunks.activate,
+      configure: thunks.configure,
+      gesture: thunks.gesture,
+      label: thunks.label,
+    };
+  } catch (error) {
+    console.log("Failed to load frontend", error);
+    dispatch(
+      patchToolState({
+        tool: Tool.Cv,
+        patch: { status: ToolStatus.Failed },
+      })
+    );
+    return;
+  }
+
+  // udpate the tool state
+  dispatch(patchToolState({ tool: Tool.Cv, patch: { algorithm: id } }));
+  // run the new activation algorithm
+  dispatch(activateTool({ tool: Tool.Cv }));
+});
+
+// deactivate the current algorithm and reset the tool state
+export const cvResetAlgorithm = createAsyncThunk<
+  void,
+  void,
+  { state: RootState; dispatch: AppDispatch }
+>("toolbox/cv/activateAlgorithm", async (_, { dispatch }) => {
+  console.log("Deactivating algorithm");
+
+  // reset the toolbox
+  // (this will not trigger re-rendering)
+  previewRegistry[Tool.Cv] = undefined;
+  configPaneRegistry[Tool.Cv] = DefaultConfiguration;
+  thunksRegistry[Tool.Cv] = { activate };
+
+  // trigger re-renering
+  dispatch(activateTool({ tool: Tool.Cv }));
+});
