@@ -15,7 +15,7 @@ import { Tool, ToolGroup } from "../../types/toolbox";
 import {
   AtomicToolThunk,
   createActivateThunk,
-  createLabelThunk,
+  createLabelShapeThunk,
   createToolSelectors,
   createToolThunk,
 } from "../custom-tool";
@@ -155,7 +155,7 @@ export const gesture = createToolThunk<
   }
 );
 
-export const label = createLabelThunk({ operation: "tool/polygon" });
+export const label = createLabelShapeThunk({ operation: "tool/polygon" });
 
 export const polygonThunks: ToolThunks = {
   activate,

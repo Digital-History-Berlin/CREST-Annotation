@@ -2,7 +2,7 @@ import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { v4 as uuidv4 } from "uuid";
 import { AppDispatch, RootState } from "../../../app/store";
 import { ToolboxOperation } from "../toolbox";
-import { OperationRejectedError } from "../types/operation";
+import { Begin, OperationRejectedError } from "../types/operation";
 
 /// Application specific operation type
 export type RootOperation = ToolboxOperation;
@@ -38,7 +38,7 @@ export default slice.reducer;
 
 export const operationCancel = createAsyncThunk<
   void,
-  RootOperation | void,
+  { id: string } | void,
   { state: RootState; dispatch: AppDispatch }
 >("operation/cancel", (payload, { dispatch, getState }) => {
   const {
@@ -55,7 +55,7 @@ export const operationCancel = createAsyncThunk<
 
 export const operationBegin = createAsyncThunk<
   RootOperation,
-  Omit<RootOperation, "id">,
+  Begin<RootOperation>,
   { state: RootState; dispatch: AppDispatch }
 >("operation/begin", async (payload, { dispatch }) => {
   await dispatch(operationCancel()).unwrap();
@@ -85,7 +85,7 @@ export const operationUpdate = createAsyncThunk<
 
 export const operationComplete = createAsyncThunk<
   void,
-  RootOperation | undefined,
+  { id: string } | undefined,
   { state: RootState; dispatch: AppDispatch }
 >("operation/complete", (payload, { dispatch, getState }) => {
   const {
@@ -94,9 +94,9 @@ export const operationComplete = createAsyncThunk<
   if (payload === undefined || payload.id !== current?.id)
     throw new OperationRejectedError(payload?.id);
 
-  debug("Complete operation", payload);
+  debug("Complete operation", current);
   // trigger finalization within current context
-  payload.finalization?.();
+  current.finalization?.();
   dispatch(slice.actions.updateOperation(undefined));
 });
 

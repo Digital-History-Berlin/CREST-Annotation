@@ -1,13 +1,7 @@
-// Copyright (c) Meta Platforms, Inc. and affiliates.
-// All rights reserved.
-
-// This source code is licensed under the license found in the
-// LICENSE file in the root directory of this source tree.
-
 import { Tensor } from "onnxruntime-web";
-import { modeDataProps } from "./Interfaces";
+import { modeDataProps } from "./types";
 
-const modelData = ({ clicks, tensor, modelScale }: modeDataProps) => {
+export const modelData = ({ clicks, tensor, modelScale }: modeDataProps) => {
   const imageEmbedding = tensor;
   let pointCoords;
   let pointLabels;
@@ -68,4 +62,11 @@ const modelData = ({ clicks, tensor, modelScale }: modeDataProps) => {
   };
 };
 
-export { modelData };
+export const handleImageScale = (image: HTMLImageElement) => {
+  // Input images to SAM must be resized so the longest side is 1024
+  const LONG_SIDE_LENGTH = 1024;
+  const w = image.naturalWidth;
+  const h = image.naturalHeight;
+  const samScale = LONG_SIDE_LENGTH / Math.max(h, w);
+  return { height: h, width: w, samScale };
+};

@@ -13,14 +13,16 @@ export const Configuration = () => {
     (state) => state.toolbox.tools[Tool.Cv] as CvToolInfo | undefined
   );
 
-  const [state, setState] = useState<Partial<CvToolConfig>>(info?.config || {});
+  const [state, _setState] = useState<Partial<CvToolConfig>>(
+    info?.config || {}
+  );
 
   const resetAlgorithm = useCallback(
     () => dispatch(cvResetAlgorithm()),
     [dispatch]
   );
 
-  const applyChanges = useCallback(() => {
+  const _applyChanges = useCallback(() => {
     console.log("Applying changes");
     // activate changes
     dispatch(configureTool({ tool: Tool.Cv, config: state }));

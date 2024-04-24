@@ -1,29 +1,7 @@
+import { Debouncer } from "../types/debounce";
 import { Position } from "../types/geometry";
 
-export class DebounceCancelError extends Error {
-  constructor() {
-    super("Debounce canceled");
-  }
-}
-
-interface Debounce {
-  timeout: NodeJS.Timeout;
-  reject: () => void;
-}
-
-const previewDebounceTimeout = 150;
-let previewDebounce: Debounce | undefined = undefined;
-
-const cancelPreviewDebounce = () => {
-  if (previewDebounce) {
-    // cancel planned preview
-    clearTimeout(previewDebounce.timeout);
-    // reject the promise to ensure completion
-    previewDebounce.reject();
-    // reset the preview state
-    previewDebounce = undefined;
-  }
-};
+const debouncer = new Debouncer<Response>(150);
 
 export const cvInfo = async (backend: string): Promise<Response> => {
   const response = await fetch(`${backend}/info`, {
@@ -41,7 +19,7 @@ export const cvPrepare = async (
   algorithm: string,
   body: { url?: string }
 ): Promise<Response> => {
-  cancelPreviewDebounce();
+  debouncer.cancel();
 
   const response = await fetch(`${backend}/${algorithm}/prepare`, {
     body: JSON.stringify(body),
@@ -59,32 +37,16 @@ export const cvPreview = (
   algorithm: string,
   body: { cursor: Position }
 ): Promise<Response> => {
-  cancelPreviewDebounce();
+  return debouncer.debounce(async () => {
+    const response = await fetch(`${backend}/${algorithm}/preview`, {
+      body: JSON.stringify(body),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
 
-  // schedule new preview
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(async () => {
-      try {
-        console.log("CV preview...");
-        const response = await fetch(`${backend}/${algorithm}/preview`, {
-          body: JSON.stringify(body),
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
+    if (!response.ok) throw new Error("Invalid response");
 
-        // handle result (will be ignored if already rejected)
-        if (response.ok) resolve(response);
-        else reject(new Error("Invalid response"));
-      } finally {
-        previewDebounce = undefined;
-      }
-    }, previewDebounceTimeout);
-
-    // store the current timeout
-    previewDebounce = {
-      reject: () => reject(new DebounceCancelError()),
-      timeout,
-    };
+    return response;
   });
 };
 
@@ -93,9 +55,8 @@ export const cvRun = async (
   algorithm: string,
   body: { cursor: Position }
 ): Promise<Response> => {
-  cancelPreviewDebounce();
+  debouncer.cancel();
 
-  console.log("CV run...");
   const response = await fetch(`${backend}/${algorithm}/run`, {
     body: JSON.stringify(body),
     method: "POST",

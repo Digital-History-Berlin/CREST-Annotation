@@ -9,7 +9,13 @@ interface Debounce {
   reject: () => void;
 }
 
-export class Debouncer {
+export const swallowDebounceCancel = (error: Error) => {
+  if (!(error instanceof DebounceCancelError))
+    // re-throw only non-cancellation errors
+    throw error;
+};
+
+export class Debouncer<T = void> {
   private debounced: Debounce | undefined = undefined;
   constructor(private debounceTimeout = 150) {}
 
@@ -24,9 +30,11 @@ export class Debouncer {
     }
   };
 
-  debounce = (callback: () => Promise<void>) => {
+  debounce = (callback: () => Promise<T>): Promise<T> => {
+    this.cancel();
+
     // schedule new preview
-    return new Promise((resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(async () => {
         try {
           resolve(await callback());
@@ -42,10 +50,6 @@ export class Debouncer {
         reject: () => reject(new DebounceCancelError()),
         timeout,
       };
-    }).catch((error) => {
-      if (!(error instanceof DebounceCancelError))
-        // swallow debounce cancellations
-        throw error;
     });
   };
 }

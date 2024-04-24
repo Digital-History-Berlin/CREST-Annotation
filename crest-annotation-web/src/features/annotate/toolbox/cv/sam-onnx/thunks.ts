@@ -1,18 +1,11 @@
 import npyjs from "npyjs";
 import { InferenceSession } from "onnxruntime-web";
-import { v4 as uuidv4 } from "uuid";
-import { modelData } from "./helpers/onnxModelAPI";
-import { handleImageScale } from "./helpers/scaleHelper";
+import * as ort from "onnxruntime-web";
+import { handleImageScale, modelData } from "./tools";
 import { cvPrepare, cvRun } from "../../../../../api/cvApi";
 import { Debouncer } from "../../../../../types/debounce";
 import { MaskShape } from "../../../components/shapes/Mask";
-import { addAnnotation } from "../../../slice/annotations";
-import {
-  isOperationOfType,
-  operationBegin,
-  operationCancel,
-  operationComplete,
-} from "../../../slice/operation";
+import { operationBegin, operationCancel } from "../../../slice/operation";
 import { patchToolState } from "../../../slice/toolbox";
 import {
   GestureEvent,
@@ -22,7 +15,6 @@ import {
 import { ShapeType } from "../../../types/shapes";
 import {
   ToolGesturePayload,
-  ToolLabelPayload,
   ToolThunk,
   ToolboxThunkApi,
 } from "../../../types/thunks";
@@ -30,6 +22,7 @@ import { Tool, ToolStatus } from "../../../types/toolbox";
 import {
   createActivateThunk,
   createConfigureThunk,
+  createLabelThunk,
   createToolThunk,
 } from "../../custom-tool";
 import {
@@ -38,10 +31,8 @@ import {
   CvToolInfo,
   CvToolOperation,
 } from "../types";
-// TODO check if import works
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const ort = require("onnxruntime-web");
 
+// debounce preview operation
 const debouncer = new Debouncer(150);
 
 interface OperationPayload {
@@ -62,7 +53,7 @@ const toPreviewMask = (json: any) => ({
 });
 
 const prepare = (info: CvToolInfo, { dispatch, getState }: ToolboxThunkApi) => {
-  console.log("Preparing algorithm...");
+  console.log("Preparing sam-onnx...");
 
   const {
     annotations: { project, object, image },
@@ -88,25 +79,29 @@ const prepare = (info: CvToolInfo, { dispatch, getState }: ToolboxThunkApi) => {
     })
   );
 
+  const base = `${backend.url}/${algorithm}`;
   const body = { url: image };
   cvPrepare(backend.url, algorithm, body)
     .then(async () => {
       console.log("Loading model...");
-      const model = await InferenceSession.create(
-        `${backend.url}/${algorithm}/onnx-quantized`
-      );
-      // store model in tool info
-      dispatch(patchToolState({ tool: Tool.Cv, patch: { model } }));
-    })
-    .then(async () => {
+      const model = await InferenceSession.create(`${base}/onnx-quantized`);
+
       console.log("Loading embeddings...");
-      const npLoader = new npyjs();
-      const npArray = await npLoader.load(
-        `${backend.url}/${algorithm}/embeddings`
+      const np = new npyjs();
+      const embeddings = await np.load(`${base}/embeddings`);
+      const tensor = new ort.Tensor(
+        "float32",
+        embeddings.data,
+        embeddings.shape
       );
-      const tensor = new ort.Tensor("float32", npArray.data, npArray.shape);
+
       // store tensor in tool info
-      dispatch(patchToolState({ tool: Tool.Cv, patch: { tensor } }));
+      dispatch(
+        patchToolState({
+          tool: Tool.Cv,
+          patch: { status: ToolStatus.Ready, tensor, model, modelScale },
+        })
+      );
     })
     .then(async () => {
       console.log("Loading image...");
@@ -168,7 +163,6 @@ const run: ToolThunk<OperationPayload> = (
           type: "tool/cv",
           state: {
             tool: Tool.Cv,
-            interface: "generic-single-mask",
             shape: mask,
             labeling: true,
           },
@@ -244,7 +238,6 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
                   type: "tool/cv",
                   state: {
                     tool: Tool.Cv,
-                    interface: "generic-single-mask",
                     shape: {
                       type: ShapeType.Mask,
                       mask: arrayToImageMask(
@@ -282,38 +275,11 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
   }
 );
 
-export const label: ToolThunk<ToolLabelPayload> = (
-  { label },
-  { dispatch, getState }
-) => {
-  if (label === undefined)
-    // cancel operation if labeling was canceled
-    return dispatch(operationCancel());
-
-  const {
-    operation: { current },
-  } = getState();
-
-  if (
-    !isOperationOfType<CvToolOperation>(current, "tool/cv") ||
-    current.state.interface !== "generic-single-mask"
-  )
-    // no shape to label
-    return;
-
-  const shape = {
-    ...(current.state.shape as MaskShape),
+export const label = createLabelThunk({
+  operation: "tool/cv",
+  select: (operation) => ({
+    ...(operation.state.shape as MaskShape),
     // disable preview mode
     preview: false,
-  };
-
-  dispatch(operationComplete(current));
-  // create a new annotation with shape
-  dispatch(
-    addAnnotation({
-      id: uuidv4(),
-      shapes: [shape],
-      label,
-    })
-  );
-};
+  }),
+});

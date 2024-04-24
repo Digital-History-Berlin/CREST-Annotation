@@ -10,7 +10,7 @@ import {
 } from "../atomic-drag-tool";
 import {
   createActivateThunk,
-  createLabelThunk,
+  createLabelShapeThunk,
   createToolSelectors,
 } from "../custom-tool";
 
@@ -56,7 +56,7 @@ export const gesture = createAtomicDragTool({
   end,
 });
 
-export const label = createLabelThunk({ operation: "tool/rectangle" });
+export const label = createLabelShapeThunk({ operation: "tool/rectangle" });
 
 export const rectangleThunks: ToolThunks = {
   activate,

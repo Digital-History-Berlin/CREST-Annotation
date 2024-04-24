@@ -100,8 +100,9 @@ export const createConfigureThunk =
 
 //  creates the standard labeling thunk
 export const createLabelThunk =
-  <T extends Extract<RootOperation, { state: { shape: Shape } }>>(options: {
+  <T extends RootOperation>(options: {
     operation: T["type"];
+    select: (operation: T) => Shape;
   }): ToolThunk<ToolLabelPayload> =>
   ({ label }, { dispatch, getState }) => {
     if (label === undefined)
@@ -116,16 +117,32 @@ export const createLabelThunk =
       // no shape to label
       return;
 
+    const shape = options.select(current);
+    if (shape === undefined)
+      // no shape to label
+      return;
+
     dispatch(operationComplete(current));
     // create a new annotation with shape
     dispatch(
       addAnnotation({
         id: uuidv4(),
-        shapes: [current.state.shape],
+        shapes: [shape],
         label,
       })
     );
   };
+
+//  creates a labeling thunk for a simple shape tool
+export const createLabelShapeThunk = <
+  T extends Extract<RootOperation, { state: { shape: Shape } }>
+>(options: {
+  operation: T["type"];
+}): ToolThunk<ToolLabelPayload> =>
+  createLabelThunk({
+    ...options,
+    select: (operation) => operation.state.shape,
+  });
 
 // create default tool selectors
 export const createToolSelectors = (options: {

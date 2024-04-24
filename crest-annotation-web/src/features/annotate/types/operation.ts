@@ -24,3 +24,6 @@ export interface Operation<T extends string, S> {
   cancellation?: OperationCancellation;
   finalization?: OperationFinalization;
 }
+
+/// Modifier to declare a new operation
+export type Begin<T> = Omit<T, "id">;
