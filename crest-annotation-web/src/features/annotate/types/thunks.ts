@@ -2,6 +2,7 @@ import { GestureEvent } from "./events";
 import { ToolInfo } from "./toolbox";
 import { Label } from "../../../api/openApi";
 import { AppDispatch, RootState } from "../../../app/store";
+import { MaybePromise } from "../../../types/maybe-promise";
 
 export type ToolboxThunkApi = {
   dispatch: AppDispatch;
@@ -9,7 +10,10 @@ export type ToolboxThunkApi = {
   getInfo: <I>() => I;
 };
 
-export type ToolboxThunk<P> = (payload: P, thunkApi: ToolboxThunkApi) => void;
+export type ToolboxThunk<P> = (
+  payload: P,
+  thunkApi: ToolboxThunkApi
+) => MaybePromise<void>;
 
 export type ToolApi = {
   requestLabel: () => void;
@@ -20,7 +24,7 @@ export type ToolThunk<P> = (
   payload: P,
   thunkApi: ToolboxThunkApi,
   toolApi: ToolApi
-) => void;
+) => MaybePromise<void>;
 
 export type ToolActivatePayload = void;
 export type ToolConfigurePayload = { config: unknown };

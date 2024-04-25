@@ -1,267 +1,200 @@
 import npyjs from "npyjs";
 import { InferenceSession } from "onnxruntime-web";
 import * as ort from "onnxruntime-web";
-import { handleImageScale, modelData } from "./tools";
-import { cvPrepare, cvRun } from "../../../../../api/cvApi";
-import { Debouncer } from "../../../../../types/debounce";
+import { samDimensionsFromUrl, samOnnxFeeds } from "./tools";
+import { SamToolData } from "./types";
+import { cvPrepare } from "../../../../../api/cvApi";
+import {
+  Debouncer,
+  swallowDebounceCancel,
+} from "../../../../../types/debounce";
 import { MaskShape } from "../../../components/shapes/Mask";
-import { operationBegin, operationCancel } from "../../../slice/operation";
-import { patchToolState } from "../../../slice/toolbox";
+import { operationCancel, operationWithAsync } from "../../../slice/operation";
 import {
   GestureEvent,
   GestureIdentifier,
   GestureOverload,
 } from "../../../types/events";
+import { Begin } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
-import {
-  ToolGesturePayload,
-  ToolThunk,
-  ToolboxThunkApi,
-} from "../../../types/thunks";
+import { ToolGesturePayload, ToolThunk } from "../../../types/thunks";
 import { Tool, ToolStatus } from "../../../types/toolbox";
+import { createLoaderThunk } from "../../async-tool";
 import {
   createActivateThunk,
   createConfigureThunk,
   createLabelThunk,
   createToolThunk,
 } from "../../custom-tool";
-import {
-  CvBackendConfig,
-  CvToolConfig,
-  CvToolInfo,
-  CvToolOperation,
-} from "../types";
+import { CvToolInfo, CvToolOperation } from "../types";
 
 // debounce preview operation
 const debouncer = new Debouncer(150);
 
 interface OperationPayload {
   gesture: GestureEvent;
-  backend: CvBackendConfig;
-  algorithm: string;
+  data: SamToolData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toPreviewMask = (json: any) => ({
-  type: ShapeType.Mask,
-  mask: json.mask,
-  width: json.mask[0].length,
-  height: json.mask.length,
-  dx: 0,
-  dy: 0,
-  preview: true,
-});
+const previewOperation: Begin<CvToolOperation> = {
+  type: "tool/cv",
+  silence: true,
+  state: { tool: Tool.Cv },
+};
 
-const prepare = (info: CvToolInfo, { dispatch, getState }: ToolboxThunkApi) => {
-  console.log("Preparing sam-onnx...");
+const runOperation: Begin<CvToolOperation> = {
+  type: "tool/cv",
+  state: { tool: Tool.Cv, labeling: true },
+};
 
-  const {
-    annotations: { project, object, image },
-  } = getState();
+// convert the ONNX model output to a mask
+function tensorToMaskShape(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any,
+  width: number,
+  height: number
+): MaskShape {
+  const mask: number[][] = [];
 
-  const { backend, algorithm } = info;
-  if (!project || !object || !image || !backend || !algorithm) {
-    console.log("Tool is not configured properly");
-    // initialization not possible
-    return dispatch(
-      patchToolState({
-        tool: Tool.Cv,
-        patch: { status: ToolStatus.Failed },
-      })
-    );
+  for (let y = 0; y < height; y++) {
+    mask[y] = [];
+    for (let x = 0; x < width; x++) mask[y][x] = data[y * width + x];
   }
 
-  // begin initializing the tool
-  dispatch(
-    patchToolState({
-      tool: Tool.Cv,
-      patch: { status: ToolStatus.Loading },
-    })
-  );
+  return {
+    type: ShapeType.Mask,
+    mask,
+    width,
+    height,
+    dx: 0,
+    dy: 0,
+    preview: true,
+  };
+}
 
-  const base = `${backend.url}/${algorithm}`;
-  const body = { url: image };
-  cvPrepare(backend.url, algorithm, body)
-    .then(async () => {
-      console.log("Loading model...");
-      const model = await InferenceSession.create(`${base}/onnx-quantized`);
+const prepare = createLoaderThunk<CvToolInfo>(
+  { tool: Tool.Cv, name: "Waiting for backend..." },
+  async ({ info, image }, thunkApi, { progress, configure }) => {
+    console.log("Preparing sam-onnx...");
 
-      console.log("Loading embeddings...");
-      const np = new npyjs();
-      const embeddings = await np.load(`${base}/embeddings`);
-      const tensor = new ort.Tensor(
-        "float32",
-        embeddings.data,
-        embeddings.shape
-      );
+    if (!info.backend || !info.algorithm)
+      throw new Error("Tool is not configured properly");
 
-      // store tensor in tool info
-      dispatch(
-        patchToolState({
-          tool: Tool.Cv,
-          patch: { status: ToolStatus.Ready, tensor, model, modelScale },
-        })
-      );
-    })
-    .then(async () => {
-      console.log("Loading image...");
-      const img = new Image();
-      img.src = image;
-      img.onload = () => {
-        const { height, width, samScale } = handleImageScale(img);
-        img.width = width;
-        img.height = height;
-        dispatch(
-          patchToolState({
-            tool: Tool.Cv,
-            patch: {
-              status: ToolStatus.Ready,
-              modelScale: {
-                height: height, // original image height
-                width: width, // original image width
-                samScale: samScale, // scaling factor for image which has been resized to longest side 1024
-              },
-              img,
-            },
-          })
-        );
-      };
-    })
-    .catch((error) => {
-      console.log("Tool initialization failed", error);
-      dispatch(
-        patchToolState({
-          tool: Tool.Cv,
-          patch: { status: ToolStatus.Ready },
-        })
-      );
-    });
-};
+    // TODO: provide configuration and update on return
+    await cvPrepare(info.backend.url, info.algorithm, { url: image });
+    const baseUrl = `${info.backend.url}/${info.algorithm}`;
+
+    progress("Loading model...");
+    const model = await InferenceSession.create(`${baseUrl}/onnx-quantized`);
+
+    progress("Loading embeddings...");
+    const np = new npyjs();
+    const embeddings = await np.load(`${baseUrl}/embeddings`);
+    const tensor = new ort.Tensor("float32", embeddings.data, embeddings.shape);
+
+    progress("Loading model scale...");
+    const dimensions = await samDimensionsFromUrl(image);
+    const data: SamToolData = { tensor, model, dimensions };
+
+    // initialization successful
+    configure({ status: ToolStatus.Ready, data });
+  }
+);
 
 export const activate = createActivateThunk<CvToolInfo>(
   { tool: Tool.Cv },
-  (info, thunkApi) => prepare(info, thunkApi)
+  (info, thunkApi) => prepare({ info, config: info.config }, thunkApi)
 );
 
-export const configure = createConfigureThunk<CvToolInfo, CvToolConfig>(
+export const configure = createConfigureThunk<CvToolInfo>(
   { tool: Tool.Cv },
-  (info, config, thunkApi) => prepare(info, thunkApi)
+  (info, config, thunkApi) => prepare({ info, config }, thunkApi)
 );
+
+const preview: ToolThunk<OperationPayload> = (
+  { gesture, data: { model, tensor, dimensions } },
+  { dispatch }
+) => {
+  // TODO: input from operation state
+  const clicks = [{ ...gesture.transformed, clickType: 1 }];
+
+  operationWithAsync({ dispatch }, previewOperation, async ({ update }) =>
+    debouncer
+      .debounce(async () => {
+        const feeds = samOnnxFeeds({
+          clicks,
+          tensor,
+          dimensions,
+        });
+
+        const results = await model.run(feeds);
+        // TODO: allow selecting other outputs
+        const output = results[model.outputNames[0]];
+        const shape = tensorToMaskShape(
+          output.data,
+          output.dims[3],
+          output.dims[2]
+        );
+
+        update({
+          type: "tool/cv",
+          state: { tool: Tool.Cv, shape },
+        });
+      })
+      .catch(swallowDebounceCancel)
+  );
+};
 
 const run: ToolThunk<OperationPayload> = (
-  { gesture, backend, algorithm },
+  { gesture, data: { model, tensor, dimensions } },
   { dispatch },
   { requestLabel, cancelLabel }
 ) => {
-  const body = { cursor: gesture.transformed };
-  cvRun(backend.url, algorithm, body)
-    .then((response) => response.json())
-    .then(toPreviewMask)
-    .then((mask) => {
-      dispatch(
-        operationBegin({
-          type: "tool/cv",
-          state: {
-            tool: Tool.Cv,
-            shape: mask,
-            labeling: true,
-          },
-          // register cleanup
-          cancellation: cancelLabel,
-          finalization: cancelLabel,
-        })
-      );
+  // TODO: input from operation state
+  const clicks = [{ ...gesture.transformed, clickType: 1 }];
 
-      // request a label for the shape
-      requestLabel();
+  operationWithAsync({ dispatch }, runOperation, async ({ update }) => {
+    debouncer.cancel();
+    const feeds = samOnnxFeeds({
+      clicks,
+      tensor,
+      dimensions,
     });
+
+    const results = await model.run(feeds);
+    // TODO: allow selecting other outputs
+    const output = results[model.outputNames[0]];
+    const shape = tensorToMaskShape(
+      output.data,
+      output.dims[3],
+      output.dims[2]
+    );
+
+    update({
+      type: "tool/cv",
+      state: { tool: Tool.Cv, shape, labeling: true },
+      // register cleanup
+      cancellation: cancelLabel,
+      finalization: cancelLabel,
+    });
+
+    // request a label for the shape
+    requestLabel();
+  });
 };
-
-// Convert the onnx model mask prediction to ImageData
-function arrayToImageMask(input: any, width: number, height: number) {
-  const mask: boolean[][] = [];
-
-  for (let x = 0; x < width; x++) {
-    mask[x] = [];
-    for (let y = 0; y < height; y++) {
-      // Threshold the onnx model mask prediction at 0.0
-      // This is equivalent to thresholding the mask using predictor.model.mask_threshold
-      // in python
-      mask[x][y] = input[x * height + y] > 0.0;
-    }
-  }
-
-  return mask;
-}
 
 export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
   { operation: "tool/cv" },
   ({ gesture }, operation, thunkApi, toolApi) => {
     const info = thunkApi.getInfo<CvToolInfo | undefined>();
-    if (info === undefined) return;
-
-    const { backend, algorithm, model, tensor, modelScale } =
-      info as CvToolInfo & {
-        model: InferenceSession;
-        tensor: any;
-        modelScale: { height: number; width: number; samScale: number };
-      };
+    const data = info?.data as SamToolData | undefined;
     // tool is not configured properly
-    if (!backend || !algorithm) return;
+    if (info?.status !== ToolStatus.Ready || !data) return;
 
     if (gesture.identifier === GestureIdentifier.Move) {
-      if (!operation?.state.labeling) {
-        thunkApi.dispatch(operationCancel(operation));
-        debouncer.cancel();
-
-        const clicks = [{ ...gesture.transformed, clickType: 1 }];
-        try {
-          if (!model || !tensor || !modelScale) return;
-          else {
-            // Preapre the model input in the correct format for SAM.
-            // The modelData function is from onnxModelAPI.tsx.
-            const feeds = modelData({
-              clicks,
-              tensor,
-              modelScale,
-            });
-            if (feeds === undefined) return;
-
-            const time = performance.now();
-            console.log("Running model...");
-            // Run the SAM ONNX model with the feeds returned from modelData()
-            debouncer.debounce(async () => {
-              const results = await model.run(feeds);
-              const output = results[model.outputNames[0]];
-              thunkApi.dispatch(
-                operationBegin({
-                  type: "tool/cv",
-                  state: {
-                    tool: Tool.Cv,
-                    shape: {
-                      type: ShapeType.Mask,
-                      mask: arrayToImageMask(
-                        output.data,
-                        output.dims[2],
-                        output.dims[3]
-                      ),
-                      width: output.dims[3],
-                      height: output.dims[2],
-                      dx: 0,
-                      dy: 0,
-                      preview: true,
-                    },
-                  },
-                })
-              );
-              const duration = performance.now() - time;
-              console.log(`Inference done in ${duration} ms`);
-            });
-          }
-        } catch (e) {
-          console.log(e);
-        }
-      }
+      if (!operation?.state.labeling)
+        // display preview when cursor pauses
+        preview({ gesture, data }, thunkApi, toolApi);
     }
 
     if (gesture.identifier === GestureIdentifier.Click) {
@@ -270,12 +203,12 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
         return thunkApi.dispatch(operationCancel(operation));
       if (gesture.overload === GestureOverload.Primary)
         // extract segmentation mask
-        run({ gesture, backend, algorithm }, thunkApi, toolApi);
+        run({ gesture, data }, thunkApi, toolApi);
     }
   }
 );
 
-export const label = createLabelThunk({
+export const label = createLabelThunk<CvToolOperation>({
   operation: "tool/cv",
   select: (operation) => ({
     ...(operation.state.shape as MaskShape),

@@ -7,6 +7,7 @@ export interface LayoutProps {
   header?: ReactNode;
   left?: ReactNode;
   right?: ReactNode;
+  status?: ReactNode;
   scrollable?: boolean;
   sx?: CSSProperties;
 }
@@ -23,6 +24,7 @@ const Layout = ({
   header,
   left,
   right,
+  status,
   children,
   scrollable,
   sx,
@@ -44,6 +46,7 @@ const Layout = ({
         </div>
         {right || <div />}
       </div>
+      {status || <div />}
     </div>
   );
 };

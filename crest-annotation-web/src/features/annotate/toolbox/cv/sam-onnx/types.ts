@@ -1,23 +1,25 @@
-import { Tensor } from "onnxruntime-web";
+import { InferenceSession, Tensor } from "onnxruntime-web";
 
-export interface modelScaleProps {
-  samScale: number;
+export interface SamImageDimensions {
+  scale: number;
   height: number;
   width: number;
 }
 
-export interface modelInputProps {
+export interface SamClick {
   x: number;
   y: number;
   clickType: number;
 }
 
-export interface modeDataProps {
-  clicks?: Array<modelInputProps>;
+export interface SamInput {
+  clicks?: Array<SamClick>;
   tensor: Tensor;
-  modelScale: modelScaleProps;
+  dimensions: SamImageDimensions;
 }
 
-export interface ToolProps {
-  handleMouseMove: (e: any) => void;
+export interface SamToolData {
+  model: InferenceSession;
+  tensor: Tensor;
+  dimensions: SamImageDimensions;
 }

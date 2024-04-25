@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import Konva from "konva";
 import { Group, Circle as KonvaCircle } from "react-konva";
 import Anchor from "./Anchor";
-import { ShapeFC, ShapeType } from "../../types/shapes";
+import { ShapeFC } from "../../types/components";
+import { ShapeType } from "../../types/shapes";
 
 export interface CircleShape {
   type: ShapeType.Circle;

@@ -3,7 +3,8 @@ import { Configuration as DefaultConfiguration } from "./Configuration";
 import { Algorithm, CvToolInfo } from "./types";
 import { configPaneRegistry, previewRegistry, thunksRegistry } from "..";
 import { AppDispatch, RootState } from "../../../../app/store";
-import { activateTool, patchToolState } from "../../slice/toolbox";
+import { activateTool, updateToolState } from "../../slice/toolbox";
+import { ConfigFC } from "../../types/components";
 import { ToolSelectors } from "../../types/thunks";
 import { Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
 import { createActivateThunk } from "../custom-tool";
@@ -35,37 +36,35 @@ export const cvActivateAlgorithm = createAsyncThunk<
   const { id, frontend } = algorithm;
   console.log(`Activate algorithm ${id} with frontend ${frontend}`);
 
-  try {
-    // import the required modules
-    const { Preview } = await import(`./${frontend}/Preview`);
-    const { Configuration } = await import(`./${frontend}/Configuration`);
-    const thunks = await import(`./${frontend}/thunks`);
+  // reset current algorithm state
+  dispatch(
+    updateToolState({
+      tool: Tool.Cv,
+      state: { status: ToolStatus.Failed, config: undefined, data: undefined },
+    })
+  );
 
-    // inject the tool into the toolbox
-    // (this will not trigger re-rendering)
-    previewRegistry[Tool.Cv] = Preview;
-    configPaneRegistry[Tool.Cv] = Configuration ?? DefaultConfiguration;
-    thunksRegistry[Tool.Cv] = {
-      activate: thunks.activate,
-      configure: thunks.configure,
-      gesture: thunks.gesture,
-      label: thunks.label,
-    };
-  } catch (error) {
-    console.log("Failed to load frontend", error);
-    dispatch(
-      patchToolState({
-        tool: Tool.Cv,
-        patch: { status: ToolStatus.Failed },
-      })
-    );
-    return;
-  }
+  // import the required modules
+  const { Preview } = await import(`./${frontend}/Preview`);
+  const { Configuration } = await import(`./${frontend}/Configuration`);
+  const thunks = await import(`./${frontend}/thunks`);
 
-  // udpate the tool state
-  dispatch(patchToolState({ tool: Tool.Cv, patch: { algorithm: id } }));
+  // inject the tool into the toolbox
+  // (this will not trigger re-rendering)
+  previewRegistry[Tool.Cv] = Preview;
+  configPaneRegistry[Tool.Cv] = Configuration ?? DefaultConfiguration;
+  thunksRegistry[Tool.Cv] = {
+    activate: thunks.activate,
+    configure: thunks.configure,
+    gesture: thunks.gesture,
+    label: thunks.label,
+  };
+
+  // trigger re-rendering
+  // TODO: load presets
+  dispatch(updateToolState({ tool: Tool.Cv, state: { algorithm: id } }));
   // run the new activation algorithm
-  dispatch(activateTool({ tool: Tool.Cv }));
+  await dispatch(activateTool({ tool: Tool.Cv })).unwrap();
 });
 
 // deactivate the current algorithm and reset the tool state
@@ -79,9 +78,15 @@ export const cvResetAlgorithm = createAsyncThunk<
   // reset the toolbox
   // (this will not trigger re-rendering)
   previewRegistry[Tool.Cv] = undefined;
-  configPaneRegistry[Tool.Cv] = DefaultConfiguration;
+  configPaneRegistry[Tool.Cv] = DefaultConfiguration as ConfigFC;
   thunksRegistry[Tool.Cv] = { activate };
 
-  // trigger re-renering
   dispatch(activateTool({ tool: Tool.Cv }));
+  // trigger re-rendering
+  dispatch(
+    updateToolState({
+      tool: Tool.Cv,
+      state: { status: ToolStatus.Failed, config: undefined, data: undefined },
+    })
+  );
 });

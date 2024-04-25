@@ -1,4 +1,3 @@
-import { FC } from "react";
 import { circleSelectors, circleThunks } from "./circle/thunks";
 import { CircleToolOperation } from "./circle/types";
 import { Configuration as CvConfiguration } from "./cv/Configuration";
@@ -18,8 +17,9 @@ import { Line } from "../components/shapes/Line";
 import { Mask } from "../components/shapes/Mask";
 import { Polygon } from "../components/shapes/Polygon";
 import { Rectangle } from "../components/shapes/Rectangle";
-import { PreviewFC } from "../types/preview";
-import { ShapeFC, ShapeType } from "../types/shapes";
+import { ConfigFC, PreviewFC, ShapeFC } from "../types/components";
+import { Operation } from "../types/operation";
+import { ShapeType } from "../types/shapes";
 import { ToolSelectors, ToolThunks } from "../types/thunks";
 import { Tool } from "../types/toolbox";
 
@@ -59,13 +59,13 @@ export const previewRegistry: Record<Tool, PreviewFC | undefined> = {
  * This component renders the configuration pane for a tool,
  * where the user can adjust the tool's behaviour.
  */
-export const configPaneRegistry: Record<Tool, FC | undefined> = {
+export const configPaneRegistry: Record<Tool, ConfigFC | undefined> = {
   [Tool.Pen]: undefined,
   [Tool.Circle]: undefined,
   [Tool.Rectangle]: undefined,
   [Tool.Polygon]: undefined,
   [Tool.Edit]: undefined,
-  [Tool.Cv]: CvConfiguration,
+  [Tool.Cv]: CvConfiguration as ConfigFC,
 };
 
 /// Cursor for different tools
@@ -101,8 +101,18 @@ export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
   [Tool.Cv]: cvSelectors as ToolSelectors,
 };
 
+export type InitializationState = {
+  tool: Tool;
+};
+
+export type InitializationOperation = Operation<
+  "toolbox/initialization",
+  InitializationState
+>;
+
 /// Combination of available tool operation
 export type ToolboxOperation =
+  | InitializationOperation
   | PenToolOperation
   | CircleToolOperation
   | RectangleToolOperation

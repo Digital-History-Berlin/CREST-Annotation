@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Group, Image } from "react-konva";
-import { ShapeFC, ShapeType } from "../../types/shapes";
+import { ShapeFC } from "../../types/components";
+import { ShapeType } from "../../types/shapes";
 
 export interface MaskShape {
   type: ShapeType.Mask;
@@ -63,18 +64,14 @@ export const Mask: ShapeFC<MaskShape> = ({
 
     for (let x = 0; x < width; x++)
       for (let y = 0; y < height; y++) {
-        d[x * 4 + y * width * 4 + 0] = shape.mask[y][x]
-          ? foreground.red
-          : background.red;
-        d[x * 4 + y * width * 4 + 1] = shape.mask[y][x]
-          ? foreground.green
-          : background.green;
-        d[x * 4 + y * width * 4 + 2] = shape.mask[y][x]
-          ? foreground.blue
-          : background.blue;
-        d[x * 4 + y * width * 4 + 3] = shape.mask[y][x]
-          ? foreground.alpha
-          : background.alpha;
+        d[x * 4 + y * width * 4 + 0] =
+          shape.mask[y][x] > 0 ? foreground.red : background.red;
+        d[x * 4 + y * width * 4 + 1] =
+          shape.mask[y][x] > 0 ? foreground.green : background.green;
+        d[x * 4 + y * width * 4 + 2] =
+          shape.mask[y][x] > 0 ? foreground.blue : background.blue;
+        d[x * 4 + y * width * 4 + 3] =
+          shape.mask[y][x] > 0 ? foreground.alpha : background.alpha;
       }
 
     context.putImageData(id, 0, 0);

@@ -6,8 +6,14 @@ import { configPaneRegistry } from "../../toolbox";
 /// Renders a configuration pane for an arbitrary tool
 const ConfigurationContainer = () => {
   const tool = useAppSelector((state) => state.toolbox.selection.tool);
-  // TODO
-  const loading = false;
+  const info = useAppSelector((state) => state.toolbox.tools[tool]);
+
+  const loading = useAppSelector(
+    (state) =>
+      !!state.operation.current &&
+      // extend other states as needed
+      ["toolbox/initialization"].includes(state.operation.current.type)
+  );
 
   const Component = configPaneRegistry[tool];
   if (Component === undefined) return null;
@@ -18,7 +24,7 @@ const ConfigurationContainer = () => {
         <CircularProgress sx={{ color: "white" }} />
       </Backdrop>
       <Box sx={{ pointerEvents: loading ? "none" : undefined }}>
-        <Component />
+        <Component info={info} />
       </Box>
     </SidebarContainer>
   );

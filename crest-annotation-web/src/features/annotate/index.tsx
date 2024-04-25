@@ -6,6 +6,7 @@ import EditAnnotationDialog from "./components/dialogs/EditAnnotationDialog";
 import AnnotationsContainer from "./components/sections/AnnotationsContainer";
 import ConfigurationContainer from "./components/sections/ConfigurationContainer";
 import LabelsContainer from "./components/sections/LabelsContainer";
+import { StatusbarProgress } from "./components/sections/StatusbarProgress";
 import ToolbarActions from "./components/sections/ToolbarActions";
 import ToolbarTools from "./components/sections/ToolbarTools";
 import { useAnnotationMiddleware } from "./hooks/use-annotation-middleware";
@@ -91,6 +92,7 @@ const AnnotatePage = () => {
     <Layout
       sx={{ display: "flex" }}
       header={<Toolbar tools={<ToolbarTools />} actions={<ToolbarActions />} />}
+      status={<StatusbarProgress />}
       left={
         <Sidebar position="left">
           <AnnotationsContainer />

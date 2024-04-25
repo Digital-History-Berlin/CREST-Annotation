@@ -1,59 +1,100 @@
-import { AppDispatch } from "../../../app/store";
+import { Object as DataObject, Project } from "../../../api/openApi";
 import {
-  RootOperation,
   operationBegin,
   operationCancel,
   operationComplete,
   operationUpdate,
 } from "../slice/operation";
-import { Begin } from "../types/operation";
+import { updateToolState } from "../slice/toolbox";
+import { ToolboxThunk, ToolboxThunkApi } from "../types/thunks";
+import { Tool, ToolStatus } from "../types/toolbox";
+import { InitializationOperation } from ".";
 
-export type AsyncToolOperationApi<T extends RootOperation> = {
-  operation: T;
-  update: (state: Omit<T, "id">) => void;
-  complete: () => void;
-  cancel: () => void;
+export type ToolLoaderApi<I> = {
+  operation: InitializationOperation;
+  // update the operation
+  progress: (name?: string, progress?: number) => void;
+  // update the tool configuration
+  configure: (state: I) => void;
 };
 
-export type AsyncToolOperationCallback<T extends RootOperation> = (
-  operationApi: AsyncToolOperationApi<T>
+export type ToolLoaderThunkPayload<I, C> = {
+  info: I;
+  config: C;
+  project: Project;
+  object: DataObject;
+  image: string;
+};
+
+export type ToolLoaderThunk<I, C> = (
+  payload: ToolLoaderThunkPayload<I, C>,
+  thunkApi: ToolboxThunkApi,
+  loaderApi: ToolLoaderApi<I>
 ) => Promise<void>;
 
-export type AsyncToolOperationOptions<T extends RootOperation> = {
-  initial: Begin<T>;
-  dispatch: AppDispatch;
-  cancelOnError?: boolean;
-};
+// creates an asynchronous tool preparation thunk
+export const createLoaderThunk =
+  <I extends { status: ToolStatus }, C = unknown>(
+    options: { tool: Tool; name?: string; progress?: number },
+    thunk: ToolLoaderThunk<I, C>
+  ): ToolboxThunk<{ info: I; config: C }> =>
+  ({ info, config }, thunkApi) => {
+    const { dispatch, getState } = thunkApi;
+    const {
+      annotations: { project, object, image },
+    } = getState();
 
-export const withAsyncToolOperation = <T extends RootOperation>(
-  { initial, dispatch, cancelOnError }: AsyncToolOperationOptions<T>,
-  callback: AsyncToolOperationCallback<T>
-) => {
-  dispatch(operationBegin(initial))
-    .unwrap()
-    .then((operation) => {
-      const update = (state: Omit<T, "id">) =>
-        dispatch(
-          operationUpdate({
-            id: operation.id,
-            ...state,
-          } as T)
-        );
+    return dispatch(
+      operationBegin({
+        type: "toolbox/initialization",
+        state: { tool: options.tool },
+        name: options.name,
+        progress: options.progress,
+      })
+    )
+      .unwrap()
+      .then(async (operation) => {
+        if (!project || !object || !image)
+          // wait until the image is available
+          throw new Error("Image not ready");
 
-      const complete = () => dispatch(operationComplete({ id: operation.id }));
-      const cancel = () => dispatch(operationCancel({ id: operation.id }));
+        const progress = (name?: string, progress?: number) =>
+          dispatch(
+            operationUpdate({
+              id: operation.id,
+              type: "toolbox/initialization",
+              state: { tool: options.tool },
+              name,
+              progress,
+            })
+          );
 
-      return callback({
-        operation: operation as T,
-        update,
-        complete,
-        cancel,
-      }).catch((error) => {
-        console.log(error);
-        // cancelation must be explicitly disabled
-        if (cancelOnError !== false) dispatch(operationCancel(operation));
+        const configure = (state: I) =>
+          dispatch(
+            updateToolState({
+              tool: options.tool,
+              state,
+            })
+          );
+
+        await thunk({ info, config, project, object, image }, thunkApi, {
+          operation: operation as InitializationOperation,
+          progress,
+          configure,
+        })
+          // tool is ready
+          .then(() => dispatch(operationComplete(operation)))
+          // catch errors in thunk
+          .catch((error) => {
+            dispatch(operationCancel(operation));
+            dispatch(
+              updateToolState({
+                tool: options.tool,
+                state: { status: ToolStatus.Failed },
+              })
+            );
+            // ensure error is still propagated
+            throw error;
+          });
       });
-    })
-    // catch errors in dispatch
-    .catch(console.log);
-};
+  };

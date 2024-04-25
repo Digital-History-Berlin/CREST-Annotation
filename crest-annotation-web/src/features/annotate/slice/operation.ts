@@ -106,3 +106,50 @@ export const isOperationOfType = <T extends RootOperation>(
 ): operation is T => {
   return operation !== undefined && operation.type === type;
 };
+
+export type AsyncOperationApi<T> = {
+  operation: T;
+  update: (state: Omit<T, "id">) => void;
+  complete: () => void;
+  cancel: () => void;
+};
+
+export type AsyncOperationCallback<T> = (
+  api: AsyncOperationApi<T>
+) => Promise<void>;
+
+/**
+ * Encapsulate a promise within a single operation
+ *
+ * This provides a standard way to manage the lifecycle of an operation
+ * when it matches an async function. It provides a simplified API to
+ * update, complete, and cancel the operation.
+ */
+export const operationWithAsync = <T extends RootOperation>(
+  options: { dispatch: AppDispatch },
+  initial: Begin<T>,
+  callback: AsyncOperationCallback<T>
+) =>
+  options
+    .dispatch(operationBegin(initial))
+    .unwrap()
+    .then(async (operation) => {
+      const update = (state: Omit<T, "id">) =>
+        options.dispatch(operationUpdate({ id: operation.id, ...state } as T));
+      const complete = () =>
+        options.dispatch(operationComplete({ id: operation.id }));
+      const cancel = () =>
+        options.dispatch(operationCancel({ id: operation.id }));
+
+      await callback({
+        operation: operation as T,
+        update,
+        complete,
+        cancel,
+      }).catch((error) => {
+        // cancel operation on error
+        options.dispatch(operationCancel(operation));
+        // ensure error is still propagated
+        throw error;
+      });
+    });

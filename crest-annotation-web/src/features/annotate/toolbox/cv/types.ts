@@ -8,26 +8,23 @@ export type Algorithm = {
   frontend: string;
 };
 
+/// Backend configuration (algorithm independent)
 export interface CvBackendConfig {
   url: string;
   state: boolean;
   algorithms: Algorithm[];
 }
 
-export interface CvToolConfig {
-  // allow custom properties
-  [key: string]: unknown;
-}
-
+/// The complete tool information
 export interface CvToolInfo {
   status: ToolStatus;
   backend?: CvBackendConfig;
   algorithm?: string;
-  config?: CvToolConfig;
-  // allow custom properties
-  [key: string]: unknown;
+  config?: unknown;
+  data?: unknown;
 }
 
+/// The state of the current operation
 export interface CvToolState {
   readonly tool: Tool.Cv;
   // allow custom properties

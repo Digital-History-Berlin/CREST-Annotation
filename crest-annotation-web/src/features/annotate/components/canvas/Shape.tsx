@@ -2,7 +2,8 @@ import React from "react";
 import { alpha } from "@mui/material";
 import { Transformation } from "../../../../types/geometry";
 import { shapeRegistry } from "../../toolbox";
-import { Shape as DataShape, ShapeProps } from "../../types/shapes";
+import { ShapeProps } from "../../types/components";
+import { Shape as DataShape } from "../../types/shapes";
 
 export type IProps = ShapeProps<DataShape> & {
   transformation: Transformation;

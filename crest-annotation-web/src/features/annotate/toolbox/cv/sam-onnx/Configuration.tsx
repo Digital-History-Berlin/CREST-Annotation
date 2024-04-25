@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from "../../../../../app/hooks";
 import { configureTool } from "../../../slice/toolbox";
 import { Tool } from "../../../types/toolbox";
 import { cvResetAlgorithm } from "../thunks";
-import { CvToolConfig, CvToolInfo } from "../types";
+import { CvToolInfo } from "../types";
 
 export const Configuration = () => {
   const dispatch = useAppDispatch();
@@ -13,9 +13,7 @@ export const Configuration = () => {
     (state) => state.toolbox.tools[Tool.Cv] as CvToolInfo | undefined
   );
 
-  const [state, _setState] = useState<Partial<CvToolConfig>>(
-    info?.config || {}
-  );
+  const [state, _setState] = useState<Partial<unknown>>(info?.config || {});
 
   const resetAlgorithm = useCallback(
     () => dispatch(cvResetAlgorithm()),

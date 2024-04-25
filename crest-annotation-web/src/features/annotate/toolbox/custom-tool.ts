@@ -42,7 +42,7 @@ export const createToolThunk =
       ? current
       : undefined;
 
-    thunk(payload, operation, thunkApi, toolApi);
+    return thunk(payload, operation, thunkApi, toolApi);
   };
 
 export type ToolActivationThunk<I = unknown> = (
@@ -57,20 +57,13 @@ export const createActivateThunk =
     thunk?: ToolActivationThunk<I>
   ): ToolboxThunk<ToolActivatePayload> =>
   (payload, thunkApi) => {
-    const { dispatch } = thunkApi;
+    const { dispatch, getInfo } = thunkApi;
 
     dispatch(operationCancel());
     // tool is activated immediately
     dispatch(setToolboxTool(options.tool));
-
     // run additional logic (if any)
-    if (thunk) {
-      const {
-        toolbox: { tools },
-      } = thunkApi.getState();
-      // provide default config
-      thunk?.(tools[options.tool] as I, thunkApi);
-    }
+    return thunk?.(getInfo(), thunkApi);
   };
 
 export type ToolConfigurationThunk<I, C> = (
@@ -81,21 +74,16 @@ export type ToolConfigurationThunk<I, C> = (
 
 // creates the standard tool configuration thunk
 export const createConfigureThunk =
-  <I, C>(
+  <I, C = unknown>(
     options: { tool: Tool },
     thunk: ToolConfigurationThunk<I, C>
   ): ToolboxThunk<ToolConfigurePayload> =>
   ({ config }, thunkApi) => {
-    const { dispatch } = thunkApi;
+    const { dispatch, getInfo } = thunkApi;
 
     dispatch(operationCancel());
-
-    const {
-      toolbox: { tools },
-    } = thunkApi.getState();
     // run configuration logic
-    // provide default config
-    thunk(tools[options.tool] as I, config as C, thunkApi);
+    return thunk(getInfo(), config as C, thunkApi);
   };
 
 //  creates the standard labeling thunk
@@ -105,9 +93,11 @@ export const createLabelThunk =
     select: (operation: T) => Shape;
   }): ToolThunk<ToolLabelPayload> =>
   ({ label }, { dispatch, getState }) => {
-    if (label === undefined)
+    if (label === undefined) {
       // cancel operation if labeling was canceled
-      return dispatch(operationCancel());
+      dispatch(operationCancel());
+      return;
+    }
 
     const {
       operation: { current },

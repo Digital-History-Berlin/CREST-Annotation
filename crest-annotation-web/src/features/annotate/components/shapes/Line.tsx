@@ -1,6 +1,7 @@
 import React from "react";
 import { Line as KonvaLine } from "react-konva";
-import { ShapeFC, ShapeType } from "../../types/shapes";
+import { ShapeFC } from "../../types/components";
+import { ShapeType } from "../../types/shapes";
 
 export interface LineShape {
   type: ShapeType.Line;
