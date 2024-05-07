@@ -7,6 +7,7 @@ import { useGetImageUriQuery } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { updateObject } from "../slice/annotations";
 import { operationCancel } from "../slice/operation";
+import { activateTool } from "../slice/toolbox";
 
 /**
  * Enable the annotation middleware and ensure it is configured correctly
@@ -86,6 +87,8 @@ export const useAnnotationMiddleware = ({
         );
         // ensure ongoing operation is canceled when object changes
         dispatch(operationCancel());
+        // activate the current tool
+        dispatch(activateTool({ tool: undefined }));
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

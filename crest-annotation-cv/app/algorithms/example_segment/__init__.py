@@ -4,4 +4,4 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/example-segment")
 
 # import all routes
-from . import segment
+from . import routes

@@ -29,6 +29,11 @@ async def info():
                     "name": "Square (Example)",
                     "frontend": "generic-single-mask",
                 },
+                {
+                    "id": "custom-crest-detection",
+                    "name": "Crest Detection (Custom)",
+                    "frontend": "crest-detection",
+                },
             ]
         }
     )

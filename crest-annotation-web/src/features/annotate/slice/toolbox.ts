@@ -147,13 +147,16 @@ const toolboxApi = (
 
 export const activateTool = createAsyncThunk<
   void,
-  { tool: Tool },
+  { tool: Tool | undefined },
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/activateTool", ({ tool }, api) => {
-  console.debug("Activate tool: ", tool);
+  // re-activate current tool if not specified
+  const state = api.getState();
+  const activate = tool ?? state.toolbox.selection.tool;
+  console.debug("Activate tool: ", activate);
 
-  const thunks = thunksRegistry[tool];
-  const toolbox = toolboxApi(api, tool);
+  const thunks = thunksRegistry[activate];
+  const toolbox = toolboxApi(api, activate);
   return thunks?.activate?.(undefined, toolbox);
 });
 

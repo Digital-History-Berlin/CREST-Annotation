@@ -120,10 +120,11 @@ export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
   { operation: "tool/cv" },
   ({ gesture }, operation, thunkApi, toolApi) => {
     const info = thunkApi.getInfo<CvToolInfo | undefined>();
+    const ready = info?.status === ToolStatus.Ready;
     const backend = info?.backend;
     const algorithm = info?.algorithm;
     // tool is not configured properly
-    if (!backend || !algorithm) return;
+    if (!ready || !backend || !algorithm) return;
 
     if (gesture.identifier === GestureIdentifier.Move) {
       if (!operation?.state.labeling)

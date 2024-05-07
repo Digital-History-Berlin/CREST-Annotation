@@ -4,4 +4,4 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/facebook-sam")
 
 # import all routes
-from . import segment
+from . import routes
