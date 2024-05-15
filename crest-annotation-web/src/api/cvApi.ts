@@ -1,3 +1,4 @@
+import { CvAlgorithm } from "../features/annotate/toolbox/cv/types";
 import { Debouncer } from "../types/debounce";
 
 const debouncer = new Debouncer<Response>(150);
@@ -15,12 +16,12 @@ export const cvInfo = async (backend: string): Promise<Response> => {
 
 export const cvPrepare = async (
   backend: string,
-  algorithm: string,
+  algorithm: CvAlgorithm,
   body: unknown
 ): Promise<Response> => {
   debouncer.cancel();
 
-  const response = await fetch(`${backend}/${algorithm}/prepare`, {
+  const response = await fetch(`${backend}/${algorithm.id}/prepare`, {
     body: JSON.stringify(body),
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,11 +34,11 @@ export const cvPrepare = async (
 
 export const cvPreview = (
   backend: string,
-  algorithm: string,
+  algorithm: CvAlgorithm,
   body: unknown
 ): Promise<Response> => {
   return debouncer.debounce(async () => {
-    const response = await fetch(`${backend}/${algorithm}/preview`, {
+    const response = await fetch(`${backend}/${algorithm.id}/preview`, {
       body: JSON.stringify(body),
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -51,12 +52,12 @@ export const cvPreview = (
 
 export const cvRun = async (
   backend: string,
-  algorithm: string,
+  algorithm: CvAlgorithm,
   body: unknown
 ): Promise<Response> => {
   debouncer.cancel();
 
-  const response = await fetch(`${backend}/${algorithm}/run`, {
+  const response = await fetch(`${backend}/${algorithm.id}/run`, {
     body: JSON.stringify(body),
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -69,10 +70,10 @@ export const cvRun = async (
 
 export const cvGet = async (
   backend: string,
-  algorithm: string,
+  algorithm: CvAlgorithm,
   url: string
 ): Promise<Response> => {
-  const response = await fetch(`${backend}/${algorithm}/${url}`);
+  const response = await fetch(`${backend}/${algorithm.id}/${url}`);
 
   if (!response.ok) throw new Error("Invalid response");
 
@@ -81,11 +82,11 @@ export const cvGet = async (
 
 export const cvPost = async (
   backend: string,
-  algorithm: string,
+  algorithm: CvAlgorithm,
   url: string,
   body: unknown
 ): Promise<Response> => {
-  const response = await fetch(`${backend}/${algorithm}/${url}`, {
+  const response = await fetch(`${backend}/${algorithm.id}/${url}`, {
     body: JSON.stringify(body),
     method: "POST",
     headers: { "Content-Type": "application/json" },

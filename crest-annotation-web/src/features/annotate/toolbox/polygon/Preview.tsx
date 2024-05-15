@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { Layer } from "react-konva";
-import { PolygonToolState } from "./types";
+import { PolygonToolOperationState } from "./types";
 import Shape from "../../components/canvas/Shape";
 import { PreviewFC } from "../../types/components";
 
-export const Preview: PreviewFC<PolygonToolState> = ({
+export const Preview: PreviewFC<PolygonToolOperationState> = ({
   state,
   transformation,
 }) => {

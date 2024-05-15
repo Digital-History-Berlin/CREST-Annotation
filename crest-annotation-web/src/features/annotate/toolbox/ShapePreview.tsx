@@ -1,10 +1,10 @@
 import { Layer } from "react-konva";
 import ComponentShape from "../components/canvas/Shape";
 import { PreviewFC } from "../types/components";
-import { Shape as DataShape } from "../types/shapes";
+import { Shape } from "../types/shapes";
 
 /// Generic preview for single shape tools
-export const ShapePreview: PreviewFC<{ shape: DataShape }> = ({
+export const ShapePreview: PreviewFC<{ shape: Shape }> = ({
   state,
   transformation,
 }) => {

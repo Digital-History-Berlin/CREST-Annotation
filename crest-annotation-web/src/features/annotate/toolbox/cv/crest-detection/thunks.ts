@@ -1,79 +1,124 @@
-import { cvGet, cvPrepare } from "../../../../../api/cvApi";
-import { MaskShape } from "../../../components/shapes/Mask";
-import { operationBegin } from "../../../slice/operation";
-import { ShapeType } from "../../../types/shapes";
-import { Tool, ToolStatus } from "../../../types/toolbox";
-import { createLoaderThunk } from "../../async-tool";
 import {
-  createActivateThunk,
-  createConfigureThunk,
-  createLabelThunk,
-} from "../../custom-tool";
-import { CvBackendConfig, CvToolInfo, CvToolOperation } from "../types";
+  CvCrestDetectionToolConfig,
+  CvCrestDetectionToolOperation,
+  CvCrestDetectionToolOperationState,
+  CvCrestDetectionToolState,
+  SamMask,
+} from "./types";
+import { cvGet, cvPrepare } from "../../../../../api/cvApi";
+import { operationChainWithAsync } from "../../../slice/operation";
+import { Tool, ToolStatus } from "../../../types/toolbox";
+import { createActivateThunk, createConfigureThunk } from "../../custom-tool";
+import {
+  cvCreateCustomThunk,
+  cvCreateLoaderThunk,
+  cvToolState,
+} from "../cv-tool";
+import { CvAlgorithm, CvBackendConfig } from "../types";
 
-interface OperationPayload {
-  backend: CvBackendConfig;
-  algorithm: string;
-}
-
-const toMaskShape = (json: { mask: number[][] }): MaskShape => ({
-  type: ShapeType.Mask,
-  mask: json.mask,
-  width: json.mask[0].length,
-  height: json.mask.length,
-  dx: 0,
-  dy: 0,
-  preview: true,
-});
-
-const prepare = createLoaderThunk<CvToolInfo>(
-  { tool: Tool.Cv, name: "Waiting for backend..." },
-  async ({ info, config, image }, { dispatch }, { configure }) => {
+const prepare = cvCreateLoaderThunk<CvCrestDetectionToolState>(
+  { name: "Waiting for backend..." },
+  async ({ state, config, image }, thunkApi, { dispatchToolState }) => {
     console.log("Preparing crest-detection...");
+    // clear the previous state
+    dispatchToolState({
+      status: ToolStatus.Loading,
+      config,
+      data: undefined,
+    });
 
-    if (!info.backend || !info.algorithm)
+    if (!state.backend || state.algorithm?.frontend !== "crest-detection")
       throw new Error("Tool is not configured properly");
 
     // TODO: provide configuration and update on return
-    await cvPrepare(info.backend.url, info.algorithm, { url: image });
+    await cvPrepare(state.backend.url, state.algorithm, { url: image });
     const response = await cvGet(
-      info.backend.url,
-      info.algorithm,
+      state.backend.url,
+      state.algorithm,
       "bounding-boxes"
     );
 
     const boundingBoxes = await response.json();
 
     // initialization successful
-    configure({ status: ToolStatus.Ready, config });
+    dispatchToolState({
+      status: ToolStatus.Ready,
+      config,
+      data: { boundingBoxes },
+    });
+  }
+);
 
-    console.log(boundingBoxes);
+export const activate = createActivateThunk<CvCrestDetectionToolState>(
+  { tool: Tool.Cv },
+  (state, thunkApi) => prepare({ state, config: state.config }, thunkApi)
+);
 
-    // proceed with labeling operation
-    dispatch(
-      operationBegin({
-        type: "tool/cv",
-        state: { tool: Tool.Cv, boundingBoxes },
-      })
+export const configure = createConfigureThunk<
+  CvCrestDetectionToolState,
+  CvCrestDetectionToolConfig
+>({ tool: Tool.Cv }, (state, config, thunkApi) =>
+  prepare({ state, config }, thunkApi)
+);
+
+const cvGetMask = async (
+  backend: CvBackendConfig,
+  algorithm: CvAlgorithm,
+  index: number
+): Promise<SamMask> => {
+  const response = await cvGet(backend.url, algorithm, `mask/${index}`);
+  return await response.json();
+};
+
+const _maskRate = () => {
+  return 0.5;
+};
+
+export const select = cvCreateCustomThunk<
+  { index: number },
+  CvCrestDetectionToolOperation
+>(
+  "cv/crestDetection/select",
+  { task: "cv/crest-detection/select" },
+  async ({ index }, operation, { dispatch, getState }) => {
+    const { backend, algorithm, config, data } =
+      cvToolState<CvCrestDetectionToolState>(getState(), "crest-detection");
+
+    if (!data?.boundingBoxes || data.boundingBoxes.length === 0) return;
+
+    const state: CvCrestDetectionToolOperationState = {
+      tool: Tool.Cv,
+      task: "cv/crest-detection/select",
+      index,
+      boundingBox: data.boundingBoxes[index],
+    };
+
+    operationChainWithAsync<CvCrestDetectionToolOperation>(
+      { dispatch },
+      operation,
+      { type: "tool/cv", state },
+      async ({ update }) => {
+        if (config?.showPixelMask) {
+          update({ type: "tool/cv", name: "Downloading mask...", state });
+          const mask = await cvGetMask(backend, algorithm, index);
+          // show the mask as soon as it is available
+          // (only if operation is still active)
+          update({ type: "tool/cv", state: { ...state, mask } });
+        }
+      }
     );
   }
 );
 
-export const activate = createActivateThunk<CvToolInfo>(
-  { tool: Tool.Cv },
-  (info, thunkApi) => prepare({ info, config: info.config }, thunkApi)
+export const decide = cvCreateCustomThunk<
+  { accept: boolean; proceed?: boolean },
+  CvCrestDetectionToolOperation
+>(
+  "cv/crestDetection/next",
+  { task: "cv/crest-detection/select" },
+  async ({ proceed }, operation, { dispatch }) => {
+    if (!operation) return console.error("Invalid state");
+    // proceed with next mask
+    if (proceed) dispatch(select({ index: operation.state.index + 1 }));
+  }
 );
-
-export const configure = createConfigureThunk<CvToolInfo>(
-  { tool: Tool.Cv },
-  (info, config, thunkApi) => prepare({ info, config }, thunkApi)
-);
-
-export const label = createLabelThunk<CvToolOperation>({
-  operation: "tool/cv",
-  select: (operation) => ({
-    ...(operation.state.shape as MaskShape),
-    // disable preview mode
-    preview: false,
-  }),
-});

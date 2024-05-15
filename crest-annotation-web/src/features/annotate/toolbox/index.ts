@@ -101,13 +101,13 @@ export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
   [Tool.Cv]: cvSelectors as ToolSelectors,
 };
 
-export type InitializationState = {
+export type InitializationOperationState = {
   tool: Tool;
 };
 
 export type InitializationOperation = Operation<
   "toolbox/initialization",
-  InitializationState
+  InitializationOperationState
 >;
 
 /// Combination of available tool operation

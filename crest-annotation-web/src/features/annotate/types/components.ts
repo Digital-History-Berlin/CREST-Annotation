@@ -9,16 +9,11 @@ export type PreviewProps<T> = {
   transformation: Transformation;
 };
 
-/// Renders a shape component
+/// Renders a preview component
 export type PreviewFC<T = unknown> = (props: PreviewProps<T>) => ReactElement;
 
-/// Properties provided to a shape component
-export type ConfigProps<T> = {
-  info?: T;
-};
-
-/// Renders a shape component
-export type ConfigFC<T = unknown> = (props: ConfigProps<T>) => ReactElement;
+/// Renders a configuration pane component
+export type ConfigFC = () => ReactElement;
 
 /// Callbacks provided to a shape component
 export type ShapeCallbacks = {
@@ -43,6 +38,8 @@ export type ShapeProps<T extends Shape> = {
   editingPointConfig?: ShapeConfig;
   // solid color for some shapes
   solidColor?: string;
+  // font size for some shapes
+  fontSize?: number;
 } & ShapeCallbacks;
 
 /// Renders a shape component

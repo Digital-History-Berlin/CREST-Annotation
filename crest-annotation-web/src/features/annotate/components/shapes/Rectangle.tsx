@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
-import { Group, Rect as KonvaRectangle } from "react-konva";
+import { Group, Rect as KonvaRectangle, Text } from "react-konva";
 import Anchor from "./Anchor";
 import { ShapeFC } from "../../types/components";
 import { ShapeType } from "../../types/shapes";
@@ -12,6 +12,8 @@ export interface RectangleShape {
   y: number;
   width: number;
   height: number;
+  // rectangle can have additional caption
+  caption?: string;
 }
 
 enum Edges {
@@ -30,6 +32,7 @@ export const Rectangle: ShapeFC<RectangleShape> = ({
   shapeConfig,
   editingPointConfig,
   editable,
+  fontSize,
   onUpdate,
   onClick,
 }) => {
@@ -127,6 +130,14 @@ export const Rectangle: ShapeFC<RectangleShape> = ({
         height={preview.height}
         onClick={onClick}
       />
+      {fontSize && (
+        <Text
+          text={shape.caption}
+          x={preview.x + fontSize / 4}
+          y={preview.y + fontSize / 4}
+          fontSize={fontSize}
+        />
+      )}
       {editable && (
         <>
           <Anchor

@@ -1,4 +1,8 @@
 import { InferenceSession, Tensor } from "onnxruntime-web";
+import { MaskShape } from "../../../components/shapes/Mask";
+import { Operation } from "../../../types/operation";
+import { Tool } from "../../../types/toolbox";
+import { CvToolState } from "../types";
 
 export interface SamImageDimensions {
   scale: number;
@@ -18,8 +22,29 @@ export interface SamInput {
   dimensions: SamImageDimensions;
 }
 
-export interface SamToolData {
+export interface CvSamOnnxToolConfig {
+  // TODO: add tool configuration options
+  unused: undefined;
+}
+
+export interface CvSamOnnxToolData {
   model: InferenceSession;
   tensor: Tensor;
   dimensions: SamImageDimensions;
 }
+
+export type CvSamOnnxToolState = CvToolState<
+  CvSamOnnxToolConfig,
+  CvSamOnnxToolData
+>;
+
+export interface CvSamOnnxToolOperationState {
+  readonly tool: Tool.Cv;
+  shape?: MaskShape;
+  labeling?: boolean;
+}
+
+export type CvSamOnnxToolOperation = Operation<
+  "tool/cv",
+  CvSamOnnxToolOperationState
+>;

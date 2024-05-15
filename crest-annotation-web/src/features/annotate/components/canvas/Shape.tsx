@@ -40,6 +40,9 @@ const Shape = ({
     strokeWidth: 8 / transformation.scale,
   };
 
+  // additional properties
+  const fontSize = 12 / transformation.scale;
+
   return (
     <Component
       {...props}
@@ -48,6 +51,7 @@ const Shape = ({
       shapeConfig={shapeConfig}
       editingPointConfig={editingPointConfig}
       solidColor={color}
+      fontSize={fontSize}
     />
   );
 };

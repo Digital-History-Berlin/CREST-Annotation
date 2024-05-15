@@ -9,9 +9,11 @@ export type IProps = {
 
 const PreviewLayer = ({ transformation }: IProps) => {
   const state = useAppSelector((state) => state.operation.current?.state);
+  const selection = useAppSelector((state) => state.toolbox.selection.tool);
+  const tool = state?.tool ?? selection;
 
-  if (state === undefined) return null;
-  const Component = previewRegistry[state.tool];
+  if (tool === undefined) return null;
+  const Component = previewRegistry[tool];
   if (Component === undefined) return null;
 
   return <Component state={state} transformation={transformation} />;

@@ -7,7 +7,7 @@ import { MaybePromise } from "../../../types/maybe-promise";
 export type ToolboxThunkApi = {
   dispatch: AppDispatch;
   getState: () => RootState;
-  getInfo: <I>() => I;
+  getToolState: <T>() => T;
 };
 
 export type ToolboxThunk<P> = (

@@ -2,10 +2,10 @@ import { LineShape } from "../../components/shapes/Line";
 import { Operation } from "../../types/operation";
 import { Tool } from "../../types/toolbox";
 
-export interface PenToolState {
+export interface PenToolOperationState {
   readonly tool: Tool.Pen;
   shape: LineShape;
   labeling?: boolean;
 }
 
-export type PenToolOperation = Operation<"tool/pen", PenToolState>;
+export type PenToolOperation = Operation<"tool/pen", PenToolOperationState>;

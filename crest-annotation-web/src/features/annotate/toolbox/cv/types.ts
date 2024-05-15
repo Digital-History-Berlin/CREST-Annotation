@@ -1,8 +1,8 @@
 import { Operation } from "../../types/operation";
 import { Tool, ToolStatus } from "../../types/toolbox";
 
-/// Algorithm information as provided by backend
-export type Algorithm = {
+/// Algorithm information as provisded by backend
+export type CvAlgorithm = {
   id: string;
   name: string;
   frontend: string;
@@ -12,23 +12,27 @@ export type Algorithm = {
 export interface CvBackendConfig {
   url: string;
   state: boolean;
-  algorithms: Algorithm[];
+  algorithms?: CvAlgorithm[];
 }
 
-/// The complete tool information
-export interface CvToolInfo {
+export type CvAlgorithmState = CvAlgorithm & {
+  state: boolean;
+};
+
+/// The operation-independent tool state
+export interface CvToolState<C = unknown, D = unknown> {
   status: ToolStatus;
   backend?: CvBackendConfig;
-  algorithm?: string;
-  config?: unknown;
-  data?: unknown;
+  algorithm?: CvAlgorithmState;
+  config?: C;
+  data?: D;
 }
 
 /// The state of the current operation
-export interface CvToolState {
+export interface CvToolOperationState {
   readonly tool: Tool.Cv;
-  // allow custom properties
-  [key: string]: unknown;
+  // additional discriminator
+  readonly task?: string;
 }
 
-export type CvToolOperation = Operation<"tool/cv", CvToolState>;
+export type CvToolOperation = Operation<"tool/cv", CvToolOperationState>;

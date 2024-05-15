@@ -45,7 +45,7 @@ const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
       },
       // register cleanup
       cancellation: cancelLabel,
-      finalization: cancelLabel,
+      completion: cancelLabel,
     })
   );
 

@@ -1,6 +1,7 @@
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { Label } from "../../../api/openApi";
 import { AppDispatch, RootState } from "../../../app/store";
+import { PartialAppThunkApi } from "../../../types/thunks";
 import { thunksRegistry } from "../toolbox";
 import { GestureEvent } from "../types/events";
 import { ToolApi, ToolboxThunkApi } from "../types/thunks";
@@ -106,8 +107,6 @@ export const slice = createSlice({
 });
 
 export const {
-  resetToolState,
-  updateToolState,
   updateToolboxSelection,
   setToolboxTool,
   setToolboxLabel,
@@ -117,6 +116,14 @@ export const {
 } = slice.actions;
 
 export default slice.reducer;
+
+// generic version to improve type-safety without too many constraints
+export const resetToolState = <T>(payload: { tool: Tool; state: T }) =>
+  slice.actions.resetToolState(payload);
+export const updateToolState = <T>(payload: {
+  tool: Tool;
+  state: Partial<T>;
+}) => slice.actions.updateToolState(payload);
 
 const getOperationTool = (state: RootState) => {
   const {
@@ -130,11 +137,6 @@ const getOperationTool = (state: RootState) => {
     : selection.tool;
 };
 
-type PartialAppThunkApi = {
-  dispatch: AppDispatch;
-  getState: () => RootState;
-};
-
 const toolboxApi = (
   { dispatch, getState }: PartialAppThunkApi,
   tool: Tool
@@ -142,7 +144,7 @@ const toolboxApi = (
   dispatch,
   getState,
   // shorthand to retrieve the tool info (config)
-  getInfo: <I>() => getState().toolbox.tools[tool] as I,
+  getToolState: <T>() => getState().toolbox.tools[tool] as T,
 });
 
 export const activateTool = createAsyncThunk<
@@ -153,7 +155,7 @@ export const activateTool = createAsyncThunk<
   // re-activate current tool if not specified
   const state = api.getState();
   const activate = tool ?? state.toolbox.selection.tool;
-  console.debug("Activate tool: ", activate);
+  console.debug("Activate tool:", activate);
 
   const thunks = thunksRegistry[activate];
   const toolbox = toolboxApi(api, activate);
@@ -165,7 +167,7 @@ export const configureTool = createAsyncThunk<
   { tool: Tool; config: unknown },
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/activateTool", ({ tool, config }, api) => {
-  console.debug("Configure tool: ", tool, config);
+  console.debug("Configure tool:", tool, config);
 
   const thunks = thunksRegistry[tool];
   const toolbox = toolboxApi(api, tool);
@@ -188,7 +190,7 @@ export const processLabel = createAsyncThunk<
   { label?: Label; toolApi: ToolApi },
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/processLabel", ({ label, toolApi }, api) => {
-  console.debug("Process label: ", label);
+  console.debug("Process label:", label);
 
   const tool = getOperationTool(api.getState());
   const thunks = thunksRegistry[tool];

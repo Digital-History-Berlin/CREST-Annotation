@@ -2,14 +2,22 @@ import npyjs from "npyjs";
 import { InferenceSession } from "onnxruntime-web";
 import * as ort from "onnxruntime-web";
 import { samDimensionsFromUrl, samOnnxFeeds } from "./tools";
-import { SamToolData } from "./types";
+import {
+  CvSamOnnxToolConfig,
+  CvSamOnnxToolData,
+  CvSamOnnxToolOperation,
+  CvSamOnnxToolState,
+} from "./types";
 import { cvPrepare } from "../../../../../api/cvApi";
 import {
   Debouncer,
   swallowDebounceCancel,
 } from "../../../../../types/debounce";
 import { MaskShape } from "../../../components/shapes/Mask";
-import { operationCancel, operationWithAsync } from "../../../slice/operation";
+import {
+  operationBeginWithAsync,
+  operationCancel,
+} from "../../../slice/operation";
 import {
   GestureEvent,
   GestureIdentifier,
@@ -19,32 +27,36 @@ import { Begin } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
 import { ToolGesturePayload, ToolThunk } from "../../../types/thunks";
 import { Tool, ToolStatus } from "../../../types/toolbox";
-import { createLoaderThunk } from "../../async-tool";
 import {
   createActivateThunk,
   createConfigureThunk,
   createLabelThunk,
   createToolThunk,
 } from "../../custom-tool";
-import { CvToolInfo, CvToolOperation } from "../types";
+import { cvCreateLoaderThunk } from "../cv-tool";
 
 // debounce preview operation
 const debouncer = new Debouncer(150);
 
 interface OperationPayload {
   gesture: GestureEvent;
-  data: SamToolData;
+  data: CvSamOnnxToolData;
 }
 
-const previewOperation: Begin<CvToolOperation> = {
+const previewOperation: Begin<CvSamOnnxToolOperation> = {
   type: "tool/cv",
   silence: true,
-  state: { tool: Tool.Cv },
+  state: {
+    tool: Tool.Cv,
+  },
 };
 
-const runOperation: Begin<CvToolOperation> = {
+const runOperation: Begin<CvSamOnnxToolOperation> = {
   type: "tool/cv",
-  state: { tool: Tool.Cv, labeling: true },
+  state: {
+    tool: Tool.Cv,
+    labeling: true,
+  },
 };
 
 // convert the ONNX model output to a mask
@@ -72,17 +84,27 @@ function tensorToMaskShape(
   };
 }
 
-const prepare = createLoaderThunk<CvToolInfo>(
-  { tool: Tool.Cv, name: "Waiting for backend..." },
-  async ({ info, image }, thunkApi, { progress, configure }) => {
+const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
+  { name: "Waiting for backend..." },
+  async (
+    { state, config, image },
+    thunkApi,
+    { progress, dispatchToolState }
+  ) => {
     console.log("Preparing sam-onnx...");
+    // clear the previous state
+    dispatchToolState({
+      status: ToolStatus.Loading,
+      config,
+      data: undefined,
+    });
 
-    if (!info.backend || !info.algorithm)
+    if (!state.backend || state.algorithm?.frontend !== "sam-onnx")
       throw new Error("Tool is not configured properly");
 
     // TODO: provide configuration and update on return
-    await cvPrepare(info.backend.url, info.algorithm, { url: image });
-    const baseUrl = `${info.backend.url}/${info.algorithm}`;
+    await cvPrepare(state.backend.url, state.algorithm, { url: image });
+    const baseUrl = `${state.backend.url}/${state.algorithm}`;
 
     progress("Loading model...");
     const model = await InferenceSession.create(`${baseUrl}/onnx-quantized`);
@@ -94,21 +116,25 @@ const prepare = createLoaderThunk<CvToolInfo>(
 
     progress("Loading model scale...");
     const dimensions = await samDimensionsFromUrl(image);
-    const data: SamToolData = { tensor, model, dimensions };
 
     // initialization successful
-    configure({ status: ToolStatus.Ready, data });
+    dispatchToolState({
+      status: ToolStatus.Ready,
+      data: { tensor, model, dimensions },
+    });
   }
 );
 
-export const activate = createActivateThunk<CvToolInfo>(
+export const activate = createActivateThunk<CvSamOnnxToolState>(
   { tool: Tool.Cv },
-  (info, thunkApi) => prepare({ info, config: info.config }, thunkApi)
+  (state, thunkApi) => prepare({ state, config: state.config }, thunkApi)
 );
 
-export const configure = createConfigureThunk<CvToolInfo>(
-  { tool: Tool.Cv },
-  (info, config, thunkApi) => prepare({ info, config }, thunkApi)
+export const configure = createConfigureThunk<
+  CvSamOnnxToolState,
+  CvSamOnnxToolConfig
+>({ tool: Tool.Cv }, (state, config, thunkApi) =>
+  prepare({ state, config }, thunkApi)
 );
 
 const preview: ToolThunk<OperationPayload> = (
@@ -118,7 +144,7 @@ const preview: ToolThunk<OperationPayload> = (
   // TODO: input from operation state
   const clicks = [{ ...gesture.transformed, clickType: 1 }];
 
-  operationWithAsync({ dispatch }, previewOperation, async ({ update }) =>
+  operationBeginWithAsync({ dispatch }, previewOperation, async ({ update }) =>
     debouncer
       .debounce(async () => {
         const feeds = samOnnxFeeds({
@@ -136,9 +162,12 @@ const preview: ToolThunk<OperationPayload> = (
           output.dims[2]
         );
 
-        update({
+        await update({
           type: "tool/cv",
-          state: { tool: Tool.Cv, shape },
+          state: {
+            tool: Tool.Cv,
+            shape,
+          },
         });
       })
       .catch(swallowDebounceCancel)
@@ -153,7 +182,7 @@ const run: ToolThunk<OperationPayload> = (
   // TODO: input from operation state
   const clicks = [{ ...gesture.transformed, clickType: 1 }];
 
-  operationWithAsync({ dispatch }, runOperation, async ({ update }) => {
+  operationBeginWithAsync({ dispatch }, runOperation, async ({ update }) => {
     debouncer.cancel();
     const feeds = samOnnxFeeds({
       clicks,
@@ -170,12 +199,16 @@ const run: ToolThunk<OperationPayload> = (
       output.dims[2]
     );
 
-    update({
+    await update({
       type: "tool/cv",
-      state: { tool: Tool.Cv, shape, labeling: true },
+      state: {
+        tool: Tool.Cv,
+        shape,
+        labeling: true,
+      },
       // register cleanup
       cancellation: cancelLabel,
-      finalization: cancelLabel,
+      completion: cancelLabel,
     });
 
     // request a label for the shape
@@ -183,32 +216,33 @@ const run: ToolThunk<OperationPayload> = (
   });
 };
 
-export const gesture = createToolThunk<ToolGesturePayload, CvToolOperation>(
-  { operation: "tool/cv" },
-  ({ gesture }, operation, thunkApi, toolApi) => {
-    const info = thunkApi.getInfo<CvToolInfo | undefined>();
-    const data = info?.data as SamToolData | undefined;
-    // tool is not configured properly
-    if (info?.status !== ToolStatus.Ready || !data) return;
+export const gesture = createToolThunk<
+  ToolGesturePayload,
+  CvSamOnnxToolOperation
+>({ operation: "tool/cv" }, ({ gesture }, operation, thunkApi, toolApi) => {
+  const state = thunkApi.getToolState<CvSamOnnxToolState | undefined>();
+  const ready = state?.status === ToolStatus.Ready;
+  const data = state?.data;
+  // tool is not configured properly
+  if (!ready || !data) return;
 
-    if (gesture.identifier === GestureIdentifier.Move) {
-      if (!operation?.state.labeling)
-        // display preview when cursor pauses
-        preview({ gesture, data }, thunkApi, toolApi);
-    }
-
-    if (gesture.identifier === GestureIdentifier.Click) {
-      if (operation?.state.labeling)
-        // labeling process is can be canceled by clicking
-        return thunkApi.dispatch(operationCancel(operation));
-      if (gesture.overload === GestureOverload.Primary)
-        // extract segmentation mask
-        run({ gesture, data }, thunkApi, toolApi);
-    }
+  if (gesture.identifier === GestureIdentifier.Move) {
+    if (!operation?.state.labeling)
+      // display preview when cursor pauses
+      preview({ gesture, data }, thunkApi, toolApi);
   }
-);
 
-export const label = createLabelThunk<CvToolOperation>({
+  if (gesture.identifier === GestureIdentifier.Click) {
+    if (operation?.state.labeling)
+      // labeling process is can be canceled by clicking
+      return thunkApi.dispatch(operationCancel(operation));
+    if (gesture.overload === GestureOverload.Primary)
+      // extract segmentation mask
+      run({ gesture, data }, thunkApi, toolApi);
+  }
+});
+
+export const label = createLabelThunk<CvSamOnnxToolOperation>({
   operation: "tool/cv",
   select: (operation) => ({
     ...(operation.state.shape as MaskShape),

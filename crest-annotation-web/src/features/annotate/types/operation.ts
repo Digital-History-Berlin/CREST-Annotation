@@ -2,14 +2,14 @@ export class OperationRejectedError extends Error {
   constructor(operation: string | undefined) {
     super(
       operation === undefined
-        ? "Unknown operation"
+        ? "Operation not provided"
         : `Operation cancelled: ${operation}`
     );
   }
 }
 
 export type OperationCancellation = () => void;
-export type OperationFinalization = () => void;
+export type OperationCompletion = <T>(state: T) => void;
 
 export interface Operation<T extends string, S> {
   readonly id: string;
@@ -22,7 +22,7 @@ export interface Operation<T extends string, S> {
   state: S;
   // callbacks for cleanup
   cancellation?: OperationCancellation;
-  finalization?: OperationFinalization;
+  completion?: OperationCompletion;
 }
 
 /// Modifier to declare a new operation

@@ -27,7 +27,7 @@ export type AtomicToolThunk<P, O> = (
   toolApi: ToolApi
 ) => void;
 
-// create a bare tool thunk with immediate state access
+// create a bare tool thunk with immediate operation state access
 export const createToolThunk =
   <P, O extends RootOperation>(
     options: { operation: O["type"] },
@@ -45,45 +45,45 @@ export const createToolThunk =
     return thunk(payload, operation, thunkApi, toolApi);
   };
 
-export type ToolActivationThunk<I = unknown> = (
-  info: I,
+export type ToolActivationThunk<T = unknown> = (
+  state: T,
   thunkApi: ToolboxThunkApi
 ) => void;
 
 // creates the standard tool activation thunk
 export const createActivateThunk =
-  <I = unknown>(
+  <T = unknown>(
     options: { tool: Tool },
-    thunk?: ToolActivationThunk<I>
+    thunk?: ToolActivationThunk<T>
   ): ToolboxThunk<ToolActivatePayload> =>
   (payload, thunkApi) => {
-    const { dispatch, getInfo } = thunkApi;
+    const { dispatch, getToolState } = thunkApi;
 
     dispatch(operationCancel());
     // tool is activated immediately
     dispatch(setToolboxTool(options.tool));
     // run additional logic (if any)
-    return thunk?.(getInfo(), thunkApi);
+    return thunk?.(getToolState(), thunkApi);
   };
 
-export type ToolConfigurationThunk<I, C> = (
-  info: I,
+export type ToolConfigurationThunk<T, C> = (
+  state: T,
   config: C,
   thunkApi: ToolboxThunkApi
 ) => void;
 
 // creates the standard tool configuration thunk
 export const createConfigureThunk =
-  <I, C = unknown>(
+  <T, C = unknown>(
     options: { tool: Tool },
-    thunk: ToolConfigurationThunk<I, C>
+    thunk: ToolConfigurationThunk<T, C>
   ): ToolboxThunk<ToolConfigurePayload> =>
   ({ config }, thunkApi) => {
-    const { dispatch, getInfo } = thunkApi;
+    const { dispatch, getToolState } = thunkApi;
 
     dispatch(operationCancel());
     // run configuration logic
-    return thunk(getInfo(), config as C, thunkApi);
+    return thunk(getToolState(), config as C, thunkApi);
   };
 
 //  creates the standard labeling thunk

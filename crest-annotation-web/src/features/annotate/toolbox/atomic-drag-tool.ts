@@ -26,7 +26,7 @@ export type AtomicDragToolEndThunk<T extends RootOperation> = (
 
 // creates a gesture thunk that uses a single drag gesture to emit a shape
 export const createAtomicDragTool = <
-  O extends Extract<RootOperation, { state: { labeling?: boolean } }>
+  O extends RootOperation & { state: { labeling?: boolean } }
 >(options: {
   operation: O["type"];
   start: AtomicDragToolStartThunk<O>;
@@ -57,13 +57,13 @@ export const createAtomicDragTool = <
         if (gesture.overload !== GestureOverload.Primary)
           return dispatch(operationCancel(operation));
 
+        const update: O = {
+          ...operation,
+          state: options.move(gesture, operation.state),
+        };
+
         // resume with ongoing drag gesture
-        return dispatch(
-          operationUpdate({
-            ...operation,
-            state: options.move(gesture, operation.state),
-          } as O)
-        );
+        return dispatch(operationUpdate(update));
       }
 
       if (gesture.identifier === GestureIdentifier.DragEnd) {
@@ -71,16 +71,15 @@ export const createAtomicDragTool = <
         if (gesture.overload !== GestureOverload.Primary)
           return dispatch(operationCancel(operation));
 
-        // complete ongoing drag gesture
-        dispatch(
-          operationUpdate({
-            ...operation,
-            state: options.end(gesture, operation.state),
-            cancellation: cancelLabel,
-            finalization: cancelLabel,
-          } as O)
-        );
+        const update: O = {
+          ...operation,
+          state: options.end(gesture, operation.state),
+          cancellation: cancelLabel,
+          completion: cancelLabel,
+        };
 
+        // complete ongoing drag gesture
+        dispatch(operationUpdate(update));
         // request a label for the shape
         requestLabel();
       }

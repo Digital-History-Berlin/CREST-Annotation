@@ -1,30 +1,11 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import { Button, Stack } from "@mui/material";
-import { useAppDispatch, useAppSelector } from "../../../../../app/hooks";
-import { configureTool } from "../../../slice/toolbox";
-import { Tool } from "../../../types/toolbox";
-import { cvResetAlgorithm } from "../thunks";
-import { CvToolInfo } from "../types";
+import { useCvResetAlgorithm } from "../hooks";
+
+// const defaultConfig: CvSamOnnxConfig = { unused: undefined };
 
 export const Configuration = () => {
-  const dispatch = useAppDispatch();
-
-  const info = useAppSelector(
-    (state) => state.toolbox.tools[Tool.Cv] as CvToolInfo | undefined
-  );
-
-  const [state, _setState] = useState<Partial<unknown>>(info?.config || {});
-
-  const resetAlgorithm = useCallback(
-    () => dispatch(cvResetAlgorithm()),
-    [dispatch]
-  );
-
-  const _applyChanges = useCallback(() => {
-    console.log("Applying changes");
-    // activate changes
-    dispatch(configureTool({ tool: Tool.Cv, config: state }));
-  }, [dispatch, state]);
+  const resetAlgorithm = useCvResetAlgorithm();
 
   return (
     <Stack padding={2} spacing={2}>

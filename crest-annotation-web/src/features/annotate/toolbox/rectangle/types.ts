@@ -2,7 +2,7 @@ import { RectangleShape } from "../../components/shapes/Rectangle";
 import { Operation } from "../../types/operation";
 import { Tool } from "../../types/toolbox";
 
-export interface RectangleToolState {
+export interface RectangleToolOperationState {
   readonly tool: Tool.Rectangle;
   shape: RectangleShape;
   labeling?: boolean;
@@ -10,5 +10,5 @@ export interface RectangleToolState {
 
 export type RectangleToolOperation = Operation<
   "tool/rectangle",
-  RectangleToolState
+  RectangleToolOperationState
 >;
