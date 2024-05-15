@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  Box,
   Button,
   ButtonGroup,
   Divider,
@@ -150,6 +149,7 @@ export const Configuration: ConfigFC = () => {
         />
       </FormGroup>
 
+      <Divider />
       {operation === undefined && (
         <Button value="select" onClick={handleSelect}>
           Select individual masks
@@ -173,9 +173,7 @@ export const Configuration: ConfigFC = () => {
           </Button>
         </>
       )}
-      <Box flexGrow={1} />
 
-      <Divider />
       <Button onClick={resetAlgorithm} color="error">
         Change algorithm
       </Button>

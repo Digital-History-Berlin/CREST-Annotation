@@ -51,14 +51,12 @@ export const cvValidateBackend = createAsyncThunk<
   { url: string },
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/cv/validateBackend", async ({ url }, { dispatch }) => {
-  console.log(`Validating backend at ${url}`);
+  console.log(`Validating CV backend at ${url}`);
 
   try {
     const response = await cvInfo(url);
     const { algorithms } = await response.json();
     const backend: CvBackendConfig = { url, state: true, algorithms };
-
-    console.log("Backend available", backend);
 
     // completely reset the tool when the backend changes
     // (the tool is not ready until an algorithm is selected)
