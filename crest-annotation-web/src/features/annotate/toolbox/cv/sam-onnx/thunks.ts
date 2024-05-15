@@ -26,7 +26,7 @@ import {
 import { Begin } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
 import { ToolGesturePayload, ToolThunk } from "../../../types/thunks";
-import { Tool, ToolStatus } from "../../../types/toolbox";
+import { Tool, ToolStateError, ToolStatus } from "../../../types/toolbox";
 import {
   createActivateThunk,
   createConfigureThunk,
@@ -99,8 +99,8 @@ const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
       data: undefined,
     });
 
-    if (!state.backend || state.algorithm?.frontend !== "sam-onnx")
-      throw new Error("Tool is not configured properly");
+    if (!state?.backend || state.algorithm?.frontend !== "sam-onnx")
+      throw new ToolStateError(Tool.Cv, state);
 
     // TODO: provide configuration and update on return
     await cvPrepare(state.backend.url, state.algorithm, { url: image });
@@ -127,7 +127,7 @@ const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
 
 export const activate = createActivateThunk<CvSamOnnxToolState>(
   { tool: Tool.Cv },
-  (state, thunkApi) => prepare({ state, config: state.config }, thunkApi)
+  (state, thunkApi) => prepare({ state, config: state?.config }, thunkApi)
 );
 
 export const configure = createConfigureThunk<
@@ -220,7 +220,7 @@ export const gesture = createToolThunk<
   ToolGesturePayload,
   CvSamOnnxToolOperation
 >({ operation: "tool/cv" }, ({ gesture }, operation, thunkApi, toolApi) => {
-  const state = thunkApi.getToolState<CvSamOnnxToolState | undefined>();
+  const state = thunkApi.getToolState<CvSamOnnxToolState>();
   const ready = state?.status === ToolStatus.Ready;
   const data = state?.data;
   // tool is not configured properly

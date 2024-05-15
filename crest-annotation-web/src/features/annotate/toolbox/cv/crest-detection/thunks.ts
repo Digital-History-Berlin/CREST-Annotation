@@ -7,7 +7,7 @@ import {
 } from "./types";
 import { cvGet, cvPrepare } from "../../../../../api/cvApi";
 import { operationChainWithAsync } from "../../../slice/operation";
-import { Tool, ToolStatus } from "../../../types/toolbox";
+import { Tool, ToolStateError, ToolStatus } from "../../../types/toolbox";
 import { createActivateThunk, createConfigureThunk } from "../../custom-tool";
 import {
   cvCreateCustomThunk,
@@ -27,8 +27,8 @@ const prepare = cvCreateLoaderThunk<CvCrestDetectionToolState>(
       data: undefined,
     });
 
-    if (!state.backend || state.algorithm?.frontend !== "crest-detection")
-      throw new Error("Tool is not configured properly");
+    if (!state?.backend || state.algorithm?.frontend !== "crest-detection")
+      throw new ToolStateError(Tool.Cv, state);
 
     // TODO: provide configuration and update on return
     await cvPrepare(state.backend.url, state.algorithm, { url: image });
@@ -51,7 +51,7 @@ const prepare = cvCreateLoaderThunk<CvCrestDetectionToolState>(
 
 export const activate = createActivateThunk<CvCrestDetectionToolState>(
   { tool: Tool.Cv },
-  (state, thunkApi) => prepare({ state, config: state.config }, thunkApi)
+  (state, thunkApi) => prepare({ state, config: state?.config }, thunkApi)
 );
 
 export const configure = createConfigureThunk<
@@ -78,13 +78,14 @@ export const select = cvCreateCustomThunk<
   { index: number },
   CvCrestDetectionToolOperation
 >(
-  "cv/crestDetection/select",
+  "toolbox/cv/crestDetection/select",
   { task: "cv/crest-detection/select" },
   async ({ index }, operation, { dispatch, getState }) => {
     const { backend, algorithm, config, data } =
       cvToolState<CvCrestDetectionToolState>(getState(), "crest-detection");
 
-    if (!data?.boundingBoxes || data.boundingBoxes.length === 0) return;
+    if (!data?.boundingBoxes || data.boundingBoxes.length === 0)
+      return console.warn("No bounding boxes detected");
 
     const state: CvCrestDetectionToolOperationState = {
       tool: Tool.Cv,
@@ -114,7 +115,7 @@ export const decide = cvCreateCustomThunk<
   { accept: boolean; proceed?: boolean },
   CvCrestDetectionToolOperation
 >(
-  "cv/crestDetection/next",
+  "toolbox/cv/crestDetection/decide",
   { task: "cv/crest-detection/select" },
   async ({ proceed }, operation, { dispatch }) => {
     if (!operation) return console.error("Invalid state");

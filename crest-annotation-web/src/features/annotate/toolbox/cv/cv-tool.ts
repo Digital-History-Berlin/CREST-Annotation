@@ -9,7 +9,7 @@ import {
   ToolboxThunk,
   ToolboxThunkApi,
 } from "../../types/thunks";
-import { Tool, ToolStatus } from "../../types/toolbox";
+import { Tool, ToolStateError, ToolStatus } from "../../types/toolbox";
 import { ToolLoaderThunk, createLoaderThunk } from "../async-tool";
 
 // creates an asynchronous tool preparation thunk
@@ -17,7 +17,7 @@ import { ToolLoaderThunk, createLoaderThunk } from "../async-tool";
 export const cvCreateLoaderThunk = <T extends CvToolState>(
   options: { name?: string; progress?: number },
   thunk: ToolLoaderThunk<T, T["config"]>
-): ToolboxThunk<{ state: T; config: T["config"] }> =>
+): ToolboxThunk<{ state: T | undefined; config: T["config"] }> =>
   createLoaderThunk({ tool: Tool.Cv, ...options }, thunk);
 
 export type CvToolThunk<P, O> = (
@@ -96,7 +96,7 @@ export const cvToolState = <S extends CvToolState>(
     cv.status !== ToolStatus.Ready ||
     cv.algorithm?.frontend !== frontend
   )
-    throw new Error("Invalid tool state");
+    throw new ToolStateError(Tool.Cv, cv);
 
   return {
     backend: cv.backend,

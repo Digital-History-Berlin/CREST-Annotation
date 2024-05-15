@@ -1,15 +1,33 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Configuration as DefaultConfiguration } from "./Configuration";
-import { CvAlgorithm, CvToolState } from "./types";
+import { CvAlgorithm, CvBackendConfig, CvToolState } from "./types";
 import { configPaneRegistry, previewRegistry, thunksRegistry } from "..";
+import { cvInfo } from "../../../../api/cvApi";
 import { AppDispatch, RootState } from "../../../../app/store";
-import { activateTool, updateToolState } from "../../slice/toolbox";
+import {
+  activateTool,
+  resetToolState,
+  updateToolState,
+} from "../../slice/toolbox";
 import { ConfigFC } from "../../types/components";
 import { ToolSelectors } from "../../types/thunks";
 import { Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
 import { createActivateThunk } from "../custom-tool";
 
-const activate = createActivateThunk({ tool: Tool.Cv });
+const activate = createActivateThunk<CvToolState>(
+  { tool: Tool.Cv },
+  async (state, { dispatch }) => {
+    const url = localStorage.getItem("cv-backend");
+    const id = localStorage.getItem("cv-algorithm");
+
+    if (state?.backend !== undefined || !url?.length) return;
+
+    console.log("Restoring CV state from local storage");
+    const backend = await dispatch(cvValidateBackend({ url })).unwrap();
+    const algorithm = backend?.algorithms?.find((a) => a.id === id);
+    if (algorithm) await dispatch(cvActivateAlgorithm({ algorithm })).unwrap();
+  }
+);
 
 export const cvThunks = {
   activate,
@@ -26,6 +44,51 @@ export const cvSelectors: ToolSelectors<CvToolState | undefined> = {
     },
   }),
 };
+
+// validate the given backend and load the algorithms
+export const cvValidateBackend = createAsyncThunk<
+  CvBackendConfig,
+  { url: string },
+  { state: RootState; dispatch: AppDispatch }
+>("toolbox/cv/validateBackend", async ({ url }, { dispatch }) => {
+  console.log(`Validating backend at ${url}`);
+
+  try {
+    const response = await cvInfo(url);
+    const { algorithms } = await response.json();
+    const backend: CvBackendConfig = { url, state: true, algorithms };
+
+    console.log("Backend available", backend);
+
+    // completely reset the tool when the backend changes
+    // (the tool is not ready until an algorithm is selected)
+    localStorage.setItem("cv-backend", url);
+    dispatch(
+      resetToolState<CvToolState>({
+        tool: Tool.Cv,
+        state: { status: ToolStatus.Failed, backend },
+      })
+    );
+
+    return backend;
+  } catch (error) {
+    // invalidate the backend on failure
+    localStorage.removeItem("cv-backend");
+    dispatch(
+      updateToolState<CvToolState>({
+        tool: Tool.Cv,
+        state: {
+          status: ToolStatus.Failed,
+          backend: { url, state: false },
+          algorithm: undefined,
+        },
+      })
+    );
+
+    // re-throw to notify caller
+    throw error;
+  }
+});
 
 // activate the given algorithm and inject it into the toolbox
 export const cvActivateAlgorithm = createAsyncThunk<
@@ -66,7 +129,7 @@ export const cvActivateAlgorithm = createAsyncThunk<
     };
 
     // update the algorithm on success
-    // TODO: load presets
+    localStorage.setItem("cv-algorithm", id);
     dispatch(
       updateToolState<CvToolState>({
         tool: Tool.Cv,
@@ -74,11 +137,13 @@ export const cvActivateAlgorithm = createAsyncThunk<
       })
     );
 
+    // TODO: load presets
     console.log("Activating algorithm");
     // run the new activation algorithm
     await dispatch(activateTool({ tool: Tool.Cv })).unwrap();
   } catch (error) {
     // invalidate the tool state on failure
+    localStorage.removeItem("cv-algorithm");
     dispatch(
       updateToolState<CvToolState>({
         tool: Tool.Cv,
@@ -101,6 +166,8 @@ export const cvResetAlgorithm = createAsyncThunk<
   { state: RootState; dispatch: AppDispatch }
 >("toolbox/cv/activateAlgorithm", async (_, { dispatch }) => {
   console.log("Deactivating algorithm");
+  // clear the algorithm from local storage
+  localStorage.removeItem("cv-algorithm");
 
   // reset the toolbox
   // (this will not trigger re-rendering)

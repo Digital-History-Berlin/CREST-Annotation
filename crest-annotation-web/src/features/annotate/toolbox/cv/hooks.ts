@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { cvResetAlgorithm } from "./thunks";
-import { CvBackendConfig, CvToolOperationState, CvToolState } from "./types";
+import { CvToolOperationState, CvToolState } from "./types";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import { resetToolState, updateToolState } from "../../slice/toolbox";
-import { Tool, ToolStatus } from "../../types/toolbox";
+import { updateToolState } from "../../slice/toolbox";
+import { Tool } from "../../types/toolbox";
 import { useToolStateSelector } from "../hooks";
 
 // enable local debug logs
@@ -89,32 +89,12 @@ export const useCvToolData = <T>({
 };
 
 export const useCvToolBackend = () => {
-  const dispatch = useAppDispatch();
-
   const backend = useToolStateSelector(
     Tool.Cv,
     (state: CvToolState | undefined) => state?.backend
   );
 
-  const updateBackend = useCallback(
-    (backend: CvBackendConfig) => {
-      if (debug) console.debug("Updating backend", backend);
-      dispatch(
-        // reset the tool when the backend changes
-        // (the tool is not ready until an algorithm is selected)
-        resetToolState<CvToolState>({
-          tool: Tool.Cv,
-          state: { status: ToolStatus.Failed, backend },
-        })
-      );
-    },
-    [dispatch]
-  );
-
-  return {
-    backend,
-    updateBackend,
-  };
+  return backend;
 };
 
 export const useCvToolAlgorithm = () => {
@@ -123,9 +103,7 @@ export const useCvToolAlgorithm = () => {
     (state: CvToolState | undefined) => state?.algorithm
   );
 
-  return {
-    algorithm,
-  };
+  return algorithm;
 };
 
 export const useCvToolOperationState = <T extends CvToolOperationState>(

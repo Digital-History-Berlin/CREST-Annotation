@@ -46,17 +46,26 @@ export const Configuration: ConfigFC = () => {
   });
 
   const handleSelect = useCallback(
-    () => dispatch(select({ index: 0 })),
+    () =>
+      dispatch(select({ index: 0 }))
+        .unwrap()
+        .catch(console.error),
     [dispatch]
   );
 
   const handleAccept = useCallback(
-    () => dispatch(decide({ accept: true, proceed: true })),
+    () =>
+      dispatch(decide({ accept: true, proceed: true }))
+        .unwrap()
+        .catch(console.error),
     [dispatch]
   );
 
   const handleReject = useCallback(
-    () => dispatch(decide({ accept: false, proceed: false })),
+    () =>
+      dispatch(decide({ accept: false, proceed: false }))
+        .unwrap()
+        .catch(console.error),
     [dispatch]
   );
 
@@ -70,7 +79,10 @@ export const Configuration: ConfigFC = () => {
   const handleChange = (patch: Partial<CvCrestDetectionToolConfig>) => {
     updateConfig(patch);
     // apply the configuration by re-selecting the active shape
-    if (operation) dispatch(select({ index: operation.index }));
+    if (operation)
+      dispatch(select({ index: operation.index }))
+        .unwrap()
+        .catch(console.error);
   };
 
   return (

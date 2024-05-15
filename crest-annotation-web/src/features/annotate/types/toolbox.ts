@@ -1,3 +1,9 @@
+export class ToolStateError extends Error {
+  constructor(tool: string, state: unknown) {
+    super(`Invalid tool state (${tool}): ${JSON.stringify(state)}`);
+  }
+}
+
 export enum Tool {
   // edit existing shapes
   Edit = "Edit",

@@ -46,7 +46,7 @@ export const createToolThunk =
   };
 
 export type ToolActivationThunk<T = unknown> = (
-  state: T,
+  state: T | undefined,
   thunkApi: ToolboxThunkApi
 ) => void;
 
@@ -67,8 +67,8 @@ export const createActivateThunk =
   };
 
 export type ToolConfigurationThunk<T, C> = (
-  state: T,
-  config: C,
+  state: T | undefined,
+  config: C | undefined,
   thunkApi: ToolboxThunkApi
 ) => void;
 

@@ -20,8 +20,8 @@ export type ToolLoaderApi<T> = {
 };
 
 export type ToolLoaderThunkPayload<T, C> = {
-  state: T;
-  config: C;
+  state: T | undefined;
+  config: C | undefined;
   project: Project;
   object: DataObject;
   image: string;
@@ -38,7 +38,7 @@ export const createLoaderThunk =
   <T extends { status: ToolStatus }, C = unknown>(
     options: { tool: Tool; name?: string; progress?: number },
     thunk: ToolLoaderThunk<T, C>
-  ): ToolboxThunk<{ state: T; config: C }> =>
+  ): ToolboxThunk<{ state: T | undefined; config: C | undefined }> =>
   ({ state, config }, thunkApi) => {
     const { dispatch, getState } = thunkApi;
     const {
@@ -75,11 +75,13 @@ export const createLoaderThunk =
 
       const dispatchToolState = (state: Partial<T>) => {
         throwIfRejected(operation, getState());
-        // ensuretool state is updated from active operation only
-        updateToolState<T>({
-          tool: options.tool,
-          state,
-        });
+        // ensure tool state is updated from active operation only
+        dispatch(
+          updateToolState<T>({
+            tool: options.tool,
+            state,
+          })
+        );
       };
 
       await thunk({ state, config, project, object, image }, thunkApi, {

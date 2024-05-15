@@ -14,7 +14,7 @@ import {
 import { Begin } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
 import { ToolGesturePayload, ToolThunk } from "../../../types/thunks";
-import { Tool, ToolStatus } from "../../../types/toolbox";
+import { Tool, ToolStateError, ToolStatus } from "../../../types/toolbox";
 import {
   createActivateThunk,
   createConfigureThunk,
@@ -67,8 +67,8 @@ const prepare = cvCreateLoaderThunk<CvToolState>(
       data: undefined,
     });
 
-    if (!state.backend || state.algorithm?.frontend !== "generic-single-mask")
-      throw new Error("Tool is not configured properly");
+    if (!state?.backend || state.algorithm?.frontend !== "generic-single-mask")
+      throw new ToolStateError(Tool.Cv, state);
 
     // TODO: provide configuration and update on return
     await cvPrepare(state.backend.url, state.algorithm, { url: image });
@@ -79,7 +79,7 @@ const prepare = cvCreateLoaderThunk<CvToolState>(
 
 export const activate = createActivateThunk<CvToolState>(
   { tool: Tool.Cv },
-  (state, thunkApi) => prepare({ state, config: state.config }, thunkApi)
+  (state, thunkApi) => prepare({ state, config: state?.config }, thunkApi)
 );
 
 export const configure = createConfigureThunk<CvToolState>(
@@ -141,7 +141,7 @@ export const gesture = createToolThunk<
   ToolGesturePayload,
   CvGenericSingleMaskToolOperation
 >({ operation: "tool/cv" }, ({ gesture }, operation, thunkApi, toolApi) => {
-  const state = thunkApi.getToolState<CvToolState | undefined>();
+  const state = thunkApi.getToolState<CvToolState>();
   const ready = state?.status === ToolStatus.Ready;
   const backend = state?.backend;
   const algorithm = state?.algorithm;

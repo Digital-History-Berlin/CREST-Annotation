@@ -144,7 +144,7 @@ const toolboxApi = (
   dispatch,
   getState,
   // shorthand to retrieve the tool info (config)
-  getToolState: <T>() => getState().toolbox.tools[tool] as T,
+  getToolState: <T>() => getState().toolbox.tools[tool] as T | undefined,
 });
 
 export const activateTool = createAsyncThunk<

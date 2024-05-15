@@ -10,9 +10,8 @@ import {
 } from "@mui/material";
 import Check from "@mui/icons-material/Check";
 import { useCvToolAlgorithm, useCvToolBackend } from "./hooks";
-import { cvActivateAlgorithm } from "./thunks";
-import { CvAlgorithm, CvBackendConfig } from "./types";
-import { cvInfo } from "../../../../api/cvApi";
+import { cvActivateAlgorithm, cvValidateBackend } from "./thunks";
+import { CvAlgorithm } from "./types";
 import { useAppDispatch } from "../../../../app/hooks";
 import { ConfigFC } from "../../types/components";
 
@@ -25,65 +24,20 @@ import { ConfigFC } from "../../types/components";
  */
 export const Configuration: ConfigFC = () => {
   const dispatch = useAppDispatch();
-
-  const { backend, updateBackend } = useCvToolBackend();
-  const { algorithm } = useCvToolAlgorithm();
+  const backend = useCvToolBackend();
+  const algorithm = useCvToolAlgorithm();
 
   // component input state
   // (store update needs to be triggered manually)
   const [unsafeBackend, setUnsafeBackend] = useState<string>("");
   const [unsafeAlgorithm, setUnsafeAlgorithm] = useState<string>("");
 
-  const backendReady = useCallback(
-    (url: string, data: { algorithms: CvAlgorithm[] }): CvBackendConfig => {
-      const valid = { url: url, state: true, algorithms: data.algorithms };
-      updateBackend(valid);
-      // persist the backend URL in local storage
-      localStorage.setItem("cv-backend", url);
-      // response for caller promise
-      return valid;
-    },
-    [updateBackend]
-  );
-
-  const backendFailed = useCallback(
-    (url: string, error: unknown): CvBackendConfig => {
-      const invalid = { url: url, state: false };
-      updateBackend(invalid);
-      // clear the backend URL in local storage
-      localStorage.removeItem("cv-backend");
-      console.log("Backend not available", error);
-      // response for caller promise
-      return invalid;
-    },
-    [updateBackend]
-  );
-
   // check if backend responds properly
   const validateBackend = useCallback(
-    async (url?: string) => {
-      if (url?.length)
-        return await cvInfo(url)
-          .then((response) => response.json())
-          .then((data) => backendReady(url, data))
-          .catch((error) => backendFailed(url, error));
-      return undefined;
+    async (url: string) => {
+      dispatch(cvValidateBackend({ url }));
     },
-    [backendReady, backendFailed]
-  );
-
-  const algorithmReady = useCallback((algorithm: CvAlgorithm) => {
-    // persist the algorithm in local storage
-    localStorage.setItem("cv-algorithm", algorithm.id);
-  }, []);
-
-  const algorithmFailed = useCallback(
-    (algorithm: CvAlgorithm, error: unknown) => {
-      // clear the backend URL in local storage
-      localStorage.removeItem("cv-algorithm");
-      console.error("Failed to activate algorithm", error);
-    },
-    []
+    [dispatch]
   );
 
   // check if algorithm can be loaded properly
@@ -93,12 +47,9 @@ export const Configuration: ConfigFC = () => {
       if (!algorithm) return console.log(`Unknown algorithm: ${id}`);
 
       // activate the algorithm
-      await dispatch(cvActivateAlgorithm({ algorithm }))
-        .unwrap()
-        .then(() => algorithmReady(algorithm))
-        .catch((error) => algorithmFailed(algorithm, error));
+      dispatch(cvActivateAlgorithm({ algorithm }));
     },
-    [algorithmReady, algorithmFailed, dispatch]
+    [dispatch]
   );
 
   const handleChangeBackend = useCallback(
@@ -123,26 +74,10 @@ export const Configuration: ConfigFC = () => {
   // reload data when store changes
   // (load from local storage if not available)
   useEffect(() => {
-    const restore = async () => {
-      const url = localStorage.getItem("cv-backend") || undefined;
-      const id = localStorage.getItem("cv-algorithm") || undefined;
-      const backend = await validateBackend(url);
-      // proceed if the backend was restored properly
-      if (id && backend) await validateAlgorithm(id, backend.algorithms);
-      else console.log(`Algorithm could not be restored`);
-    };
-
-    if (backend === undefined) {
-      // try to restore from local storage
-      restore()
-        .then(() => console.debug("Restored backend from local storage"))
-        .catch(console.error);
-    } else {
-      // update the inputs
-      setUnsafeBackend(backend?.url || "");
-      setUnsafeAlgorithm(algorithm?.id || "");
-    }
-  }, [validateAlgorithm, validateBackend, backend, algorithm]);
+    // update the inputs
+    setUnsafeBackend(backend?.url || "");
+    setUnsafeAlgorithm(algorithm?.id || "");
+  }, [backend, algorithm]);
 
   return (
     <Stack padding={2} spacing={2}>
