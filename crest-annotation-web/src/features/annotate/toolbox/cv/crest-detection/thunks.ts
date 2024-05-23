@@ -202,8 +202,11 @@ export const navigateMaskIndex: ToolboxThunk<{
       if (config?.showPixelMask) {
         contextApi.progress("Downloading mask...");
         const mask = await cvGetMask(backend, algorithm, index);
-        const { state } = contextApi.getState();
-        contextApi.state({ ...state, mask });
+        contextApi.update({
+          ...operation,
+          state: { ...operation.state, mask },
+          name: undefined,
+        });
       }
     }
   );
