@@ -1,18 +1,23 @@
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { useAppSelector } from "../../../../app/hooks";
 import SidebarContainer from "../../../../components/SidebarContainer";
+import { useToolStateSelector } from "../../hooks/use-tool-state";
 import { selectToolboxTool } from "../../slice/toolbox";
-import { configPaneRegistry } from "../../toolbox";
+import { configPaneRegistry, selectorsRegistry } from "../../toolbox";
+import { CvToolState } from "../../toolbox/cv/types";
+import { Tool, ToolStatus } from "../../types/toolbox";
 
 /// Renders a configuration pane for an arbitrary tool
 const ConfigurationContainer = () => {
   const tool = useAppSelector(selectToolboxTool);
+  const status = useToolStateSelector(tool, selectorsRegistry[tool].status);
+  const loading = status === ToolStatus.Loading;
 
-  const loading = useAppSelector(
-    (state) =>
-      !!state.operation.current &&
-      // extend other states as needed
-      ["toolbox/initialization"].includes(state.operation.current.type)
+  // HACK: the CV tool changes the display configuration pane
+  // track the algorithm state to ensure it is reloaded
+  useToolStateSelector<CvToolState, unknown>(
+    Tool.Cv,
+    (state) => state?.algorithm
   );
 
   const Component = configPaneRegistry[tool];

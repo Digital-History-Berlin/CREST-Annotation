@@ -11,7 +11,10 @@ import {
 import { ConfigFC } from "../../types/components";
 import { Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
 import { ToolSelectors } from "../../types/toolbox-thunks";
-import { createActivateThunk } from "../create-custom-tool";
+import {
+  createActivateThunk,
+  createToolSelectors,
+} from "../create-custom-tool";
 
 const activate = createActivateThunk<CvToolState>(
   { tool: Tool.Cv },
@@ -32,17 +35,17 @@ export const cvThunks = {
   activate,
 };
 
-export const cvSelectors: ToolSelectors<CvToolState | undefined> = {
-  info: (state) => ({
-    status: state?.status ?? ToolStatus.Failed,
+export const cvSelectors: ToolSelectors<CvToolState | undefined> =
+  createToolSelectors({
+    tool: Tool.Cv,
     group: ToolGroup.Cv,
     icon: {
       name: "mdi:auto-fix",
       style: { fontSize: "25px" },
       tooltip: "Computer Vision",
     },
-  }),
-};
+    status: (state) => state?.status ?? ToolStatus.Failed,
+  });
 
 // validate the given backend and load the algorithms
 export const cvValidateBackend = createAppAsyncThunk(
@@ -134,7 +137,7 @@ export const cvActivateAlgorithm = createAppAsyncThunk(
       // TODO: load presets
       console.log("Activating algorithm");
       // run the new activation algorithm
-      dispatch(activateTool({ tool: Tool.Cv }));
+      await dispatch(activateTool({ tool: Tool.Cv })).unwrap();
     } catch (error) {
       // invalidate the tool state on failure
       localStorage.removeItem("cv-algorithm");
@@ -168,7 +171,7 @@ export const cvResetAlgorithm = createAppAsyncThunk(
     configPaneRegistry[Tool.Cv] = DefaultConfiguration as ConfigFC;
     thunksRegistry[Tool.Cv] = { activate };
 
-    dispatch(activateTool({ tool: Tool.Cv }));
+    await dispatch(activateTool({ tool: Tool.Cv })).unwrap();
     // trigger re-rendering
     dispatch(
       updateToolState<CvToolState>({

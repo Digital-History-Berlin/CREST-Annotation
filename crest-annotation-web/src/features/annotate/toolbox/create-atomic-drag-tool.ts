@@ -33,23 +33,27 @@ export const createAtomicDragTool =
     move: AtomicDragToolMoveThunk<O>;
     end: AtomicDragToolEndThunk<O>;
   }): ToolThunk<ToolGesturePayload> =>
-  ({ gesture }, thunkApi, { requestLabel, cancelLabel }) => {
+  async ({ gesture }, thunkApi, { requestLabel, cancelLabel }) => {
     if (gesture.identifier === GestureIdentifier.DragStart) {
       // start operation when drag gestures begins
       if (gesture.overload === GestureOverload.Primary)
-        thunkApi.dispatch(
-          operationBegin<AtomicToolOperation>({
-            operation: {
-              type: options.operation,
-              state: options.start(gesture),
-            },
-          })
-        );
+        await thunkApi
+          .dispatch(
+            operationBegin<AtomicToolOperation>({
+              operation: {
+                type: options.operation,
+                state: options.start(gesture),
+              },
+            })
+          )
+          .unwrap();
+
+      // drag start does not relate to operation
       return;
     }
 
     // remaining gesture handlers require operation
-    withCurrentOperationContext<O>(
+    await withCurrentOperationContext<O>(
       { thunkApi, type: options.operation },
       (contextApi) => {
         const current = contextApi.getState();

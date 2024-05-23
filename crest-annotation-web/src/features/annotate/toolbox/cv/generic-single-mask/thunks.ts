@@ -165,9 +165,8 @@ export const gesture: ToolThunk<ToolGesturePayload> = (
 
 export const label = createLabelThunk<CvGenericSingleMaskToolOperation>({
   operation: "tool/cv/generic-single-mask",
-  select: (operation) => ({
-    ...(operation.state.shape as MaskShape),
+  select: (operation) => [
     // disable preview mode
-    preview: false,
-  }),
+    { ...(operation.state.shape as MaskShape), preview: false },
+  ],
 });

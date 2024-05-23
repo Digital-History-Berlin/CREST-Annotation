@@ -36,7 +36,6 @@ export interface ToolIcon {
 
 export interface ToolInfo {
   group: ToolGroup;
-  status: ToolStatus;
   icon: ToolIcon;
 }
 

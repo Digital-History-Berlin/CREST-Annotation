@@ -244,9 +244,8 @@ export const gesture: ToolThunk<ToolGesturePayload> = (
 
 export const label = createLabelThunk<CvSamOnnxToolOperation>({
   operation: "tool/cv/sam-onnx",
-  select: (operation) => ({
-    ...(operation.state.shape as MaskShape),
+  select: (operation) => [
     // disable preview mode
-    preview: false,
-  }),
+    { ...(operation.state.shape as MaskShape), preview: false },
+  ],
 });

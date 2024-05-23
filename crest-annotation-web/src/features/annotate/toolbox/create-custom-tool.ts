@@ -34,6 +34,7 @@ import {
   ToolConfigurePayload,
   ToolLabelPayload,
   ToolSelectors,
+  ToolStatusSelector,
   ToolThunk,
   ToolboxThunk,
   ToolboxThunkApi,
@@ -188,11 +189,14 @@ export const createActivateThunk =
   (payload, thunkApi) => {
     const { dispatch, getToolState } = thunkApi;
 
-    dispatch(operationCancel({ id: undefined }));
-    // tool is activated immediately
-    dispatch(setToolboxTool(options.tool));
-    // run additional logic (if any)
-    return thunk?.(getToolState(), thunkApi);
+    return dispatch(operationCancel({ id: undefined }))
+      .unwrap()
+      .then(() => {
+        // tool is activated immediately
+        dispatch(setToolboxTool(options.tool));
+        // run additional logic (if any)
+        return thunk?.(getToolState(), thunkApi);
+      });
   };
 
 export type ToolConfigurationThunk<T, C> = (
@@ -216,9 +220,9 @@ export const createConfigureThunk =
   ({ config }, thunkApi) => {
     const { dispatch, getToolState } = thunkApi;
 
-    dispatch(operationCancel({ id: undefined }));
-    // run configuration logic
-    return thunk(getToolState(), config as C, thunkApi);
+    return dispatch(operationCancel({ id: undefined }))
+      .unwrap()
+      .then(() => thunk(getToolState(), config as C, thunkApi));
   };
 
 /**
@@ -230,29 +234,26 @@ export const createConfigureThunk =
 export const createLabelThunk =
   <O extends ToolOperation>(options: {
     operation: O["type"];
-    select: (operation: O) => Shape;
+    select: (operation: O) => Shape[] | undefined;
   }): ToolThunk<ToolLabelPayload> =>
-  ({ label }, { dispatch, getState }): void => {
+  async ({ label }, { dispatch, getState }) => {
     const { id, current } = getState().operation;
 
     // extract the shape from operation state
-    const shape = isOperationOfGroup<O>(current, "tool/")
+    const shapes = isOperationOfGroup<O>(current, "tool/")
       ? options.select(current)
       : undefined;
 
     // cancel operation if data is missing
-    if (label === undefined || shape === undefined)
-      return void dispatch(operationCancel({ id }));
+    if (label === undefined || shapes === undefined)
+      return dispatch(operationCancel({ id })).unwrap();
 
-    dispatch(operationComplete({ id }));
-    // create a new annotation with shape
-    dispatch(
-      addAnnotation({
-        id: uuidv4(),
-        shapes: [shape],
-        label,
-      })
-    );
+    return dispatch(operationComplete({ id }))
+      .unwrap()
+      .then(() => {
+        // create a new annotation with shape
+        dispatch(addAnnotation({ id: uuidv4(), shapes, label }));
+      });
   };
 
 /**
@@ -263,7 +264,7 @@ export const createLabelShapeThunk = <O extends AtomicToolOperation>(options: {
 }): ToolThunk<ToolLabelPayload> =>
   createLabelThunk({
     ...options,
-    select: (operation) => operation.state.shape,
+    select: (operation) => [operation.state.shape],
   });
 
 /**
@@ -281,17 +282,24 @@ export const createCustomToolThunk = <P>(
     thunk(payload, createToolboxApi(api, tool))
   );
 
+const defaultStatusSelector: ToolStatusSelector<unknown> = () =>
+  ToolStatus.Ready;
+
 // create default tool selectors
-export const createToolSelectors = (options: {
+export const createToolSelectors = <S>(options: {
   tool: Tool;
   group: ToolGroup;
   icon: ToolIcon;
-}): ToolSelectors => {
+  status?: ToolStatusSelector<S>;
+}): ToolSelectors<S> => {
+  // ensure info is memoized
+  const info = {
+    group: options.group,
+    icon: options.icon,
+  };
+
   return {
-    info: () => ({
-      status: ToolStatus.Ready,
-      group: options.group,
-      icon: options.icon,
-    }),
+    info: () => info,
+    status: options.status || defaultStatusSelector,
   };
 };

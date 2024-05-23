@@ -1,6 +1,6 @@
 import { Key } from "react";
 import { GestureEvent } from "./events";
-import { ToolInfo } from "./toolbox";
+import { ToolInfo, ToolStatus } from "./toolbox";
 import { Label } from "../../../api/openApi";
 import { AppDispatch, RootState } from "../../../app/store";
 import { MaybePromise } from "../../../types/maybe-promise";
@@ -48,7 +48,9 @@ export type ToolThunks = {
 };
 
 export type ToolInfoSelector<S> = (state: S) => ToolInfo;
+export type ToolStatusSelector<S> = (state: S) => ToolStatus;
 
 export type ToolSelectors<S = unknown> = {
   info: ToolInfoSelector<S>;
+  status: ToolStatusSelector<S>;
 };

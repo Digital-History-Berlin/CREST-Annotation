@@ -59,7 +59,7 @@ export const Configuration: ConfigFC = () => {
 
   const handleReject = useCallback(
     () =>
-      dispatch(decide({ accept: false, proceed: false }))
+      dispatch(decide({ accept: false, proceed: true }))
         .unwrap()
         .catch(console.error),
     [dispatch]

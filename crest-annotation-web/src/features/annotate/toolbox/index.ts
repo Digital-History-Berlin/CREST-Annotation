@@ -71,6 +71,7 @@ export const defaultCursorMap: Record<Tool, string | undefined> = {
   [Tool.Edit]: "pointer",
   [Tool.Cv]: undefined,
 };
+
 /**
  * Thunks map for different tools
  *
@@ -86,7 +87,7 @@ export const thunksRegistry: Record<Tool, ToolThunks | undefined> = {
   [Tool.Cv]: cvThunks,
 };
 
-export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
+export const selectorsRegistry: Record<Tool, ToolSelectors> = {
   [Tool.Pen]: penSelectors,
   [Tool.Circle]: circleSelectors,
   [Tool.Rectangle]: rectangleSelectors,
