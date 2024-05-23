@@ -1,5 +1,7 @@
-import { Operation } from "../../../types/operation";
+import { RootState } from "../../../../../app/store";
+import { Operation, operationStateOfType } from "../../../types/operation";
 import { Tool } from "../../../types/toolbox";
+import { cvToolState } from "../create-cv-tool";
 import { CvToolState } from "../types";
 
 export interface SamBoundingBox {
@@ -31,7 +33,6 @@ export type CvCrestDetectionToolState = CvToolState<
 
 export interface CvCrestDetectionToolOperationState {
   readonly tool: Tool.Cv;
-  readonly task?: "cv/crest-detection/select";
 
   index: number;
   boundingBox: SamBoundingBox;
@@ -39,6 +40,19 @@ export interface CvCrestDetectionToolOperationState {
 }
 
 export type CvCrestDetectionToolOperation = Operation<
-  "tool/cv",
+  "tool/cv/crest-detection",
   CvCrestDetectionToolOperationState
 >;
+
+// narrow down selectors to the specific tool
+export const toolState = (state: RootState, ready = true) =>
+  cvToolState<CvCrestDetectionToolState>(
+    state.toolbox.tools[Tool.Cv],
+    "crest-detection",
+    ready
+  );
+export const operationState = (state: RootState) =>
+  operationStateOfType<CvCrestDetectionToolOperation>(
+    state.operation.current,
+    "tool/cv/crest-detection"
+  );

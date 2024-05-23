@@ -1,18 +1,18 @@
 import { RectangleToolOperation } from "./types";
 import { ShapeType } from "../../types/shapes";
-import { ToolThunks } from "../../types/thunks";
 import { Tool, ToolGroup } from "../../types/toolbox";
+import { ToolThunks } from "../../types/toolbox-thunks";
 import {
   AtomicDragToolEndThunk,
   AtomicDragToolMoveThunk,
   AtomicDragToolStartThunk,
   createAtomicDragTool,
-} from "../atomic-drag-tool";
+} from "../create-atomic-drag-tool";
 import {
   createActivateThunk,
   createLabelShapeThunk,
   createToolSelectors,
-} from "../custom-tool";
+} from "../create-custom-tool";
 
 const activate = createActivateThunk({ tool: Tool.Rectangle });
 

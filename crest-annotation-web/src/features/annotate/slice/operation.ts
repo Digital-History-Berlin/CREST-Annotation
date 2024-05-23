@@ -1,26 +1,22 @@
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { v4 as uuidv4 } from "uuid";
-import { AppDispatch, RootState } from "../../../app/store";
-import { ToolboxOperation } from "../toolbox";
-import { Begin, OperationRejectedError } from "../types/operation";
-
-/// Application specific operation type
-export type RootOperation = ToolboxOperation;
-/// Application operation discriminators
-export type RootOperationType = RootOperation["type"];
+import { createAppAsyncThunk } from "../../../types/thunks";
+import { Operation, OperationRejectedError } from "../types/operation";
 
 export interface OperationSlice {
-  current: RootOperation | undefined;
+  id: string | undefined;
+  current: Operation | undefined;
 }
 
 const initialState: OperationSlice = {
+  id: undefined,
   current: undefined,
 };
 
-const debug = (message: string, operation: RootOperation | undefined) =>
+const debug = (message: string, id: string, operation: Operation | undefined) =>
   operation &&
   !operation.silence &&
-  console.debug(`${message}: ${operation.id.substring(0, 6)}`);
+  console.debug(`${message}: ${id.substring(0, 6)}`);
 
 /**
  * Operation slice
@@ -43,38 +39,62 @@ export const slice = createSlice({
   reducers: {
     updateOperation: (
       state,
-      action: PayloadAction<RootOperation | undefined>
+      action: PayloadAction<{ id: string; operation: Operation } | undefined>
     ) => {
-      state.current = action.payload;
+      state.id = action.payload?.id;
+      state.current = action.payload?.operation;
     },
   },
 });
 
 export default slice.reducer;
 
+export type OperationCancelPayload = {
+  id: string | undefined;
+};
+
+export type OperationBeginPayload<O> = {
+  operation: O;
+};
+
+export type OperationUpdatePayload<O> = {
+  id: string | undefined;
+  operation: O;
+};
+
+export type OperationCompletePayload = {
+  id: string | undefined;
+};
+
+export type OperationChainPayload<O> = {
+  id: string | undefined;
+  operation: O;
+};
+
 /**
- * Cancel the current or specified operation
+ * Cancel the specified operation
  *
  * This will trigger the cancellation of the current operation.
  * If an operation id is specified and it does not match the current operation,
  * an exception is thrown and the current operation is not cancelled.
  */
-export const operationCancel = createAsyncThunk<
+export const operationCancel = createAppAsyncThunk<
   void,
-  { id: string } | void,
-  { state: RootState; dispatch: AppDispatch }
->("operation/cancel", (payload, { dispatch, getState }) => {
-  const {
-    operation: { current },
-  } = getState();
+  OperationCancelPayload
+>("operation/cancel", ({ id }, { dispatch, getState }) => {
+  const { operation: current } = getState();
 
-  if (current === undefined || (payload && payload.id !== current.id))
+  if (
+    current.id === undefined ||
+    current.current === undefined ||
+    (id && id !== current.id)
+  )
     // swallow mismatches on cancellation
     return;
 
-  debug("Cancel operation", current);
+  debug("Cancel operation", current.id, current.current);
   // trigger cancellation within current context
-  current.cancellation?.();
+  current.current.cancellation?.();
   dispatch(slice.actions.updateOperation(undefined));
 });
 
@@ -87,18 +107,17 @@ export const operationCancel = createAsyncThunk<
  * must be provided with subsequent updates and completions, in order to
  * identify this operation.
  */
-export const operationBegin = createAsyncThunk<
-  RootOperation,
-  Begin<RootOperation>,
-  { state: RootState; dispatch: AppDispatch }
->("operation/begin", async (payload, { dispatch }) => {
-  await dispatch(operationCancel()).unwrap();
+export const operationBeginUnknown = createAppAsyncThunk<
+  string,
+  OperationBeginPayload<Operation>
+>("operation/begin", async ({ operation }, { dispatch }) => {
+  await dispatch(operationCancel({ id: undefined })).unwrap();
 
-  const operation = { ...payload, id: uuidv4() } as RootOperation;
-  debug("Begin operation", operation);
-  dispatch(slice.actions.updateOperation(operation));
+  const id = uuidv4();
+  debug("Begin operation", id, operation);
+  dispatch(slice.actions.updateOperation({ id, operation }));
 
-  return operation;
+  return id;
 });
 
 /**
@@ -108,20 +127,15 @@ export const operationBegin = createAsyncThunk<
  * the operation is still the current operation. Otherwise, an exception
  * is thrown and the update is ignored.
  */
-export const operationUpdate = createAsyncThunk<
+export const operationUpdateUnknown = createAppAsyncThunk<
   void,
-  RootOperation | undefined,
-  { state: RootState; dispatch: AppDispatch }
->("operation/update", (payload, { dispatch, getState }) => {
-  const {
-    operation: { current },
-  } = getState();
-  if (payload === undefined || payload.id !== current?.id)
-    throw new OperationRejectedError(payload?.id);
+  OperationUpdatePayload<Operation>
+>("operation/update", ({ id, operation }, { dispatch, getState }) => {
+  const { operation: current } = getState();
+  if (id === undefined || id !== current.id)
+    throw new OperationRejectedError(id);
 
-  // avoid spamming console
-  // debug("Update operation", operation);
-  dispatch(slice.actions.updateOperation(payload));
+  dispatch(slice.actions.updateOperation({ id, operation }));
 });
 
 /**
@@ -134,20 +148,17 @@ export const operationUpdate = createAsyncThunk<
  * The completion will trigger the completion routine and reset the
  * current operation state to undefined.
  */
-export const operationComplete = createAsyncThunk<
+export const operationComplete = createAppAsyncThunk<
   void,
-  { id: string } | undefined,
-  { state: RootState; dispatch: AppDispatch }
->("operation/complete", (payload, { dispatch, getState }) => {
-  const {
-    operation: { current },
-  } = getState();
-  if (payload === undefined || payload.id !== current?.id)
-    throw new OperationRejectedError(payload?.id);
+  OperationCompletePayload
+>("operation/complete", ({ id }, { dispatch, getState }) => {
+  const { operation: current } = getState();
+  if (id === undefined || id !== current.id || current.current === undefined)
+    throw new OperationRejectedError(id);
 
-  debug("Complete operation", current);
+  debug("Complete operation", id, current.current);
   // trigger completion within current context
-  current.completion?.(current.state);
+  current.current.completion?.(current.current.state);
   dispatch(slice.actions.updateOperation(undefined));
 });
 
@@ -163,136 +174,36 @@ export const operationComplete = createAsyncThunk<
  * the successor operation. Returns the newly created operation inluding
  * the operation id.
  */
-export const operationChain = createAsyncThunk<
-  RootOperation,
-  {
-    predecessor: { id: string } | undefined;
-    successor: Begin<RootOperation>;
-  },
-  { state: RootState; dispatch: AppDispatch }
->("operation/chain", ({ predecessor, successor }, { dispatch, getState }) => {
-  const {
-    operation: { current },
-  } = getState();
+export const operationChainUnknown = createAppAsyncThunk<
+  string,
+  OperationChainPayload<Operation>
+>("operation/chain", ({ id, operation }, { dispatch, getState }) => {
+  const { operation: current } = getState();
   // predecessor can be empty if current operation is also empty
-  if (predecessor?.id !== current?.id)
-    throw new OperationRejectedError(predecessor?.id);
+  if (id !== current.id) throw new OperationRejectedError(id);
 
-  debug("Complete operation", current);
-  // trigger completion within current context
-  current?.completion?.(current.state);
+  if (id !== undefined && current.current !== undefined) {
+    debug("Complete operation", id, current.current);
+    // trigger completion within current context
+    current.current.completion?.(current.current.state);
+  }
 
-  const operation = { ...successor, id: uuidv4() } as RootOperation;
-  debug("Proceeding with operation", operation);
-  dispatch(slice.actions.updateOperation(operation));
+  id = uuidv4();
+  debug("Proceeding with operation", id, operation);
+  dispatch(slice.actions.updateOperation({ id, operation }));
 
-  return operation;
+  return id;
 });
 
-/// Throw an exception if the operation is not the current operation
-export const throwIfRejected = (
-  operation: RootOperation | undefined,
-  { operation: { current } }: RootState
-) => {
-  if (operation === undefined || operation.id !== current?.id)
-    throw new OperationRejectedError(operation?.id);
-};
+// generic versions to improve type-safety without too many constraints
+export const operationBegin = <O extends Operation>(
+  payload: OperationBeginPayload<O>
+) => operationBeginUnknown(payload);
 
-/// Check if the operation is of a specific type
-export const isOperationOfType = <T extends RootOperation>(
-  operation: RootOperation | undefined,
-  type: T["type"]
-): operation is T => {
-  return operation !== undefined && operation.type === type;
-};
+export const operationUpdate = <O extends Operation>(
+  payload: OperationUpdatePayload<O>
+) => operationUpdateUnknown(payload);
 
-export type AsyncOperationApi<T extends RootOperation> = {
-  operation: T;
-  // shorthands to dispatch operation actions
-  update: (state: Omit<T, "id">) => Promise<void>;
-  complete: () => Promise<void>;
-  cancel: () => Promise<void>;
-  chain: <O extends RootOperation>(successor: O) => Promise<O>;
-};
-
-export type AsyncOperationCallback<T extends RootOperation> = (
-  api: AsyncOperationApi<T>
-) => Promise<void>;
-
-/**
- * Encapsulate a promise within an operation
- *
- * This provides a standard way to manage the lifecycle of an operation
- * when it matches an async function. It provides a simplified API to
- * update, complete, and cancel the operation.
- */
-export const operationWithAsync = async <T extends RootOperation>(
-  options: { dispatch: AppDispatch },
-  operation: T,
-  callback: AsyncOperationCallback<T>
-) => {
-  const update = (state: Omit<T, "id">) =>
-    options
-      .dispatch(operationUpdate({ id: operation.id, ...state } as T))
-      .unwrap();
-  const complete = () =>
-    options.dispatch(operationComplete({ id: operation.id })).unwrap();
-  const cancel = () =>
-    options.dispatch(operationCancel({ id: operation.id })).unwrap();
-  const chain = <O extends RootOperation>(successor: Begin<O>) =>
-    options
-      .dispatch(
-        operationChain({
-          predecessor: { id: operation.id },
-          successor,
-        })
-      )
-      .unwrap() as Promise<O>;
-
-  await callback({
-    operation,
-    update,
-    complete,
-    cancel,
-    chain,
-  }).catch((error) => {
-    // cancel operation on error
-    options.dispatch(operationCancel(operation));
-    // ensure error is still propagated
-    throw error;
-  });
-};
-
-/// Encapsulates a promise within a new operation
-export const operationBeginWithAsync = <T extends RootOperation>(
-  options: { dispatch: AppDispatch },
-  initial: Begin<T>,
-  callback: AsyncOperationCallback<T>
-) =>
-  options
-    .dispatch(operationBegin(initial))
-    .unwrap()
-    .then((operation) => operationWithAsync(options, operation as T, callback));
-
-/// Encapsulates a promise within an existing operation
-export const operationUpdateWithAsync = <T extends RootOperation>(
-  options: { dispatch: AppDispatch },
-  operation: T,
-  callback: AsyncOperationCallback<T>
-) =>
-  options
-    .dispatch(operationUpdate(operation))
-    .unwrap()
-    .then(() => operationWithAsync(options, operation, callback));
-
-/// Encapsulates a promise within an succeeding operation
-export const operationChainWithAsync = <T extends RootOperation>(
-  options: { dispatch: AppDispatch },
-  predecessor: { id: string } | undefined,
-  successor: Begin<T>,
-  callback: AsyncOperationCallback<T>
-) =>
-  options
-    .dispatch(operationChain({ predecessor, successor }))
-    .unwrap()
-    .then((operation) => operationWithAsync(options, operation as T, callback));
+export const operationChain = <O extends Operation>(
+  payload: OperationChainPayload<O>
+) => operationChainUnknown(payload);

@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { Key, useCallback, useMemo, useState } from "react";
 import Konva from "konva";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch } from "../../../app/hooks";
 import { Position } from "../../../types/geometry";
-import { processGesture, processLabel } from "../slice/toolbox";
+import { processGesture, processKey, processLabel } from "../slice/toolbox";
 import { GestureEvent } from "../types/events";
-import { ToolApi } from "../types/thunks";
+import { ToolApi } from "../types/toolbox-thunks";
 
 export interface LabelPopup {
   left?: number | string;
@@ -20,6 +20,8 @@ export interface ToolController {
   handleGesture: (gesture: GestureEvent) => void;
   /// Handle a label selection
   handleLabel: (label?: Label) => void;
+  /// Handle a keypress
+  handleKey: (key: Key) => void;
 }
 
 /**
@@ -82,9 +84,17 @@ export const useToolController = ({
     [dispatch, toolApi]
   );
 
+  const handleKey = useCallback(
+    (key: Key) => {
+      dispatch(processKey({ key, toolApi }));
+    },
+    [dispatch, toolApi]
+  );
+
   return {
     labelPopup,
     handleGesture,
     handleLabel,
+    handleKey,
   };
 };

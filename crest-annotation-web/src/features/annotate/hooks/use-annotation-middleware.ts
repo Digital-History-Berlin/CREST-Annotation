@@ -86,8 +86,8 @@ export const useAnnotationMiddleware = ({
           })
         );
         // ensure ongoing operation is canceled when object changes
-        dispatch(operationCancel());
-        // activate the current tool
+        dispatch(operationCancel({ id: undefined }));
+        // re-activate the current tool
         dispatch(activateTool({ tool: undefined }));
       }
     },

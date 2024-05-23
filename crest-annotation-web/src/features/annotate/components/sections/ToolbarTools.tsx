@@ -8,7 +8,12 @@ import {
   ToolbarToggleButtonWithTooltip,
 } from "../../../../components/ToolbarButton";
 import { useToolInfo } from "../../hooks/use-tool-info";
-import { activateTool, toggleToolboxModifier } from "../../slice/toolbox";
+import {
+  activateTool,
+  selectToolboxModifiers,
+  selectToolboxTool,
+  toggleToolboxModifier,
+} from "../../slice/toolbox";
 import { Modifiers, Tool, ToolGroup, ToolStatus } from "../../types/toolbox";
 
 const groupsInfo = [ToolGroup.Edit, ToolGroup.Shape, ToolGroup.Cv];
@@ -26,19 +31,13 @@ const ToolbarTools = () => {
   const theme = useTheme();
   const info = useToolInfo();
 
-  const tool = useAppSelector((state) => state.toolbox.selection.tool);
-
+  const tool = useAppSelector(selectToolboxTool);
   const handleActivate = useCallback(
-    (tool: Tool) => {
-      dispatch(activateTool({ tool }));
-    },
+    (tool: Tool) => dispatch(activateTool({ tool })),
     [dispatch]
   );
 
-  const modifiers = useAppSelector(
-    (state) => state.toolbox.selection.modifiers
-  );
-
+  const modifiers = useAppSelector(selectToolboxModifiers);
   const toggleModifier = useCallback(
     // TODO: implement side effects from activation
     (modifier: Modifiers) => dispatch(toggleToolboxModifier(modifier)),

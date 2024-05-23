@@ -7,6 +7,8 @@ import {
   CvSamOnnxToolData,
   CvSamOnnxToolOperation,
   CvSamOnnxToolState,
+  operationState,
+  toolState,
 } from "./types";
 import { cvPrepare } from "../../../../../api/cvApi";
 import {
@@ -14,26 +16,22 @@ import {
   swallowDebounceCancel,
 } from "../../../../../types/debounce";
 import { MaskShape } from "../../../components/shapes/Mask";
-import {
-  operationBeginWithAsync,
-  operationCancel,
-} from "../../../slice/operation";
+import { operationCancel } from "../../../slice/operation";
 import {
   GestureEvent,
   GestureIdentifier,
   GestureOverload,
 } from "../../../types/events";
-import { Begin } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
-import { ToolGesturePayload, ToolThunk } from "../../../types/thunks";
 import { Tool, ToolStateError, ToolStatus } from "../../../types/toolbox";
+import { ToolGesturePayload, ToolThunk } from "../../../types/toolbox-thunks";
 import {
   createActivateThunk,
   createConfigureThunk,
   createLabelThunk,
-  createToolThunk,
-} from "../../custom-tool";
-import { cvCreateLoaderThunk } from "../cv-tool";
+  withBeginOperationContext,
+} from "../../create-custom-tool";
+import { cvCreateLoaderThunk } from "../create-cv-tool";
 
 // debounce preview operation
 const debouncer = new Debouncer(150);
@@ -43,16 +41,16 @@ interface OperationPayload {
   data: CvSamOnnxToolData;
 }
 
-const previewOperation: Begin<CvSamOnnxToolOperation> = {
-  type: "tool/cv",
+const previewOperation: CvSamOnnxToolOperation = {
+  type: "tool/cv/sam-onnx",
   silence: true,
   state: {
     tool: Tool.Cv,
   },
 };
 
-const runOperation: Begin<CvSamOnnxToolOperation> = {
-  type: "tool/cv",
+const runOperation: CvSamOnnxToolOperation = {
+  type: "tool/cv/sam-onnx",
   state: {
     tool: Tool.Cv,
     labeling: true,
@@ -86,11 +84,9 @@ function tensorToMaskShape(
 
 const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
   { name: "Waiting for backend..." },
-  async (
-    { state, config, image },
-    thunkApi,
-    { progress, dispatchToolState }
-  ) => {
+  async ({ config, image }, { dispatchToolState }, contextApi, thunkApi) => {
+    const { backend, algorithm } = toolState(thunkApi.getState(), false);
+
     console.log("Preparing sam-onnx...");
     // clear the previous state
     dispatchToolState({
@@ -99,22 +95,19 @@ const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
       data: undefined,
     });
 
-    if (!state?.backend || state.algorithm?.frontend !== "sam-onnx")
-      throw new ToolStateError(Tool.Cv, state);
-
     // TODO: provide configuration and update on return
-    await cvPrepare(state.backend.url, state.algorithm, { url: image });
-    const baseUrl = `${state.backend.url}/${state.algorithm}`;
+    await cvPrepare(backend.url, algorithm, { url: image });
+    const baseUrl = `${backend.url}/${algorithm}`;
 
-    progress("Loading model...");
+    contextApi.progress("Loading model...");
     const model = await InferenceSession.create(`${baseUrl}/onnx-quantized`);
 
-    progress("Loading embeddings...");
+    contextApi.progress("Loading embeddings...");
     const np = new npyjs();
     const embeddings = await np.load(`${baseUrl}/embeddings`);
     const tensor = new ort.Tensor("float32", embeddings.data, embeddings.shape);
 
-    progress("Loading model scale...");
+    contextApi.progress("Loading model scale...");
     const dimensions = await samDimensionsFromUrl(image);
 
     // initialization successful
@@ -139,50 +132,53 @@ export const configure = createConfigureThunk<
 
 const preview: ToolThunk<OperationPayload> = (
   { gesture, data: { model, tensor, dimensions } },
-  { dispatch }
+  thunkApi
 ) => {
   // TODO: input from operation state
   const clicks = [{ ...gesture.transformed, clickType: 1 }];
 
-  operationBeginWithAsync({ dispatch }, previewOperation, async ({ update }) =>
-    debouncer
-      .debounce(async () => {
-        const feeds = samOnnxFeeds({
-          clicks,
-          tensor,
-          dimensions,
-        });
+  withBeginOperationContext(
+    previewOperation,
+    { thunkApi },
+    async ({ update }) =>
+      debouncer
+        .debounce(async () => {
+          const feeds = samOnnxFeeds({
+            clicks,
+            tensor,
+            dimensions,
+          });
 
-        const results = await model.run(feeds);
-        // TODO: allow selecting other outputs
-        const output = results[model.outputNames[0]];
-        const shape = tensorToMaskShape(
-          output.data,
-          output.dims[3],
-          output.dims[2]
-        );
+          const results = await model.run(feeds);
+          // TODO: allow selecting other outputs
+          const output = results[model.outputNames[0]];
+          const shape = tensorToMaskShape(
+            output.data,
+            output.dims[3],
+            output.dims[2]
+          );
 
-        await update({
-          type: "tool/cv",
-          state: {
-            tool: Tool.Cv,
-            shape,
-          },
-        });
-      })
-      .catch(swallowDebounceCancel)
+          await update({
+            type: "tool/cv/sam-onnx",
+            state: {
+              tool: Tool.Cv,
+              shape,
+            },
+          });
+        })
+        .catch(swallowDebounceCancel)
   );
 };
 
 const run: ToolThunk<OperationPayload> = (
   { gesture, data: { model, tensor, dimensions } },
-  { dispatch },
+  thunkApi,
   { requestLabel, cancelLabel }
 ) => {
   // TODO: input from operation state
   const clicks = [{ ...gesture.transformed, clickType: 1 }];
 
-  operationBeginWithAsync({ dispatch }, runOperation, async ({ update }) => {
+  withBeginOperationContext(runOperation, { thunkApi }, async ({ update }) => {
     debouncer.cancel();
     const feeds = samOnnxFeeds({
       clicks,
@@ -200,7 +196,7 @@ const run: ToolThunk<OperationPayload> = (
     );
 
     await update({
-      type: "tool/cv",
+      type: "tool/cv/sam-onnx",
       state: {
         tool: Tool.Cv,
         shape,
@@ -216,34 +212,38 @@ const run: ToolThunk<OperationPayload> = (
   });
 };
 
-export const gesture = createToolThunk<
-  ToolGesturePayload,
-  CvSamOnnxToolOperation
->({ operation: "tool/cv" }, ({ gesture }, operation, thunkApi, toolApi) => {
-  const state = thunkApi.getToolState<CvSamOnnxToolState>();
-  const ready = state?.status === ToolStatus.Ready;
-  const data = state?.data;
-  // tool is not configured properly
-  if (!ready || !data) return;
+export const gesture: ToolThunk<ToolGesturePayload> = (
+  { gesture },
+  thunkApi,
+  toolApi
+) => {
+  const state = thunkApi.getState();
+  const { data } = toolState(state);
+  const current = operationState(state);
+
+  if (data === undefined)
+    throw new ToolStateError(Tool.Cv, "SAM-ONNX model not available");
 
   if (gesture.identifier === GestureIdentifier.Move) {
-    if (!operation?.state.labeling)
+    if (!current?.labeling)
       // display preview when cursor pauses
       preview({ gesture, data }, thunkApi, toolApi);
   }
 
   if (gesture.identifier === GestureIdentifier.Click) {
-    if (operation?.state.labeling)
-      // labeling process is can be canceled by clicking
-      return thunkApi.dispatch(operationCancel(operation));
+    if (current?.labeling)
+      // labeling process can be canceled by clicking
+      return thunkApi
+        .dispatch(operationCancel({ id: state.operation.id }))
+        .unwrap();
     if (gesture.overload === GestureOverload.Primary)
       // extract segmentation mask
       run({ gesture, data }, thunkApi, toolApi);
   }
-});
+};
 
 export const label = createLabelThunk<CvSamOnnxToolOperation>({
-  operation: "tool/cv",
+  operation: "tool/cv/sam-onnx",
   select: (operation) => ({
     ...(operation.state.shape as MaskShape),
     // disable preview mode

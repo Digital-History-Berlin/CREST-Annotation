@@ -13,16 +13,13 @@ import {
 import { decide, select } from "./thunks";
 import {
   CvCrestDetectionToolConfig,
-  CvCrestDetectionToolOperationState,
+  CvCrestDetectionToolOperation,
 } from "./types";
 import { useAppDispatch } from "../../../../../app/hooks";
+import { useOperationState } from "../../../hooks/use-operation-state";
 import { operationCancel } from "../../../slice/operation";
 import { ConfigFC } from "../../../types/components";
-import {
-  useCvResetAlgorithm,
-  useCvToolConfig,
-  useCvToolOperationState,
-} from "../hooks";
+import { useCvResetAlgorithm, useCvToolConfig } from "../hooks";
 
 const defaultConfig: CvCrestDetectionToolConfig = {
   autostart: true,
@@ -35,8 +32,8 @@ export const Configuration: ConfigFC = () => {
   const dispatch = useAppDispatch();
   const resetAlgorithm = useCvResetAlgorithm();
 
-  const operation = useCvToolOperationState<CvCrestDetectionToolOperationState>(
-    "cv/crest-detection/select"
+  const operation = useOperationState<CvCrestDetectionToolOperation>(
+    "tool/cv/crest-detection"
   );
 
   const { config, updateConfig } = useCvToolConfig({
@@ -71,7 +68,7 @@ export const Configuration: ConfigFC = () => {
   const handleEdit = useCallback(() => undefined, [dispatch]);
 
   const handlePreview = useCallback(
-    () => dispatch(operationCancel()),
+    () => dispatch(operationCancel({ id: undefined })),
     [dispatch]
   );
 

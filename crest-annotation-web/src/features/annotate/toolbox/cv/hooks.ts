@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import { cvResetAlgorithm } from "./thunks";
-import { CvToolOperationState, CvToolState } from "./types";
-import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { CvToolState } from "./types";
+import { useAppDispatch } from "../../../../app/hooks";
+import { useToolStateSelector } from "../../hooks/use-tool-state";
 import { updateToolState } from "../../slice/toolbox";
 import { Tool } from "../../types/toolbox";
-import { useToolStateSelector } from "../hooks";
 
 // enable local debug logs
 const debug = false;
@@ -104,15 +104,4 @@ export const useCvToolAlgorithm = () => {
   );
 
   return algorithm;
-};
-
-export const useCvToolOperationState = <T extends CvToolOperationState>(
-  task: T["task"]
-): T | undefined => {
-  return useAppSelector((state) =>
-    state.operation.current?.type === "tool/cv" &&
-    state.operation.current.state.task === task
-      ? (state.operation.current.state as T)
-      : undefined
-  );
 };

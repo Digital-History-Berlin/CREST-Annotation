@@ -35,7 +35,7 @@ export const Configuration: ConfigFC = () => {
   // check if backend responds properly
   const validateBackend = useCallback(
     async (url: string) => {
-      dispatch(cvValidateBackend({ url }));
+      dispatch(cvValidateBackend(url));
     },
     [dispatch]
   );
@@ -47,7 +47,7 @@ export const Configuration: ConfigFC = () => {
       if (!algorithm) return console.log(`Unknown algorithm: ${id}`);
 
       // activate the algorithm
-      dispatch(cvActivateAlgorithm({ algorithm }));
+      dispatch(cvActivateAlgorithm(algorithm));
     },
     [dispatch]
   );

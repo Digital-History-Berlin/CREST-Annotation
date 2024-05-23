@@ -1,7 +1,9 @@
 import { InferenceSession, Tensor } from "onnxruntime-web";
+import { RootState } from "../../../../../app/store";
 import { MaskShape } from "../../../components/shapes/Mask";
-import { Operation } from "../../../types/operation";
+import { Operation, operationStateOfType } from "../../../types/operation";
 import { Tool } from "../../../types/toolbox";
+import { cvToolState } from "../create-cv-tool";
 import { CvToolState } from "../types";
 
 export interface SamImageDimensions {
@@ -45,6 +47,19 @@ export interface CvSamOnnxToolOperationState {
 }
 
 export type CvSamOnnxToolOperation = Operation<
-  "tool/cv",
+  "tool/cv/sam-onnx",
   CvSamOnnxToolOperationState
 >;
+
+// narrow down selectors to the specific tool
+export const toolState = (state: RootState, ready = true) =>
+  cvToolState<CvSamOnnxToolState>(
+    state.toolbox.tools[Tool.Cv],
+    "sam-onnx",
+    ready
+  );
+export const operationState = (state: RootState) =>
+  operationStateOfType<CvSamOnnxToolOperation>(
+    state.operation.current,
+    "tool/cv/sam-onnx"
+  );

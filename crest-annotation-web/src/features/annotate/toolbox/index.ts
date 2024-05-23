@@ -1,16 +1,11 @@
 import { circleSelectors, circleThunks } from "./circle/thunks";
-import { CircleToolOperation } from "./circle/types";
 import { Configuration as CvConfiguration } from "./cv/Configuration";
 import { cvSelectors, cvThunks } from "./cv/thunks";
-import { CvToolOperation } from "./cv/types";
 import { editSelectors, editThunks } from "./edit/thunks";
 import { penSelectors, penThunks } from "./pen/thunks";
-import { PenToolOperation } from "./pen/types";
 import { Preview as PolygonPreview } from "./polygon/Preview";
 import { polygonSelectors, polygonThunks } from "./polygon/thunks";
-import { PolygonToolOperation } from "./polygon/types";
 import { rectangleSelectors, rectangleThunks } from "./rectangle/thunks";
-import { RectangleToolOperation } from "./rectangle/types";
 import { ShapePreview } from "./ShapePreview";
 import { Circle } from "../components/shapes/Circle";
 import { Line } from "../components/shapes/Line";
@@ -18,10 +13,9 @@ import { Mask } from "../components/shapes/Mask";
 import { Polygon } from "../components/shapes/Polygon";
 import { Rectangle } from "../components/shapes/Rectangle";
 import { ConfigFC, PreviewFC, ShapeFC } from "../types/components";
-import { Operation } from "../types/operation";
 import { ShapeType } from "../types/shapes";
-import { ToolSelectors, ToolThunks } from "../types/thunks";
 import { Tool } from "../types/toolbox";
+import { ToolSelectors, ToolThunks } from "../types/toolbox-thunks";
 
 /**
  * Shape component for each shape type
@@ -100,21 +94,3 @@ export const selectorsRegistry: Record<Tool, ToolSelectors | undefined> = {
   [Tool.Edit]: editSelectors,
   [Tool.Cv]: cvSelectors as ToolSelectors,
 };
-
-export type InitializationOperationState = {
-  tool: Tool;
-};
-
-export type InitializationOperation = Operation<
-  "toolbox/initialization",
-  InitializationOperationState
->;
-
-/// Combination of available tool operation
-export type ToolboxOperation =
-  | InitializationOperation
-  | PenToolOperation
-  | CircleToolOperation
-  | RectangleToolOperation
-  | PolygonToolOperation
-  | CvToolOperation;

@@ -1,41 +1,40 @@
 import { PolygonToolOperation } from "./types";
-import {
-  operationBegin,
-  operationCancel,
-  operationUpdate,
-} from "../../slice/operation";
+import { PolygonShape } from "../../components/shapes/Polygon";
+import { operationBegin } from "../../slice/operation";
 import {
   GestureEvent,
   GestureIdentifier,
   GestureOverload,
 } from "../../types/events";
+import { OperationContextApi } from "../../types/operation-thunks";
 import { ShapeType } from "../../types/shapes";
-import { ToolGesturePayload, ToolThunks } from "../../types/thunks";
 import { Tool, ToolGroup } from "../../types/toolbox";
 import {
-  AtomicToolThunk,
+  ToolApi,
+  ToolGesturePayload,
+  ToolThunk,
+  ToolThunks,
+} from "../../types/toolbox-thunks";
+import {
   createActivateThunk,
   createLabelShapeThunk,
   createToolSelectors,
-  createToolThunk,
-} from "../custom-tool";
+  withCurrentOperationContext,
+} from "../create-custom-tool";
 
 const activate = createActivateThunk({ tool: Tool.Polygon });
 
-const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
-  gesture,
-  operation,
-  { dispatch },
-  { requestLabel, cancelLabel }
+const proceedClose = (
+  operation: PolygonToolOperation,
+  contextApi: OperationContextApi<PolygonToolOperation>,
+  { requestLabel, cancelLabel }: ToolApi
 ) => {
-  if (operation === undefined) return;
   // discard if polygon is too small
-  if (operation.state.shape.points.length < 6)
-    return dispatch(operationCancel(operation));
+  if (operation.state.shape.points.length < 6) return contextApi.cancel();
 
-  // complete ongoing polygon
-  dispatch(
-    operationUpdate({
+  // complete polygon and request label
+  return contextApi
+    .update({
       ...operation,
       state: {
         ...operation.state,
@@ -43,117 +42,121 @@ const closePolygon: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
         preview: undefined,
         labeling: true,
       },
-      // register cleanup
       cancellation: cancelLabel,
       completion: cancelLabel,
     })
-  );
-
-  // request a label for the shape
-  requestLabel();
+    .then(() => requestLabel());
 };
 
-const primaryClick: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
-  gesture,
-  operation,
-  thunkApi,
-  toolApi
+const proceedClick = (
+  { transformation, transformed: { x, y } }: GestureEvent,
+  operation: PolygonToolOperation,
+  contextApi: OperationContextApi<PolygonToolOperation>,
+  toolApi: ToolApi
 ) => {
-  const {
-    transformation,
-    transformed: { x, y },
-  } = gesture;
-
-  if (operation === undefined)
-    return thunkApi.dispatch(
-      operationBegin({
-        type: "tool/polygon",
-        state: {
-          tool: Tool.Polygon,
-          // create new shape
-          shape: {
-            type: ShapeType.Polygon,
-            points: [x, y],
-            closed: false,
-          },
-          preview: [x, y],
-        },
-      })
-    );
-
-  if (operation.state.labeling)
-    // labeling process is can be canceled by clicking
-    return thunkApi.dispatch(operationCancel(operation));
+  // labeling process can be canceled by clicking
+  if (operation.state.labeling) return contextApi.cancel();
 
   // finish on click near start
   const dx = operation.state.shape.points[0] - x;
   const dy = operation.state.shape.points[1] - y;
   const threshold = 5 / transformation.scale;
   if (dx * dx + dy * dy < threshold * threshold)
-    return closePolygon(gesture, operation, thunkApi, toolApi);
+    return proceedClose(operation, contextApi, toolApi);
 
   // append new point
-  return thunkApi.dispatch(
-    operationUpdate({
-      ...operation,
-      state: {
-        ...operation.state,
-        // change existing shape
-        shape: {
-          ...operation.state.shape,
-          points: [...operation.state.shape.points, x, y],
-        },
+  return contextApi.update({
+    ...operation,
+    state: {
+      ...operation.state,
+      // change existing shape
+      shape: {
+        ...operation.state.shape,
+        points: [...operation.state.shape.points, x, y],
       },
-    })
-  );
+    },
+  });
 };
 
-const move: AtomicToolThunk<GestureEvent, PolygonToolOperation> = (
-  { transformed: { x, y } },
-  operation,
+const proceedMove = (
+  { transformed: { x, y } }: GestureEvent,
+  operation: PolygonToolOperation,
+  contextApi: OperationContextApi<PolygonToolOperation>
+) => {
+  if (operation?.state.shape.closed === false)
+    // update preview for explicitly open polygons
+    return contextApi.state({ ...operation.state, preview: [x, y] });
+};
+
+const proceed = (
+  gesture: GestureEvent,
+  contextApi: OperationContextApi<PolygonToolOperation>,
+  toolApi: ToolApi
+) => {
+  const operation = contextApi.getState();
+
+  if (
+    gesture.identifier === GestureIdentifier.Click ||
+    // during polygon creation, one might do short drags instead of clicks
+    // (i.e. if the mouse is being moved fast)
+    // it is more intuitive to treat these as clicks
+    gesture.identifier === GestureIdentifier.DragEnd
+  ) {
+    switch (gesture.overload) {
+      case GestureOverload.Primary:
+        return proceedClick(gesture, operation, contextApi, toolApi);
+      case GestureOverload.Secondary:
+        return proceedClose(operation, contextApi, toolApi);
+      case GestureOverload.Tertiary:
+        return contextApi.cancel();
+    }
+  }
+
+  if (
+    gesture.identifier === GestureIdentifier.Move ||
+    gesture.identifier === GestureIdentifier.DragMove
+  )
+    return proceedMove(gesture, operation, contextApi);
+};
+
+const begin: ToolThunk<GestureEvent> = async (
+  { identifier, overload, transformed: { x, y } },
   { dispatch }
 ) => {
-  // update preview only for open polygons
-  if (operation?.state.shape.closed !== false) return;
+  if (
+    identifier === GestureIdentifier.Click &&
+    overload === GestureOverload.Primary
+  ) {
+    // create a new polygon
+    const shape: PolygonShape = {
+      type: ShapeType.Polygon,
+      points: [x, y],
+      closed: false,
+    };
 
-  return dispatch(
-    operationUpdate({
-      ...operation,
-      state: { ...operation.state, preview: [x, y] },
-    })
-  );
+    await dispatch(
+      operationBegin<PolygonToolOperation>({
+        operation: {
+          type: "tool/polygon",
+          state: { tool: Tool.Polygon, shape, preview: [x, y] },
+        },
+      })
+    ).unwrap();
+  }
 };
 
-export const gesture = createToolThunk<
-  ToolGesturePayload,
-  PolygonToolOperation
->(
-  { operation: "tool/polygon" },
-  ({ gesture }, operation, thunkApi, toolApi) => {
-    if (
-      gesture.identifier === GestureIdentifier.Click ||
-      // during polygon creation, one might do short drags instead of clicks
-      // (i.e. if the mouse is being moved fast)
-      // it is more intuitive to treat these as clicks
-      gesture.identifier === GestureIdentifier.DragEnd
-    ) {
-      switch (gesture.overload) {
-        case GestureOverload.Primary:
-          return primaryClick(gesture, operation, thunkApi, toolApi);
-        case GestureOverload.Secondary:
-          return closePolygon(gesture, operation, thunkApi, toolApi);
-        case GestureOverload.Tertiary:
-          return thunkApi.dispatch(operationCancel(operation));
-      }
-    }
-
-    if (
-      gesture.identifier === GestureIdentifier.Move ||
-      gesture.identifier === GestureIdentifier.DragMove
-    )
-      return move(gesture, operation, thunkApi, toolApi);
-  }
-);
+export const gesture: ToolThunk<ToolGesturePayload> = (
+  { gesture },
+  thunkApi,
+  toolApi
+) =>
+  withCurrentOperationContext<PolygonToolOperation>(
+    { thunkApi, type: "tool/polygon" },
+    // proceed with existing polygon
+    (contextApi) => proceed(gesture, contextApi, toolApi),
+    // start with new polygon
+    () => begin(gesture, thunkApi, toolApi)
+  );
 
 export const label = createLabelShapeThunk({ operation: "tool/polygon" });
 

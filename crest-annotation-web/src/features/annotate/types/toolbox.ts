@@ -1,6 +1,6 @@
 export class ToolStateError extends Error {
-  constructor(tool: string, state: unknown) {
-    super(`Invalid tool state (${tool}): ${JSON.stringify(state)}`);
+  constructor(tool: string, reason: string) {
+    super(`Invalid tool state (${tool}): ${reason}`);
   }
 }
 

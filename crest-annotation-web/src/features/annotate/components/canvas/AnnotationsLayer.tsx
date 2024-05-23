@@ -4,6 +4,7 @@ import ComponentShape from "./Shape";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import {
   Annotation,
+  selectAnnotations,
   toggleAnnotation,
   updateShape,
 } from "../../slice/annotations";
@@ -19,7 +20,7 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
   const dispatch = useAppDispatch();
 
   const transformation = useAppSelector(selectTransformation);
-  const annotations = useAppSelector((state) => state.annotations.annotations);
+  const annotations = useAppSelector(selectAnnotations);
 
   // render transparent if group annotation is selected
   const modifiers = useAppSelector(

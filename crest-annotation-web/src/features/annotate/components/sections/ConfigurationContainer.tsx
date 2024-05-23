@@ -1,11 +1,12 @@
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { useAppSelector } from "../../../../app/hooks";
 import SidebarContainer from "../../../../components/SidebarContainer";
+import { selectToolboxTool } from "../../slice/toolbox";
 import { configPaneRegistry } from "../../toolbox";
 
 /// Renders a configuration pane for an arbitrary tool
 const ConfigurationContainer = () => {
-  const tool = useAppSelector((state) => state.toolbox.selection.tool);
+  const tool = useAppSelector(selectToolboxTool);
 
   const loading = useAppSelector(
     (state) =>

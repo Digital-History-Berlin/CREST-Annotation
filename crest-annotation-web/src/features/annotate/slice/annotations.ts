@@ -2,13 +2,13 @@ import {
   Action,
   Middleware,
   PayloadAction,
-  createAsyncThunk,
   createSlice,
 } from "@reduxjs/toolkit";
 import { enhancedApi } from "../../../api/enhancedApi";
 import { Object as DataObject, Label, Project } from "../../../api/openApi";
 import { useAppSelector } from "../../../app/hooks";
 import { RootState } from "../../../app/store";
+import { createAppAsyncThunk } from "../../../types/thunks";
 import { Shape } from "../types/shapes";
 
 export interface Annotation {
@@ -247,6 +247,9 @@ export const useAnnotationImage = (): string =>
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   useAppSelector((state) => state.annotations.image!);
 
+export const selectAnnotations = (state: RootState) =>
+  state.annotations.annotations;
+
 export default slice.reducer;
 
 const toJson = (annotations: Annotation[]): string => {
@@ -259,7 +262,7 @@ const toJson = (annotations: Annotation[]): string => {
   );
 };
 
-const pullAnnotations = createAsyncThunk(
+const pullAnnotations = createAppAsyncThunk(
   "annotations/pullAnnotations",
   async (
     { objectId, projectId }: { objectId: string; projectId: string },

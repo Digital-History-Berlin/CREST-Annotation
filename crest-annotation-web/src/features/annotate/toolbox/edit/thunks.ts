@@ -1,5 +1,8 @@
 import { Tool, ToolGroup } from "../../types/toolbox";
-import { createActivateThunk, createToolSelectors } from "../custom-tool";
+import {
+  createActivateThunk,
+  createToolSelectors,
+} from "../create-custom-tool";
 
 const activate = createActivateThunk({ tool: Tool.Edit });
 

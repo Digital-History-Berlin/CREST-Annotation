@@ -23,6 +23,7 @@ import {
   deleteAnnotation,
   hideAnnotation,
   lockAnnotation,
+  selectAnnotations,
   showAnnotation,
   startEditAnnotation,
   toggleAnnotation,
@@ -32,8 +33,7 @@ import {
 const AnnotationsContainer = () => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-
-  const annotations = useAppSelector((state) => state.annotations.annotations);
+  const annotations = useAppSelector(selectAnnotations);
 
   const renderActions = (annotation: Annotation) => (
     <Stack direction="row">
