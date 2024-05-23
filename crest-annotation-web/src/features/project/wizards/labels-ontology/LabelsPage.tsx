@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button, Divider, Stack, Typography } from "@mui/material";
 import { useImportOntologyMutation } from "../../../../api/enhancedApi";
 import { Ontology, Project } from "../../../../api/openApi";
+import { useDialog } from "../../../../app/hooks";
 import Layout from "../../components/Layout";
 import LabelSelect from "../../components/wizards/LabelSelect";
 import MergeLabelsDialog from "../../components/wizards/MergeLabelsDialog";
@@ -23,7 +24,7 @@ const LabelsPage = ({
 }: IProps) => {
   const [leafs, setLeafs] = useState<string[]>([]);
   const [nodes, setNodes] = useState<string[]>([]);
-  const [pending, setPending] = useState<boolean>(false);
+  const mergeDialog = useDialog();
 
   const [importMutation, { isLoading: importLoading }] =
     useImportOntologyMutation();
@@ -40,16 +41,16 @@ const LabelsPage = ({
       method: method,
     }).unwrap();
 
-    if (response.result === "conflict") setPending(true);
+    if (response.result === "conflict") mergeDialog.handleOpen();
     if (response.result === "success") {
-      setPending(false);
+      mergeDialog.handleClose();
       onProceed();
     }
   };
 
   // continue pending import
   const continueImport = (method: string) => {
-    if (pending) executeImport(method);
+    if (mergeDialog.open) executeImport(method);
   };
 
   return (
@@ -66,9 +67,9 @@ const LabelsPage = ({
       }
     >
       <MergeLabelsDialog
-        open={pending}
+        open={mergeDialog.open}
         disabled={importLoading}
-        onClose={() => setPending(false)}
+        onClose={mergeDialog.handleClose}
         onConfirm={continueImport}
       />
 

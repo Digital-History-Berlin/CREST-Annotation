@@ -1,10 +1,11 @@
 import { withCurrentOperationContext } from "./create-custom-tool";
-import { operationBegin } from "../slice/operation";
+import { operationBegin, operationCancel } from "../slice/operation";
 import {
   GestureEvent,
   GestureIdentifier,
   GestureOverload,
 } from "../types/events";
+import { operationStateOfType } from "../types/operation";
 import { AtomicToolOperation } from "../types/toolbox-operations";
 import { ToolGesturePayload, ToolThunk } from "../types/toolbox-thunks";
 
@@ -47,10 +48,20 @@ export const createAtomicDragTool =
             })
           )
           .unwrap();
-
-      // drag start does not relate to operation
-      return;
     }
+
+    if (gesture.identifier === GestureIdentifier.Click) {
+      const { id, current } = thunkApi.getState().operation;
+      // labeling process can be canceled by clicking
+      if (operationStateOfType<O>(current, options.operation)?.labeling)
+        await thunkApi.dispatch(operationCancel({ id })).unwrap();
+    }
+
+    if (
+      gesture.identifier !== GestureIdentifier.DragMove &&
+      gesture.identifier !== GestureIdentifier.DragEnd
+    )
+      return;
 
     // remaining gesture handlers require operation
     await withCurrentOperationContext<O>(

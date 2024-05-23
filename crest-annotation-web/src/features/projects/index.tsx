@@ -4,6 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ProjectCard from "./components/ProjectCard";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
 import { Project } from "../../api/openApi";
+import { useDialog } from "../../app/hooks";
 import AddProjectDialog from "../../components/dialogs/AddProjectDialog";
 import DeleteProjectDialog from "../../components/dialogs/DeleteProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
@@ -11,8 +12,8 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
 
 const ProjectsPage = () => {
-  const [showCreate, setShowCreate] = useState(false);
-  const [deleteProject, setDeleteProject] = useState<Project>();
+  const createDialog = useDialog();
+  const deleteDialog = useDialog<Project>();
   const [page, setPage] = useState(1);
 
   const projectsQuery = useGetProjectsQuery({
@@ -25,7 +26,7 @@ const ProjectsPage = () => {
       fullWidth
       variant="contained"
       startIcon={<AddIcon />}
-      onClick={() => setShowCreate(true)}
+      onClick={createDialog.handleOpen}
     >
       Add Project
     </Button>
@@ -34,12 +35,12 @@ const ProjectsPage = () => {
   return (
     <>
       <AddProjectDialog
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
+        open={createDialog.open}
+        onClose={createDialog.handleClose}
       />
       <DeleteProjectDialog
-        onClose={() => setDeleteProject(undefined)}
-        project={deleteProject}
+        project={deleteDialog.data}
+        onClose={deleteDialog.handleClose}
       />
       <CardLayout
         onChangePage={setPage}
@@ -47,7 +48,7 @@ const ProjectsPage = () => {
         renderCard={(project) => (
           <ProjectCard
             project={project}
-            onDelete={() => setDeleteProject(project)}
+            onDelete={() => deleteDialog.handleOpen(project)}
           />
         )}
         header={<Toolbar title="Projects" />}

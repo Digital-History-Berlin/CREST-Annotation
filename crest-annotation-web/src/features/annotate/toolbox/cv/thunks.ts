@@ -16,6 +16,17 @@ import {
   createToolSelectors,
 } from "../create-custom-tool";
 
+const restoreConfig = (frontend: string) => {
+  try {
+    console.log(`Restoring ${frontend} config from local storage`);
+    const json = localStorage.getItem(frontend);
+    if (json) return JSON.parse(json);
+  } catch (error) {
+    console.error("Failed to restore config", error);
+    return undefined;
+  }
+};
+
 const activate = createActivateThunk<CvToolState>(
   { tool: Tool.Cv },
   async (state, { dispatch }) => {
@@ -97,13 +108,14 @@ export const cvActivateAlgorithm = createAppAsyncThunk(
     console.log(`Loading algorithm ${id} with frontend ${frontend}`);
 
     try {
+      const config = restoreConfig(frontend);
       // reset current algorithm state
       dispatch(
         updateToolState<CvToolState>({
           tool: Tool.Cv,
           state: {
             status: ToolStatus.Loading,
-            config: undefined,
+            config,
             data: undefined,
           },
         })
@@ -134,7 +146,6 @@ export const cvActivateAlgorithm = createAppAsyncThunk(
         })
       );
 
-      // TODO: load presets
       console.log("Activating algorithm");
       // run the new activation algorithm
       await dispatch(activateTool({ tool: Tool.Cv })).unwrap();

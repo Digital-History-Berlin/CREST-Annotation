@@ -1,16 +1,13 @@
 import { useCallback } from "react";
 import { Label } from "../../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
-import { toggleToolboxLabel } from "../../slice/toolbox";
+import { selectToolboxLabelId, toggleToolboxLabel } from "../../slice/toolbox";
 import LabelsExplorer from "../LabelsExplorer";
 
 const LabelsContainer = () => {
   const dispatch = useAppDispatch();
 
-  const selectedLabelId = useAppSelector(
-    (state) => state.toolbox.selection.labelId
-  );
-
+  const selectedLabelId = useAppSelector(selectToolboxLabelId);
   const toggleLabel = useCallback(
     (label: Label) => dispatch(toggleToolboxLabel(label)),
     [dispatch]

@@ -6,9 +6,6 @@ import { useToolStateSelector } from "../../hooks/use-tool-state";
 import { updateToolState } from "../../slice/toolbox";
 import { Tool } from "../../types/toolbox";
 
-// enable local debug logs
-const debug = false;
-
 export const useCvResetAlgorithm = () => {
   const dispatch = useAppDispatch();
 
@@ -16,35 +13,25 @@ export const useCvResetAlgorithm = () => {
   return useCallback(() => dispatch(cvResetAlgorithm()), [dispatch]);
 };
 
-export const useCvToolConfig = <T>({
-  frontend,
-  defaultConfig,
-}: {
-  frontend: string;
-  defaultConfig: T;
-}) => {
+export const useCvToolConfig = <T>(frontend: string) => {
   const dispatch = useAppDispatch();
 
   const config = useToolStateSelector(
     Tool.Cv,
     (state: CvToolState | undefined) =>
-      state?.algorithm?.frontend === frontend && state.config
-        ? (state?.config as T)
-        : defaultConfig
+      state?.algorithm?.frontend === frontend
+        ? (state.config as T | undefined)
+        : undefined
   );
 
   const updateConfig = useCallback(
     (patch: Partial<T>) => {
-      if (debug) console.debug("Updating tool config", patch);
-      dispatch(
-        updateToolState<CvToolState>({
-          tool: Tool.Cv,
-          // partial update for CV tool configuration
-          state: { config: { ...config, ...patch } },
-        })
-      );
+      const state = { config: { ...config, ...patch } };
+      dispatch(updateToolState<CvToolState>({ tool: Tool.Cv, state }));
+      // store changes in local storage
+      localStorage.setItem(frontend, JSON.stringify(state.config));
     },
-    [dispatch, config]
+    [dispatch, config, frontend]
   );
 
   return {
@@ -53,31 +40,19 @@ export const useCvToolConfig = <T>({
   };
 };
 
-export const useCvToolData = <T>({
-  frontend,
-  defaultData,
-}: {
-  frontend: string;
-  defaultData: T;
-}) => {
+export const useCvToolData = <T>(frontend: string) => {
   const dispatch = useAppDispatch();
 
   const data = useToolStateSelector(Tool.Cv, (state: CvToolState | undefined) =>
-    state?.algorithm?.frontend === frontend && state.data
-      ? (state?.data as T)
-      : defaultData
+    state?.algorithm?.frontend === frontend
+      ? (state.data as T | undefined)
+      : undefined
   );
 
   const updateData = useCallback(
     (patch: Partial<T>) => {
-      if (debug) console.debug("Updating tool data", patch);
-      dispatch(
-        updateToolState<CvToolState>({
-          tool: Tool.Cv,
-          // partial update for CV tool configuration
-          state: { data: { ...data, ...patch } },
-        })
-      );
+      const state = { data: { ...data, ...patch } };
+      dispatch(updateToolState<CvToolState>({ tool: Tool.Cv, state }));
     },
     [dispatch, data]
   );

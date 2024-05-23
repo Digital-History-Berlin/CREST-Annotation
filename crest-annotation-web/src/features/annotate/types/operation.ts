@@ -8,8 +8,8 @@ export class OperationTypeError extends Error {
     type?: string;
     current: string | undefined;
   }) {
-    if (prefix) super(`Prefix mismatch: ${prefix} !==  ${current}`);
-    else if (type) super(`Type mismatch: ${type} !==  ${current}`);
+    if (prefix) super(`Prefix mismatch: ${prefix} !== ${current}`);
+    else if (type) super(`Type mismatch: ${type} !== ${current}`);
     else super(`Operation mismatch: ${current}`);
   }
 }

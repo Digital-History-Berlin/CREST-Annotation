@@ -25,10 +25,21 @@ const ConfigurationContainer = () => {
 
   return (
     <SidebarContainer title="Tool configuration">
-      <Backdrop open={loading} sx={{ position: "absolute", zIndex: 99 }}>
+      <Backdrop
+        open={loading}
+        sx={{
+          position: "absolute",
+          zIndex: 99,
+        }}
+      >
         <CircularProgress sx={{ color: "white" }} />
       </Backdrop>
-      <Box sx={{ pointerEvents: loading ? "none" : undefined }}>
+      <Box
+        sx={{
+          pointerEvents: loading ? "none" : undefined,
+          height: "100%",
+        }}
+      >
         <Component />
       </Box>
     </SidebarContainer>

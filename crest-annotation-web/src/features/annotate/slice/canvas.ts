@@ -27,6 +27,7 @@ export const slice = createSlice({
       state.transformation.scale = action.payload;
     },
     updateTransformation: (state, action: PayloadAction<Transformation>) => {
+      console.log("updateTransformation", action.payload);
       state.transformation = action.payload;
     },
   },

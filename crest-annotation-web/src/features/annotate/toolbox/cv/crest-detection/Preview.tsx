@@ -1,14 +1,14 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { Layer } from "react-konva";
+import { toMaskShape, toRectShape, update } from "./thunks";
 import {
-  CvCrestDetectionToolData,
   CvCrestDetectionToolOperationState,
+  useCvCrestDetectionToolData,
 } from "./types";
+import { useAppDispatch } from "../../../../../app/hooks";
 import Shape from "../../../components/canvas/Shape";
 import { RectangleShape } from "../../../components/shapes/Rectangle";
 import { PreviewFC } from "../../../types/components";
-import { ShapeType } from "../../../types/shapes";
-import { useCvToolData } from "../hooks";
 
 const previewPalette = [
   "#ff8700",
@@ -22,39 +22,30 @@ const previewPalette = [
   "#be0aff",
 ];
 
-const defaultData: CvCrestDetectionToolData = {};
-
 export const Preview: PreviewFC<CvCrestDetectionToolOperationState> = ({
   state,
   transformation,
 }) => {
-  const { data } = useCvToolData({ frontend: "crest-detection", defaultData });
+  const dispatch = useAppDispatch();
+  const { data } = useCvCrestDetectionToolData();
 
   const rect = useMemo(
     () =>
       state?.boundingBox && {
-        type: ShapeType.Rectangle,
-        x: state.boundingBox.bbox[0],
-        y: state.boundingBox.bbox[1],
-        width: state.boundingBox.bbox[2],
-        height: state.boundingBox.bbox[3],
+        ...toRectShape(state.boundingBox),
         caption: state.boundingBox.predictedIou.toFixed(2),
       },
     [state?.boundingBox]
   );
 
   const mask = useMemo(
-    () =>
-      state?.mask && {
-        type: ShapeType.Mask,
-        mask: state.mask.mask,
-        width: state.mask.mask[0].length,
-        height: state.mask.mask.length,
-        dx: 0,
-        dy: 0,
-        preview: true,
-      },
+    () => state?.mask && toMaskShape(state.mask),
     [state?.mask]
+  );
+
+  const handleEdit = useCallback(
+    (data: unknown) => dispatch(update({ shape: data as RectangleShape })),
+    [dispatch]
   );
 
   if (rect) {
@@ -65,6 +56,8 @@ export const Preview: PreviewFC<CvCrestDetectionToolOperationState> = ({
           shape={rect}
           color="#f00"
           transformation={transformation}
+          editable={state?.edit}
+          onUpdate={handleEdit}
         />
         {mask && (
           <Shape
@@ -83,12 +76,8 @@ export const Preview: PreviewFC<CvCrestDetectionToolOperationState> = ({
   return (
     <Layer>
       {data?.boundingBoxes?.map((boundingBox, i) => {
-        const shape: RectangleShape = {
-          type: ShapeType.Rectangle,
-          x: boundingBox.bbox[0],
-          y: boundingBox.bbox[1],
-          width: boundingBox.bbox[2],
-          height: boundingBox.bbox[3],
+        const shape = {
+          ...toRectShape(boundingBox),
           caption: boundingBox.predictedIou.toFixed(2),
         };
 
