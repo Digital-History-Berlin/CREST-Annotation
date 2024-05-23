@@ -1,4 +1,4 @@
-import { Key, useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Konva from "konva";
 import { Label } from "../../../api/openApi";
 import { useAppDispatch } from "../../../app/hooks";
@@ -21,7 +21,7 @@ export interface ToolController {
   /// Handle a label selection
   handleLabel: (label?: Label) => void;
   /// Handle a keypress
-  handleKey: (key: Key) => void;
+  handleKey: (key: KeyboardEvent) => void;
 }
 
 /**
@@ -85,11 +85,17 @@ export const useToolController = ({
   );
 
   const handleKey = useCallback(
-    (key: Key) => {
-      dispatch(processKey({ key, toolApi }));
+    (event: KeyboardEvent) => {
+      dispatch(processKey({ event, toolApi }));
     },
     [dispatch, toolApi]
   );
+
+  // attach key event handler
+  useEffect(() => {
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [handleKey]);
 
   return {
     labelPopup,

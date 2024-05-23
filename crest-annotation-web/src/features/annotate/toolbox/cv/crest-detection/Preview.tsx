@@ -3,6 +3,7 @@ import { Layer } from "react-konva";
 import { toMaskShape, toRectShape, update } from "./thunks";
 import {
   CvCrestDetectionToolOperationState,
+  useCvCrestDetectionToolConfig,
   useCvCrestDetectionToolData,
 } from "./types";
 import { useAppDispatch } from "../../../../../app/hooks";
@@ -28,6 +29,7 @@ export const Preview: PreviewFC<CvCrestDetectionToolOperationState> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { data } = useCvCrestDetectionToolData();
+  const { config } = useCvCrestDetectionToolConfig();
 
   const rect = useMemo(
     () =>
@@ -71,7 +73,7 @@ export const Preview: PreviewFC<CvCrestDetectionToolOperationState> = ({
     );
   }
 
-  if (data === undefined) return <Fragment />;
+  if (data === undefined || !config?.showOverview) return <Fragment />;
 
   return (
     <Layer>

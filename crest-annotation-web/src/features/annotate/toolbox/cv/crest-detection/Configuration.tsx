@@ -19,7 +19,7 @@ import {
 import { decide, edit, select } from "./thunks";
 import {
   CvCrestDetectionToolConfig,
-  CvCrestDetectionToolOperation,
+  operationState,
   useCvCrestDetectionToolConfig,
   useCvCrestDetectionToolData,
 } from "./types";
@@ -31,7 +31,6 @@ import {
 } from "../../../../../app/hooks";
 import Dot from "../../../../../components/Dot";
 import ToolSettingsDialog from "../../../components/dialogs/ToolSettingsDialog";
-import { useOperationState } from "../../../hooks/use-operation-state";
 import { useAnnotationProject } from "../../../slice/annotations";
 import { operationCancel } from "../../../slice/operation";
 import { selectToolboxLabelId } from "../../../slice/toolbox";
@@ -46,11 +45,7 @@ export const Configuration: ConfigFC = () => {
   const resetAlgorithm = useCvResetAlgorithm();
   const { data } = useCvCrestDetectionToolData();
   const { config, updateConfig } = useCvCrestDetectionToolConfig();
-
-  // current operation state
-  const operation = useOperationState<CvCrestDetectionToolOperation>(
-    "tool/cv/crest-detection"
-  );
+  const operation = useAppSelector(operationState);
 
   // advanced dialogs
   const skipDuplicatesDialog = useDialog();
@@ -114,7 +109,8 @@ export const Configuration: ConfigFC = () => {
   // but it is difficult to access the active label from there
   useEffect(
     () => {
-      if (data?.boundingBoxes && config?.autostart) handleSelect();
+      if (data?.boundingBoxes && config?.autostart && !operation)
+        handleSelect();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data?.boundingBoxes, handleSelect]
@@ -202,18 +198,18 @@ export const Configuration: ConfigFC = () => {
           When a new image is loaded and the tool is active, it will
           automatically start the mask selection process.
         </FormHelperText>
-      </FormGroup>
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Switch
-              disabled={config === undefined}
-              checked={!!config.showPixelMask}
-              onChange={(_, showPixelMask) => handleChange({ showPixelMask })}
-            />
-          }
-          label="Show pixel masks"
-        />
+        <FormGroup>
+          <FormControlLabel
+            control={
+              <Switch
+                disabled={config === undefined}
+                checked={!!config.showOverview}
+                onChange={(_, showOverview) => handleChange({ showOverview })}
+              />
+            }
+            label="Show overview"
+          />
+        </FormGroup>
       </FormGroup>
 
       <Divider />
@@ -270,6 +266,18 @@ export const Configuration: ConfigFC = () => {
           by skipping boxes that are (almost) completely included in existing
           rectangular annotations.
         </FormHelperText>
+      </FormGroup>
+      <FormGroup>
+        <FormControlLabel
+          control={
+            <Switch
+              disabled={config === undefined}
+              checked={!!config.showPixelMask}
+              onChange={(_, showPixelMask) => handleChange({ showPixelMask })}
+            />
+          }
+          label="Show pixel masks"
+        />
       </FormGroup>
 
       <Box flexGrow={1} />

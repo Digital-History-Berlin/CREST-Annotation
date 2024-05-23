@@ -13,9 +13,14 @@ import { Label } from "../../../../../api/openApi";
 import { MaskShape } from "../../../components/shapes/Mask";
 import { RectangleShape } from "../../../components/shapes/Rectangle";
 import { Annotation, addAnnotation } from "../../../slice/annotations";
+import { isOperationOfType } from "../../../types/operation";
 import { ShapeType } from "../../../types/shapes";
 import { Tool, ToolStateError, ToolStatus } from "../../../types/toolbox";
-import { ToolboxThunk } from "../../../types/toolbox-thunks";
+import {
+  ToolKeyPayload,
+  ToolThunk,
+  ToolboxThunk,
+} from "../../../types/toolbox-thunks";
 import {
   createActivateThunk,
   createConfigureThunk,
@@ -186,6 +191,9 @@ export const navigateMaskIndex: ToolboxThunk<{
     operation,
     { thunkApi },
     async (contextApi) => {
+      // HACK: steal the focus to prevent accidental key events
+      // @ts-expect-error blur is not always available
+      document.activeElement?.blur?.();
       // TODO: align centered on canvas
       /*
       contextApi.dispatch(
@@ -283,3 +291,28 @@ export const decide = createCustomToolThunk<{
       }
     )
 );
+
+export const key: ToolThunk<ToolKeyPayload> = ({ event }, thunkApi) => {
+  const { current } = thunkApi.getState().operation;
+  if (isOperationOfType(current, "tool/cv/crest-detection")) {
+    if (event.key === "Enter") {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      return thunkApi
+        .dispatch(decide({ accept: true, proceed: true }))
+        .unwrap();
+    }
+    if (event.key === "Escape") {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      return thunkApi
+        .dispatch(decide({ accept: false, proceed: true }))
+        .unwrap();
+    }
+    if (event.key === " ") {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      return thunkApi.dispatch(edit()).unwrap();
+    }
+  }
+};

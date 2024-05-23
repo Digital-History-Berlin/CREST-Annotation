@@ -135,6 +135,7 @@ export const cvActivateAlgorithm = createAppAsyncThunk(
         configure: thunks.configure,
         gesture: thunks.gesture,
         label: thunks.label,
+        key: thunks.key,
       };
 
       // update the algorithm on success

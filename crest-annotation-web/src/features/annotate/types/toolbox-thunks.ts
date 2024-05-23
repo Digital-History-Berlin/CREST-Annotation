@@ -1,4 +1,3 @@
-import { Key } from "react";
 import { GestureEvent } from "./events";
 import { ToolInfo, ToolStatus } from "./toolbox";
 import { Label } from "../../../api/openApi";
@@ -37,7 +36,7 @@ export type ToolActivatePayload = void;
 export type ToolConfigurePayload = { config: unknown };
 export type ToolGesturePayload = { gesture: GestureEvent };
 export type ToolLabelPayload = { label: Label | undefined };
-export type ToolKeyPayload = { key: Key };
+export type ToolKeyPayload = { event: KeyboardEvent };
 
 export type ToolThunks = {
   activate?: ToolboxThunk<ToolActivatePayload>;

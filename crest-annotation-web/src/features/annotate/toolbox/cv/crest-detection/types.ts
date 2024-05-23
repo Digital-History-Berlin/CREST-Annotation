@@ -18,6 +18,7 @@ export interface SamMask {
 
 export interface CvCrestDetectionToolConfig {
   autostart: boolean;
+  showOverview: boolean;
   showPixelMask: boolean;
   skipDuplicates: boolean;
   overlapThreshold: number;
@@ -52,6 +53,7 @@ export type CvCrestDetectionToolOperation = Operation<
 
 export const defaultConfig: CvCrestDetectionToolConfig = {
   autostart: true,
+  showOverview: false,
   showPixelMask: false,
   skipDuplicates: true,
   overlapThreshold: 0.1,

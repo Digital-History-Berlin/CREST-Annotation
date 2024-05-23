@@ -1,7 +1,6 @@
-from functools import lru_cache
-from fastapi import Depends
+import logging
 
-from segment_anything import SamPredictor, sam_model_registry
+from segment_anything import sam_model_registry
 
 from app.environment import env
 
@@ -19,6 +18,7 @@ def get_sam_model():
         sam = sam_model_registry[env.sam_model_type](checkpoint=env.sam_checkpoint)
 
         if env.sam_device:
+            logging.info(f"SAM device: {env.sam_device}")
             # if no device is specified leave on CPU
             sam.to(device=env.sam_device)
 

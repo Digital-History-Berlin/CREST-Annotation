@@ -53,14 +53,26 @@ export const isOperationOfGroup = <G extends Operation>(
   prefix: string
 ): operation is G => !!operation?.type.startsWith(prefix);
 
+export const operationOfType = <O extends Operation>(
+  operation: Operation | undefined,
+  type: O["type"]
+): O | undefined =>
+  isOperationOfType<O>(operation, type) ? operation : undefined;
+
+export const operationOfGroup = <G extends Operation>(
+  operation: Operation | undefined,
+  prefix: string
+): G | undefined =>
+  isOperationOfGroup<G>(operation, prefix) ? operation : undefined;
+
 export const operationStateOfType = <O extends Operation>(
   operation: Operation | undefined,
   type: O["type"]
 ): O["state"] | undefined =>
-  isOperationOfType(operation, type) ? operation.state : undefined;
+  isOperationOfType<O>(operation, type) ? operation.state : undefined;
 
 export const operationStateOfGroup = <G extends Operation>(
   operation: Operation | undefined,
   prefix: string
 ): G["state"] | undefined =>
-  isOperationOfGroup(operation, prefix) ? operation.state : undefined;
+  isOperationOfGroup<G>(operation, prefix) ? operation.state : undefined;
