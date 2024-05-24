@@ -3,12 +3,12 @@ import { CheckCircle } from "@mui/icons-material";
 import { Card, CardActionArea, CardMedia, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useGetImageUriQuery } from "../../../api/enhancedApi";
-import { Object as DataObject } from "../../../api/openApi";
+import { SummaryObject } from "../../../api/openApi";
 import Loader from "../../../components/Loader";
 
 interface IProps {
   projectId?: string;
-  object: DataObject;
+  object: SummaryObject;
 }
 
 const ObjectCard = ({ projectId, object }: IProps) => {

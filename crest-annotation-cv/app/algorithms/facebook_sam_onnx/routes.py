@@ -8,7 +8,6 @@ from fastapi import Body, Depends
 from fastapi.responses import FileResponse, Response
 
 from segment_anything import SamPredictor
-from segment_anything.utils.onnx import SamOnnxModel
 
 from app.schemas.common import Position
 from app.dependencies.facebook_sam import get_sam_model
@@ -18,8 +17,9 @@ from . import router
 # cached ONNX model and predictor
 predictor = None
 cache_index = None
-# TODO: specify cache directory
-embedding_path = "./cache/embedding.npy"
+# TODO: specify cache directory from environment
+embeddings_path = "./cache/facebook_sam_onnx/embeddings/"
+embedding_path = "./cache/facebook_sam_onnx/embedding.npy"
 
 
 @router.get("/onnx")

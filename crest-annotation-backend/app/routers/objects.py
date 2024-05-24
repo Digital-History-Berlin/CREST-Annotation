@@ -31,8 +31,20 @@ def to_schema(data_object: Object) -> schemas.Object:
     )
 
 
+def to_summary_schema(data_object: Object) -> schemas.SummaryObject:
+    return schemas.SummaryObject(
+        id=data_object.id,
+        object_uuid=data_object.object_uuid,
+        annotated=data_object.annotated,
+    )
+
+
 def to_dict(data_object: Object):
     return to_schema(data_object).dict()
+
+
+def to_summary_dict(data_object: Object):
+    return to_summary_schema(data_object).dict()
 
 
 # use post to avoid RTK-query caching
@@ -66,7 +78,7 @@ async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/of/{project_id}", response_model=list[schemas.Object])
+@router.get("/of/{project_id}", response_model=schemas.Paginated[schemas.SummaryObject])
 async def get_objects(
     project_id: str,
     filters: schemas.ObjectFilters = Depends(),
@@ -76,9 +88,19 @@ async def get_objects(
     query = db.query(Object).filter_by(project_id=project_id)
     if filters.annotated is not None:
         query = query.filter_by(annotated=filters.annotated)
-    objects: schemas.Paginated[schemas.Object] = paginate(query, to_schema)
+    objects: schemas.Paginated[schemas.Object] = paginate(query, to_summary_schema)
 
     return JSONResponse(objects.dict())
+
+
+@router.get("/all-of/{project_id}", response_model=list[schemas.Object])
+async def get_all_objects(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    objects: list[schemas.Object] = db.query(Object).filter_by(project_id=project_id)
+
+    return JSONResponse(list(map(to_summary_dict, objects)))
 
 
 @router.get("/id/{object_id}")

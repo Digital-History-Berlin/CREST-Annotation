@@ -61,6 +61,9 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    getAllObjects: build.query<GetAllObjectsApiResponse, GetAllObjectsApiArg>({
+      query: (queryArg) => ({ url: `/objects/all-of/${queryArg.projectId}` }),
+    }),
     getObject: build.query<GetObjectApiResponse, GetObjectApiArg>({
       query: (queryArg) => ({ url: `/objects/id/${queryArg.objectId}` }),
     }),
@@ -77,6 +80,12 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
         body: queryArg.imageRequest,
       }),
+    }),
+    getCachedImage: build.query<
+      GetCachedImageApiResponse,
+      GetCachedImageApiArg
+    >({
+      query: (queryArg) => ({ url: `/objects/cache/${queryArg.encoded}` }),
     }),
     getAnnotations: build.query<
       GetAnnotationsApiResponse,
@@ -227,12 +236,17 @@ export type GetObjectsCountApiArg = {
   projectId: string;
 };
 export type GetObjectsApiResponse =
-  /** status 200 Successful Response */ Object[];
+  /** status 200 Successful Response */ PaginatedSummaryObject;
 export type GetObjectsApiArg = {
   projectId: string;
   annotated?: boolean;
   page: number;
   size: number;
+};
+export type GetAllObjectsApiResponse =
+  /** status 200 Successful Response */ Object[];
+export type GetAllObjectsApiArg = {
+  projectId: string;
 };
 export type GetObjectApiResponse = /** status 200 Successful Response */ any;
 export type GetObjectApiArg = {
@@ -247,6 +261,11 @@ export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
 export type GetImageUriApiArg = {
   objectId: string;
   imageRequest: ImageRequest;
+};
+export type GetCachedImageApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetCachedImageApiArg = {
+  encoded: string;
 };
 export type GetAnnotationsApiResponse =
   /** status 200 Successful Response */ any;
@@ -362,6 +381,17 @@ export type Object = {
   object_uuid?: string;
   annotated?: boolean;
   annotation_data: string;
+};
+export type SummaryObject = {
+  id: string;
+  object_uuid?: string;
+  annotated?: boolean;
+};
+export type PaginatedSummaryObject = {
+  items: SummaryObject[];
+  pages: number;
+  page: number;
+  size: number;
 };
 export type ImageRequest = {
   thumbnail?: boolean;
@@ -483,9 +513,11 @@ export const {
   useGetRandomObjectMutation,
   useGetObjectsCountQuery,
   useGetObjectsQuery,
+  useGetAllObjectsQuery,
   useGetObjectQuery,
   useFinishObjectMutation,
   useGetImageUriQuery,
+  useGetCachedImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
   useGetProjectsQuery,

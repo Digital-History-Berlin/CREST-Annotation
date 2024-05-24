@@ -1,14 +1,24 @@
+import os
 import json
 import logging
+import hashlib
+import requests
+
 import numpy as np
 import cv2
 
+from uuid import uuid4
 from urllib import request
-from fastapi import Body, Depends, HTTPException
-from fastapi.responses import Response
 
 from segment_anything import SamAutomaticMaskGenerator
+from segment_anything.predictor import Sam
 
+from fastapi import Body, Depends, HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse, Response
+
+from app.schemas.common import TaskStatus
+from app.dependencies.task_pool import get_task_manager
 from app.dependencies.facebook_sam import get_sam_model
 from . import router
 
@@ -16,6 +26,65 @@ from . import router
 # cached SAM predictor
 masks = None
 cache_index = None
+# TODO: specify cache directory from environment
+segmentations_path = "./cache/custom_crest_detection/"
+# TODO: configure from environment
+backend = "http://localhost:8000"
+
+
+def run_segmentation(url: str, sam: Sam):
+    hashed_url = hashlib.sha256(url.encode()).hexdigest()
+    cache_path = segmentations_path + hashed_url + ".npy"
+    if os.path.isfile(cache_path):
+        logging.info("Loading existing segmentation...")
+        masks = np.load(cache_path, allow_pickle=True)
+        logging.info("Segmentation loaded")
+
+        return masks
+
+    if url:
+        logging.info("Loading image...")
+        response = request.urlopen(url)
+        py_data = bytearray(response.read())
+        logging.info("Image loaded")
+    else:
+        raise Exception("Invalid request")
+
+    np_data = np.asarray(py_data, dtype=np.uint8)
+    cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
+
+    logging.info("Preparing generator")
+    generator = SamAutomaticMaskGenerator(sam)
+    logging.info("Generating masks...")
+    masks = generator.generate(cv_data)
+
+    logging.info("Storing segmentation...")
+    os.makedirs(segmentations_path, exist_ok=True)
+    np.save(cache_path, masks)
+
+    return masks
+
+
+# TODO: task manager and sam from dependencies
+def segmentation_task(task: TaskStatus):
+    task_manager = get_task_manager()
+    sam = get_sam_model()
+
+    logging.info(f"Task starting: {task.id[:6]}")
+    task_manager.update_status(task.id, "processing")
+    try:
+        uri_response = requests.post(
+            f"{backend}/objects/uri/{task.object_id}",
+            json={"height": 1024},
+        )
+        run_segmentation(uri_response.json(), sam)
+
+        logging.info(f"Task completed: {task.id[:6]}")
+        task_manager.update_status(task.id, "completed")
+
+    except Exception:
+        logging.exception(f"Task failed: {task.id[:6]}")
+        task_manager.update_status(task.id, "failed")
 
 
 @router.get("/bounding-boxes")
@@ -64,20 +133,28 @@ async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)
         logging.info("Image cached")
         return
 
-    if url:
-        logging.info("Loading image...")
-        response = request.urlopen(url)
-        py_data = bytearray(response.read())
-        logging.info("Image loaded")
-    else:
-        raise Exception("Invalid request")
-
-    np_data = np.asarray(py_data, dtype=np.uint8)
-    cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
-
-    logging.info("Preparing generator")
-    generator = SamAutomaticMaskGenerator(sam)
-    logging.info("Generating masks...")
-    masks = generator.generate(cv_data)
-
+    masks = run_segmentation(url, sam)
     cache_index = url
+
+
+@router.post("/start/{task_id}/{project_id}")
+async def start(task_id: str, project_id: str, task_manager=Depends(get_task_manager)):
+    objects_response = requests.get(f"{backend}/objects/all-of/{project_id}")
+    objects = objects_response.json()
+
+    tasks = list(
+        [
+            TaskStatus(
+                id=str(uuid4()),
+                project_id=project_id,
+                object_id=obj["id"],
+                status="queued",
+            )
+            for obj in objects
+        ]
+    )
+
+    logging.info(f"Queueing segmentation tasks: {tasks}")
+    tasks = task_manager.queue_tasks(tasks, segmentation_task)
+
+    return JSONResponse(jsonable_encoder(tasks))

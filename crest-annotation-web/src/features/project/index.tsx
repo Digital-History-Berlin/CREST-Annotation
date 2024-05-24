@@ -13,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import LabelsTab from "./components/LabelsTab";
 import SettingsTab from "./components/SettingsTab";
+import TasksTab from "./components/TasksTab";
 import WizardsTab from "./components/WizardsTab";
 import { useGetProjectQuery } from "../../api/enhancedApi";
 import Layout from "../../components/layouts/Layout";
@@ -81,6 +82,7 @@ const ProjectPage = () => {
                   <Tab label="Settings" />
                   <Tab label="Labels" />
                   <Tab label="Wizards" />
+                  <Tab label="Tasks" />
                 </Tabs>
               </Box>
               <Box hidden={currentTab !== 0}>
@@ -95,6 +97,9 @@ const ProjectPage = () => {
                   // show labels tab after successful import
                   onSuccess={completeWizard}
                 />
+              </Box>
+              <Box hidden={currentTab !== 3}>
+                <TasksTab project={project} />
               </Box>
             </Paper>
           )}

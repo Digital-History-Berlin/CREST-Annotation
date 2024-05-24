@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useMemo } from "react";
+import React, { Fragment, useCallback, useMemo } from "react";
 import { Settings } from "@mui/icons-material";
 import {
   Box,
@@ -103,18 +103,6 @@ export const Configuration: ConfigFC = () => {
         .unwrap()
         .catch(console.error);
   };
-
-  // HACK: auto-start the selection process
-  // this should be done from thunks,
-  // but it is difficult to access the active label from there
-  useEffect(
-    () => {
-      if (data?.boundingBoxes && config?.autostart && !operation)
-        handleSelect();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data?.boundingBoxes, handleSelect]
-  );
 
   if (!config || !data) return <Fragment />;
 

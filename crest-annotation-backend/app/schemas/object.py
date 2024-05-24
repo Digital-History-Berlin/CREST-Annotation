@@ -7,9 +7,8 @@ from .modifiers import create, patch, response
 class BaseObject(BaseModel):
     id: str
     object_uuid: str | None
-    annotated: bool
-    annotation_data: str
     annotated: bool | None
+    annotation_data: str
 
 
 @create("id", "object_uuid", "annotated", "annotation_data", "annotated")
@@ -19,6 +18,11 @@ class CreateObject(BaseObject):
 
 @response()
 class Object(BaseObject):
+    pass
+
+
+@response("annotation_data")
+class SummaryObject(BaseObject):
     pass
 
 

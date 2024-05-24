@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ObjectCard from "./components/ObjectCard";
 import { useGetObjectsQuery, useGetProjectQuery } from "../../api/enhancedApi";
-import { Object as DataObject } from "../../api/openApi";
+import { SummaryObject } from "../../api/openApi";
 import { useAppSelector } from "../../app/hooks";
 import { selectObjectFilters, updateObjectFilters } from "../../app/slice";
 import CardLayout from "../../components/layouts/CardLayout";
@@ -47,7 +47,7 @@ const ObjectsPage = () => {
   const changeState = (annotated: boolean | undefined) =>
     dispatch(updateObjectFilters({ ...filters, annotated, offset: 0 }));
 
-  const renderCard = (object: DataObject) => (
+  const renderCard = (object: SummaryObject) => (
     <ObjectCard projectId={projectId} object={object} />
   );
 

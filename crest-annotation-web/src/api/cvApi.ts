@@ -14,6 +14,20 @@ export const cvInfo = async (backend: string): Promise<Response> => {
   return response;
 };
 
+export const cvTasks = async (
+  backend: string,
+  projectId: string
+): Promise<Response> => {
+  const response = await fetch(`${backend}/tasks/${projectId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) throw new Error("Invalid response");
+
+  return response;
+};
+
 export const cvPrepare = async (
   backend: string,
   algorithm: CvAlgorithm,

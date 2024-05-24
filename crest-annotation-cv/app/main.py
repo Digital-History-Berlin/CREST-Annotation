@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("requests_cache").setLevel(logging.WARNING)
@@ -8,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .environment import env
-from .routers import info
+from .routers import common
 
 # TODO: automatically import routers
 from .algorithms import example_segment
@@ -21,6 +22,7 @@ app = FastAPI()
 
 origins = env.cors_origins.split(",")
 
+logging.basicConfig(level=logging.INFO)
 logging.info("CORS origins: %s", origins)
 
 app.add_middleware(
@@ -31,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(info.router)
+app.include_router(common.router)
 
 # TODO: automatically include routers
 app.include_router(example_segment.router)

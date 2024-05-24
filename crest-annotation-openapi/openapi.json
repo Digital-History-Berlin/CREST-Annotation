@@ -386,7 +386,52 @@
       "content": {
        "application/json": {
         "schema": {
-         "title": "Response Get Objects Objects Of  Project Id  Get",
+         "$ref": "#/components/schemas/Paginated_SummaryObject_"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/all-of/{project_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get All Objects",
+    "operationId": "get_all_objects",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "title": "Response Get All Objects Objects All Of  Project Id  Get",
          "type": "array",
          "items": {
           "$ref": "#/components/schemas/Object"
@@ -535,6 +580,49 @@
      },
      "required": true
     },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/cache/{encoded}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Cached Image",
+    "operationId": "get_cached_image",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Encoded",
+       "type": "string"
+      },
+      "name": "encoded",
+      "in": "path"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -1703,6 +1791,37 @@
      }
     }
    },
+   "Paginated_SummaryObject_": {
+    "title": "Paginated[SummaryObject]",
+    "required": [
+     "items",
+     "pages",
+     "page",
+     "size"
+    ],
+    "type": "object",
+    "properties": {
+     "items": {
+      "title": "Items",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/SummaryObject"
+      }
+     },
+     "pages": {
+      "title": "Pages",
+      "type": "integer"
+     },
+     "page": {
+      "title": "Page",
+      "type": "integer"
+     },
+     "size": {
+      "title": "Size",
+      "type": "integer"
+     }
+    }
+   },
    "PatchLabel": {
     "title": "PatchLabel",
     "required": [
@@ -1870,6 +1989,27 @@
     ],
     "type": "string",
     "description": "An enumeration."
+   },
+   "SummaryObject": {
+    "title": "SummaryObject",
+    "required": [
+     "id"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "object_uuid": {
+      "title": "Object Uuid",
+      "type": "string"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
+     }
+    }
    },
    "ValidationError": {
     "title": "ValidationError",
