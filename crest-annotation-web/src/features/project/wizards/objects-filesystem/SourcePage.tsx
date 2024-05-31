@@ -8,11 +8,8 @@ import {
   Typography,
 } from "@mui/material";
 import StartIcon from "@mui/icons-material/Download";
-import {
-  FilesystemImport,
-  Project,
-  useImportFilesystemMutation,
-} from "../../../../api/openApi";
+import { useImportFilesystemMutation } from "../../../../api/enhancedApi";
+import { FilesystemImport, Project } from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 
 interface IProps {

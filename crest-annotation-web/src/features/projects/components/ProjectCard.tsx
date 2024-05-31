@@ -12,7 +12,8 @@ import { useNavigate } from "react-router-dom";
 import ObjectsIcon from "@mui/icons-material/Apps";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Project, useGetObjectsCountQuery } from "../../../api/openApi";
+import { useGetObjectsCountQuery } from "../../../api/enhancedApi";
+import { Project } from "../../../api/openApi";
 
 interface IProps {
   project: Project;

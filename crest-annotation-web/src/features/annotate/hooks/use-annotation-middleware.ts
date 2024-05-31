@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from "react";
 import {
+  useGetImageUriQuery,
   useGetObjectQuery,
   useGetProjectQuery,
 } from "../../../api/enhancedApi";
-import { useGetImageUriQuery } from "../../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { updateObject } from "../slice/annotations";
 import { operationCancel } from "../slice/operation";

@@ -1,10 +1,7 @@
 import React from "react";
 import { Button, Stack, Typography } from "@mui/material";
-import {
-  FilesystemImport,
-  Project,
-  useImportFilesystemMutation,
-} from "../../../../api/openApi";
+import { useImportFilesystemMutation } from "../../../../api/enhancedApi";
+import { FilesystemImport, Project } from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 
 interface IProps {
