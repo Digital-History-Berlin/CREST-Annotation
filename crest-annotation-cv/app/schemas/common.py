@@ -27,3 +27,4 @@ class TaskStatus(BaseModel):
     project_id: str
     object_id: str
     status: str
+    log: list[str] = []

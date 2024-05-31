@@ -13,10 +13,18 @@ import {
   useTheme,
 } from "@mui/material";
 import OpenIcon from "@mui/icons-material/ChevronRight";
+import CancelIcon from "@mui/icons-material/Close";
 import Layout from "./Layout";
 import { cvTasks } from "../../../api/cvApi";
 import { Project } from "../../../api/openApi";
 import Dot from "../../../components/Dot";
+
+interface Task {
+  id: string;
+  project_id: string;
+  object_id: string;
+  status: string;
+}
 
 interface IProps {
   project: Project;
@@ -26,14 +34,7 @@ const TasksTab = ({ project }: IProps) => {
   const theme = useTheme();
 
   const [backend, setBackend] = useState("");
-  const [tasks, setTasks] = useState<
-    {
-      id: string;
-      project_id: string;
-      object_id: string;
-      status: string;
-    }[]
-  >([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const save = async () => {
     try {
@@ -48,10 +49,45 @@ const TasksTab = ({ project }: IProps) => {
     }
   };
 
-  const renderItemAction = () => (
-    <IconButton size="small">
-      <OpenIcon />
-    </IconButton>
+  const renderItemAction = (task: Task) => {
+    if (task.status === "queued")
+      return (
+        <IconButton size="small">
+          <CancelIcon />
+        </IconButton>
+      );
+    if (task.status === "completed")
+      return (
+        <IconButton size="small">
+          <OpenIcon />
+        </IconButton>
+      );
+  };
+
+  const renderItem = (task: Task) => (
+    <ListItem
+      disablePadding
+      divider
+      key={task.id}
+      secondaryAction={renderItemAction(task)}
+    >
+      <ListItemIcon sx={{ width: 40, justifyContent: "center" }}>
+        {task.status === "processing" && <CircularProgress size={20} />}
+        {task.status !== "processing" && (
+          <Dot
+            disablePadding
+            color={
+              task.status === "completed"
+                ? theme.palette.success.light
+                : task.status === "failed"
+                ? theme.palette.error.light
+                : "white"
+            }
+          />
+        )}
+      </ListItemIcon>
+      <ListItemText primary={task.id} secondary={task.status} />
+    </ListItem>
   );
 
   return (
@@ -71,33 +107,7 @@ const TasksTab = ({ project }: IProps) => {
         />
       </Stack>
       <Divider />
-      <List disablePadding>
-        {tasks.map((task) => (
-          <ListItem
-            disablePadding
-            divider
-            key={task.id}
-            secondaryAction={renderItemAction()}
-          >
-            <ListItemIcon sx={{ width: 40, justifyContent: "center" }}>
-              {task.status === "processing" && <CircularProgress size={20} />}
-              {task.status !== "processing" && (
-                <Dot
-                  disablePadding
-                  color={
-                    task.status === "completed"
-                      ? theme.palette.success.light
-                      : task.status === "failed"
-                      ? theme.palette.error.light
-                      : "white"
-                  }
-                />
-              )}
-            </ListItemIcon>
-            <ListItemText primary={task.id} secondary={task.status} />
-          </ListItem>
-        ))}
-      </List>
+      <List disablePadding>{tasks.map(renderItem)}</List>
     </Layout>
   );
 };

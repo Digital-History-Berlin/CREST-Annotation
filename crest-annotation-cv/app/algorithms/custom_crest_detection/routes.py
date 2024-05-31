@@ -32,33 +32,37 @@ segmentations_path = "./cache/custom_crest_detection/"
 backend = "http://localhost:8000"
 
 
-def run_segmentation(url: str, sam: Sam):
+def run_segmentation(
+    url: str,
+    sam: Sam,
+    logger: logging.Logger,
+):
     hashed_url = hashlib.sha256(url.encode()).hexdigest()
     cache_path = segmentations_path + hashed_url + ".npy"
     if os.path.isfile(cache_path):
-        logging.info("Loading existing segmentation...")
+        logger.info("Loading existing segmentation...")
         masks = np.load(cache_path, allow_pickle=True)
-        logging.info("Segmentation loaded")
+        logger.info("Segmentation loaded")
 
         return masks
 
     if url:
-        logging.info("Loading image...")
+        logger.info("Loading image...")
         response = request.urlopen(url)
         py_data = bytearray(response.read())
-        logging.info("Image loaded")
+        logger.info("Image loaded")
     else:
         raise Exception("Invalid request")
 
     np_data = np.asarray(py_data, dtype=np.uint8)
     cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
 
-    logging.info("Preparing generator")
+    logger.info("Preparing generator")
     generator = SamAutomaticMaskGenerator(sam)
-    logging.info("Generating masks...")
+    logger.info("Generating masks...")
     masks = generator.generate(cv_data)
 
-    logging.info("Storing segmentation...")
+    logger.info("Storing segmentation...")
     os.makedirs(segmentations_path, exist_ok=True)
     np.save(cache_path, masks)
 
@@ -68,22 +72,23 @@ def run_segmentation(url: str, sam: Sam):
 # TODO: task manager and sam from dependencies
 def segmentation_task(task: TaskStatus):
     task_manager = get_task_manager()
+    logger = task_manager.get_logger(task.id)
     sam = get_sam_model()
 
-    logging.info(f"Task starting: {task.id[:6]}")
+    logger.info(f"Task starting...")
     task_manager.update_status(task.id, "processing")
     try:
         uri_response = requests.post(
             f"{backend}/objects/uri/{task.object_id}",
             json={"height": 1024},
         )
-        run_segmentation(uri_response.json(), sam)
+        run_segmentation(uri_response.json(), sam, logger)
 
-        logging.info(f"Task completed: {task.id[:6]}")
+        logger.info(f"Task completed")
         task_manager.update_status(task.id, "completed")
 
     except Exception:
-        logging.exception(f"Task failed: {task.id[:6]}")
+        logger.exception(f"Task failed")
         task_manager.update_status(task.id, "failed")
 
 
@@ -133,7 +138,7 @@ async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)
         logging.info("Image cached")
         return
 
-    masks = run_segmentation(url, sam)
+    masks = run_segmentation(url, sam, logging.root)
     cache_index = url
 
 
