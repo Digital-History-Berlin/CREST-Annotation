@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import numpy as np
@@ -72,6 +73,7 @@ async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)
     predictor.set_image(cv_data)
     embedding = predictor.get_image_embedding().cpu().numpy()
 
+    os.makedirs(embeddings_path, exist_ok=True)
     np.save(embedding_path, embedding)
     cache_index = url
 

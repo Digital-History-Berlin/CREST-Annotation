@@ -97,7 +97,7 @@ const prepare = cvCreateLoaderThunk<CvSamOnnxToolState>(
 
     // TODO: provide configuration and update on return
     await cvPrepare(backend.url, algorithm, { url: image });
-    const baseUrl = `${backend.url}/${algorithm}`;
+    const baseUrl = `${backend.url}/${algorithm.id}`;
 
     contextApi.progress("Loading model...");
     const model = await InferenceSession.create(`${baseUrl}/onnx-quantized`);
