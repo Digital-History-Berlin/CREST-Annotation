@@ -5,8 +5,9 @@ from fastapi import Depends
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from ...dependencies.db import get_db
-from ...models.objects import Object
+from app.dependencies.db import get_db
+from app.models.objects import Object
+
 from .. import export_router as router
 
 

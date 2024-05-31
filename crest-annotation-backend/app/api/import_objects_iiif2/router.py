@@ -6,10 +6,10 @@ from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from ...dependencies.db import get_db
-from ...dependencies.logger import get_logger
-from ...models.projects import Project
-from ...models.objects import Object
+from app.dependencies.db import get_db
+from app.dependencies.logger import get_logger
+from app.models.projects import Project
+from app.models.objects import Object
 
 from .. import import_router as router
 

@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 from fastapi import Depends, HTTPException
 from iiif_prezi3 import Manifest, Annotation, Service
 
-from ...dependencies.logger import get_logger
-from ... import schemas
+from app.dependencies.logger import get_logger
+from app import schemas
 
 from ..service_image_iiif import iiif3, iiif2, iiif1
 

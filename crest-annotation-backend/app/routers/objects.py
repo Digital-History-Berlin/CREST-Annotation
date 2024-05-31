@@ -1,5 +1,6 @@
 import json
 import logging
+import base64
 
 from typing import Callable
 
@@ -137,12 +138,16 @@ async def get_image_uri(
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
+    # disable caching for local files
+    image_uri = get_object_image_uri(data_object, usage)
+    local = image_uri.lower().startswith(env.image_local_url.lower())
+
     # inject cache if enabled
-    if env.image_cache:
+    if not local and env.image_cache:
         uri = f"{env.image_cache_url}/{cache.encode(object_id, usage)}"
         return JSONResponse(uri)
 
-    return JSONResponse(get_object_image_uri(data_object, usage))
+    return JSONResponse(image_uri)
 
 
 @router.get("/cache/{encoded}")
@@ -158,6 +163,13 @@ async def get_cached_image(
         return get_object_image_uri(data_object, usage)
 
     return FileResponse(cache.get(encoded, resolve))
+
+
+@router.get("/local/{encoded}")
+async def get_local_image(encoded: str):
+    decoded = base64.b32decode(encoded).decode()
+
+    return FileResponse(decoded)
 
 
 @router.get("/annotations/{object_id}")

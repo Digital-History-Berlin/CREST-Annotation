@@ -1,7 +1,7 @@
 import json
 
 from fastapi import Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
 
 from app.dependencies.db import get_db

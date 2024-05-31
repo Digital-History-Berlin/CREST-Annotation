@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from ...dependencies.logger import get_logger
+from app.dependencies.logger import get_logger
 
 
 class OntologyMetaData:

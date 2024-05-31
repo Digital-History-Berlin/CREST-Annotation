@@ -1,10 +1,12 @@
 import os
 import uuid
+import base64
 
 from pydantic import BaseModel, Field
 from fastapi import Depends
 
-from ...dependencies.logger import get_logger
+from app.environment import env
+from app.dependencies.logger import get_logger
 from app import schemas
 
 
@@ -18,7 +20,7 @@ class FilesystemObjectData(BaseModel):
     path: str
 
     def get_image_uri(self, usage: schemas.ImageRequest):
-        return self.path
+        return f"{env.image_local_url}/{self.path}"
 
 
 class FilesystemObject(schemas.CreateObject):
@@ -55,6 +57,15 @@ class Filesystem:
             )
         )
 
+    def encode_path(self, path: str, image: str):
+        """
+        Return URL-safe encoded path
+        """
+
+        # use base32 encoding to avoid special characters
+        raw = os.path.join(path, image).encode()
+        return base64.b32encode(raw).decode()
+
     def extract_objects(self, path: str):
         """
         Extract objects in path
@@ -64,7 +75,7 @@ class Filesystem:
             FilesystemObject(
                 object_uuid=uuid.uuid4().hex,
                 object_data=FilesystemObjectData(
-                    path=f"file:///{os.path.join(path, image)}",
+                    path=self.encode_path(path, image),
                 ),
             )
             # extract sequences from manifest
