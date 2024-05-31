@@ -18,6 +18,7 @@ export_router = APIRouter(
 
 
 from .import_labels_ontology import router
+from .import_objects_filesystem import router
 from .import_objects_iiif3 import router
 from .import_objects_iiif2 import router
 from .export_yaml import router
@@ -27,6 +28,7 @@ from .. import schemas
 # extended object types
 from .import_objects_iiif3.dependencies import Iiif3ObjectData
 from .import_objects_iiif2.dependencies import Iiif2ObjectData
+from .import_objects_filesystem.dependencies import FilesystemObjectData
 
 
 from ..models.objects import Object
@@ -44,6 +46,8 @@ def get_object_data_schema(object_data):
         return Iiif3ObjectData
     if object_data.get("type") == "iiif2":
         return Iiif2ObjectData
+    if object_data.get("type") == "fs":
+        return FilesystemObjectData
 
     raise ModuleNotFoundError(name=id)
 

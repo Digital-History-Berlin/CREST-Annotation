@@ -168,6 +168,20 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    importFilesystem: build.mutation<
+      ImportFilesystemApiResponse,
+      ImportFilesystemApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/import/filesystem`,
+        method: "POST",
+        params: {
+          path: queryArg.path,
+          project_id: queryArg.projectId,
+          commit: queryArg.commit,
+        },
+      }),
+    }),
     importIiif3: build.mutation<ImportIiif3ApiResponse, ImportIiif3ApiArg>({
       query: (queryArg) => ({
         url: `/import/iiif/3`,
@@ -317,6 +331,13 @@ export type ImportOntologyApiArg = {
   method?: string;
   body: string[];
 };
+export type ImportFilesystemApiResponse =
+  /** status 200 Successful Response */ FilesystemImport;
+export type ImportFilesystemApiArg = {
+  path: string;
+  projectId: string;
+  commit?: boolean;
+};
 export type ImportIiif3ApiResponse =
   /** status 200 Successful Response */ Iiif3Import;
 export type ImportIiif3ApiArg = {
@@ -439,6 +460,10 @@ export type Ontology = {
   labels: OntologyLabel[];
   problems: string[];
 };
+export type FilesystemImport = {
+  objects: string[];
+  added: string[];
+};
 export type Id = string;
 export type LngString = object;
 export type ServiceItem = {
@@ -527,6 +552,7 @@ export const {
   useDeleteProjectMutation,
   useGetOntologyImportMutation,
   useImportOntologyMutation,
+  useImportFilesystemMutation,
   useImportIiif3Mutation,
   useImportIiif2Mutation,
   useGetYamlExportQuery,

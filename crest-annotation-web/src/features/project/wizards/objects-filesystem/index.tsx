@@ -1,19 +1,37 @@
-import React from "react";
-import { Box, Button, Divider, Stack } from "@mui/material";
+import { useState } from "react";
+import InfoPage from "./InfoPage";
+import SourcePage from "./SourcePage";
+import { FilesystemImport, Project } from "../../../../api/openApi";
 import { WizardProps } from "../../components/WizardsTab";
 
-const ObjectsFileSystem = ({ onCancel }: WizardProps) => {
-  return (
-    <>
-      <Box padding={2}>Not available</Box>
-      <Divider />
+type IProps = {
+  project: Project;
+} & WizardProps;
 
-      <Stack direction="row" spacing={1} padding={2} justifyContent="flex-end">
-        <Button onClick={onCancel} variant="outlined">
-          Cancel
-        </Button>
-      </Stack>
-    </>
+const ObjectsFileSystem = ({ project, onSuccess, onCancel }: IProps) => {
+  const [path, setPath] = useState<string>();
+  const [data, setData] = useState<FilesystemImport>();
+
+  if (!data || !path)
+    return (
+      <SourcePage
+        project={project}
+        onCancel={onCancel}
+        onProceed={(path, data) => {
+          setPath(path);
+          setData(data);
+        }}
+      />
+    );
+
+  return (
+    <InfoPage
+      project={project}
+      path={path}
+      data={data}
+      onCancel={onCancel}
+      onProceed={onSuccess}
+    />
   );
 };
 

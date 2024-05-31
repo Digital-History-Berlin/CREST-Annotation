@@ -1089,6 +1089,70 @@
     }
    }
   },
+  "/import/filesystem": {
+   "post": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Import Filesystem",
+    "operationId": "import_filesystem",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Path",
+       "type": "string"
+      },
+      "name": "path",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Commit",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "commit",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FilesystemImport"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/import/iiif/3": {
    "post": {
     "tags": [
@@ -1326,6 +1390,30 @@
      },
      "color_table": {
       "title": "Color Table",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "FilesystemImport": {
+    "title": "FilesystemImport",
+    "required": [
+     "objects",
+     "added"
+    ],
+    "type": "object",
+    "properties": {
+     "objects": {
+      "title": "Objects",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "added": {
+      "title": "Added",
       "type": "array",
       "items": {
        "type": "string"

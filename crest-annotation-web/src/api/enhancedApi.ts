@@ -31,6 +31,12 @@ export const enhancedApi = api.enhanceEndpoints({
     finishObject: {
       invalidatesTags: ["Object"],
     },
+    importFilesystem: {
+      invalidatesTags: ["Object"],
+    },
+    importIiif2: {
+      invalidatesTags: ["Object"],
+    },
     importIiif3: {
       invalidatesTags: ["Object"],
     },

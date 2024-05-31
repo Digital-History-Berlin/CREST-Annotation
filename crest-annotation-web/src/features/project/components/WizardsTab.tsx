@@ -4,13 +4,13 @@ import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { Project } from "../../../api/openApi";
 import ExportYaml from "../wizards/export-yaml";
 import LabelsOntology from "../wizards/labels-ontology";
-//import ObjectsFileSystem from "../wizards/objects-filesystem";
+import ObjectsFileSystem from "../wizards/objects-filesystem";
 import ObjectsIiif2 from "../wizards/objects-iiif2";
 import ObjectsIiif3 from "../wizards/objects-iiif3";
 
 const wizards = {
   "labels-ontology": LabelsOntology,
-  //"objects-filesystem": ObjectsFileSystem,
+  "objects-filesystem": ObjectsFileSystem,
   "objects-iiif3": ObjectsIiif3,
   "objects-iiif2": ObjectsIiif2,
   "export-yaml": ExportYaml,

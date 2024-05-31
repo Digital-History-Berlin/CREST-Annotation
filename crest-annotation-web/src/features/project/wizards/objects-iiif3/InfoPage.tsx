@@ -46,12 +46,10 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
     >
       <Stack padding={2} spacing={1}>
         {title && <Typography variant="h4">{title}</Typography>}
-        <Typography variant="body1">
-          <ul>
-            <li>Total objects: {data.objects.length}</li>
-            <li>New objects: {data.added.length}</li>
-          </ul>
-        </Typography>
+        <ul>
+          <li>Total objects: {data.objects.length}</li>
+          <li>New objects: {data.added.length}</li>
+        </ul>
       </Stack>
 
       {data.problems && !!data.problems.length && (

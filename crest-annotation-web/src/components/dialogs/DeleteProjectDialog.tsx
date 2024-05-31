@@ -12,8 +12,9 @@ const DeleteProjectDialog = ({ project, onClose }: IProps) => {
   const [requestDeleteProject, { isLoading: createLoading }] =
     useDeleteProjectMutation();
 
-  const deleteProject = async () => {
-    if (project) requestDeleteProject({ projectId: project.id });
+  const deleteProject = () => {
+    if (project)
+      requestDeleteProject({ projectId: project.id }).unwrap().then(onClose);
   };
 
   return (

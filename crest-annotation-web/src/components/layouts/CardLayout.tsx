@@ -43,9 +43,11 @@ export default function CardLayout<T extends { id: string }>({
     <Layout {...props} scrollable={true}>
       <Loader
         query={query}
-        emptyPlaceholder={placeholder}
         render={({ data }) => {
           const items = "items" in data ? data.items : data;
+          if (placeholder && items.length === 0)
+            // evaluate placeholder on actual items
+            return <>{placeholder}</>;
 
           return (
             <Container maxWidth="md">

@@ -1,28 +1,30 @@
 import React from "react";
-import { Button, Divider, Stack, Typography } from "@mui/material";
-import { useImportIiif2Mutation } from "../../../../api/enhancedApi";
-import { Iiif2Import, Project } from "../../../../api/openApi";
+import { Button, Stack, Typography } from "@mui/material";
+import {
+  FilesystemImport,
+  Project,
+  useImportFilesystemMutation,
+} from "../../../../api/openApi";
 import Layout from "../../components/Layout";
-import ProblemsList from "../../components/wizards/ProblemsList";
 
 interface IProps {
   project: Project;
-  source: string;
-  data: Iiif2Import;
+  path: string;
+  data: FilesystemImport;
   onCancel: () => void;
   onProceed: () => void;
 }
 
-const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
-  const [importRequest, importQuery] = useImportIiif2Mutation();
+const InfoPage = ({ project, path, data, onCancel, onProceed }: IProps) => {
+  const [importRequest, importQuery] = useImportFilesystemMutation();
 
   // fetch import info
   const executeImport = async () => {
-    if (!source) return;
+    if (!path) return;
 
     await importRequest({
       projectId: project.id,
-      url: source,
+      path: path,
       commit: true,
     }).unwrap();
     // continue with next step
@@ -43,22 +45,13 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
       }
     >
       <Stack padding={2} spacing={1}>
-        {data.title && <Typography variant="h4">{data.title}</Typography>}
+        <Typography variant="h4">Overview</Typography>
         <ul>
+          <li>Path: {path}</li>
           <li>Total images: {data.objects.length}</li>
           <li>New images: {data.added.length}</li>
         </ul>
       </Stack>
-
-      {data.problems && !!data.problems.length && (
-        <>
-          <Divider />
-          <ProblemsList
-            title="Manifest contains problems"
-            problems={data.problems}
-          />
-        </>
-      )}
     </Layout>
   );
 };
