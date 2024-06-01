@@ -217,19 +217,19 @@ export const processGesture = createAppAsyncThunk<
   resolve(thunks?.gesture?.(payload, toolbox, toolApi));
 });
 
-export const processLabel = createAppAsyncThunk<
-  void,
-  { toolApi: ToolApi } & ToolLabelPayload
->("toolbox/processLabel", ({ toolApi, ...payload }, api) => {
-  console.debug("Process label:", payload);
+export const processLabel = createAppAsyncThunk<void, ToolLabelPayload>(
+  "toolbox/processLabel",
+  (payload, api) => {
+    console.debug("Process label:", payload);
 
-  const tool = getTargetTool(api.getState());
-  const thunks = thunksRegistry[tool];
-  const toolbox = createToolboxApi(api, tool);
-  const resolve = toolboxSandbox("label");
+    const tool = getTargetTool(api.getState());
+    const thunks = thunksRegistry[tool];
+    const toolbox = createToolboxApi(api, tool);
+    const resolve = toolboxSandbox("label");
 
-  resolve(thunks?.label?.(payload, toolbox, toolApi));
-});
+    resolve(thunks?.label?.(payload, toolbox));
+  }
+);
 
 export const processKey = createAppAsyncThunk<
   void,

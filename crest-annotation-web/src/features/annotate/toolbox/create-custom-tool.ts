@@ -35,7 +35,6 @@ import {
   ToolLabelPayload,
   ToolSelectors,
   ToolStatusSelector,
-  ToolThunk,
   ToolboxThunk,
   ToolboxThunkApi,
 } from "../types/toolbox-thunks";
@@ -235,7 +234,7 @@ export const createLabelThunk =
   <O extends ToolOperation>(options: {
     operation: O["type"];
     select: (operation: O) => Shape[] | undefined;
-  }): ToolThunk<ToolLabelPayload> =>
+  }): ToolboxThunk<ToolLabelPayload> =>
   async ({ label }, { dispatch, getState }) => {
     const { id, current } = getState().operation;
 
@@ -261,7 +260,7 @@ export const createLabelThunk =
  */
 export const createLabelShapeThunk = <O extends AtomicToolOperation>(options: {
   operation: O["type"];
-}): ToolThunk<ToolLabelPayload> =>
+}): ToolboxThunk<ToolLabelPayload> =>
   createLabelThunk({
     ...options,
     select: (operation) => [operation.state.shape],

@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Konva from "konva";
+import { useGetProjectLabelsQuery } from "../../../api/enhancedApi";
 import { Label } from "../../../api/openApi";
-import { useAppDispatch } from "../../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { Position } from "../../../types/geometry";
-import { processGesture, processKey, processLabel } from "../slice/toolbox";
+import { useAnnotationProject } from "../slice/annotations";
+import {
+  processGesture,
+  processKey,
+  processLabel,
+  selectToolboxLabelId,
+} from "../slice/toolbox";
 import { GestureEvent } from "../types/events";
 import { ToolApi } from "../types/toolbox-thunks";
 
@@ -38,12 +45,32 @@ export const useToolController = ({
   cursorRef: React.RefObject<Position>;
 }): ToolController => {
   const dispatch = useAppDispatch();
+  const project = useAnnotationProject();
 
+  // popup location
   const [labelPopup, setLabelPopup] = useState<LabelPopup>();
+
+  // currently selected label
+  const { data: labels } = useGetProjectLabelsQuery({ projectId: project.id });
+  const selectedLabelId = useAppSelector(selectToolboxLabelId);
+  const label = useMemo(
+    () => labels?.find((label) => label.id === selectedLabelId),
+    [labels, selectedLabelId]
+  );
+
+  const handleLabel = useCallback(
+    (label?: Label) => {
+      dispatch(processLabel({ label }));
+    },
+    [dispatch]
+  );
 
   const toolApi: ToolApi = useMemo(() => {
     const requestLabel = () => {
       if (!stageRef.current || !cursorRef.current) return;
+      // label is already pre-selected
+      if (label)
+        return dispatch(processLabel({ label })).unwrap().catch(console.log);
 
       console.debug("Request label");
       // display popup with nice position
@@ -68,18 +95,11 @@ export const useToolController = ({
       requestLabel,
       cancelLabel,
     };
-  }, [stageRef, cursorRef]);
+  }, [dispatch, stageRef, cursorRef, label]);
 
   const handleGesture = useCallback(
     (gesture: GestureEvent) => {
       dispatch(processGesture({ gesture, toolApi }));
-    },
-    [dispatch, toolApi]
-  );
-
-  const handleLabel = useCallback(
-    (label?: Label) => {
-      dispatch(processLabel({ label, toolApi }));
     },
     [dispatch, toolApi]
   );
@@ -96,6 +116,11 @@ export const useToolController = ({
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [handleKey]);
+
+  // label selected from elsewhere
+  useEffect(() => {
+    if (label) dispatch(processLabel({ label })).unwrap().catch(console.log);
+  }, [dispatch, label]);
 
   return {
     labelPopup,

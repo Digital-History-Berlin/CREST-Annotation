@@ -42,8 +42,8 @@ export type ToolThunks = {
   activate?: ToolboxThunk<ToolActivatePayload>;
   configure?: ToolboxThunk<ToolConfigurePayload>;
   gesture?: ToolThunk<ToolGesturePayload>;
-  label?: ToolThunk<ToolLabelPayload>;
   key?: ToolThunk<ToolKeyPayload>;
+  label?: ToolboxThunk<ToolLabelPayload>;
 };
 
 export type ToolInfoSelector<S> = (state: S) => ToolInfo;
