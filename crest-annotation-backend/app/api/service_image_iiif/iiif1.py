@@ -2,7 +2,7 @@ import requests
 
 from pydantic import BaseModel, Field
 
-from ... import schemas
+from app import schemas
 from . import cache
 
 

@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 
 from pyld import jsonld
 
-from ...dependencies.db import get_db
-from ...dependencies.logger import get_logger
-from ...dependencies.colors import Colors
-from ...models.labels import Label
-from ...models.projects import Project
+from app.dependencies.db import get_db
+from app.dependencies.logger import get_logger
+from app.dependencies.colors import Colors
+from app.models.labels import Label
+from app.models.projects import Project
 
 from .. import import_router as router
 
