@@ -5,7 +5,7 @@ import { cvInfo } from "../../../../api/cvApi";
 import { createAppAsyncThunk } from "../../../../types/thunks";
 import {
   activateTool,
-  resetToolState,
+  setToolState,
   updateToolState,
 } from "../../slice/toolbox";
 import { ConfigFC } from "../../types/components";
@@ -73,7 +73,7 @@ export const cvValidateBackend = createAppAsyncThunk(
       // (the tool is not ready until an algorithm is selected)
       localStorage.setItem("cv-backend", url);
       dispatch(
-        resetToolState<CvToolState>({
+        setToolState<CvToolState>({
           tool: Tool.Cv,
           state: { status: ToolStatus.Failed, backend },
         })

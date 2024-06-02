@@ -39,7 +39,6 @@ const ToolbarTools = () => {
 
   const modifiers = useAppSelector(selectToolboxModifiers);
   const toggleModifier = useCallback(
-    // TODO: implement side effects from activation
     (modifier: Modifiers) => dispatch(toggleToolboxModifier(modifier)),
     [dispatch]
   );

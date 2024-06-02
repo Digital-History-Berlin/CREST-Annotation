@@ -30,8 +30,10 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
   const editable = useAppSelector(
     (state) => state.toolbox.selection.tool === Tool.Edit
   );
-  // TODO: visualize group annotation
-  const groupAnnotationId = undefined; // useAppSelector(selectGroupAnnotationId);
+  // get current group annotation
+  const groupAnnotationId = useAppSelector(
+    (state) => state.toolbox.modifiers[Modifiers.Group] as string | undefined
+  );
 
   const renderAnnotation = (annotation: Annotation) => {
     if (annotation.hidden || !annotation.shapes?.length) return;

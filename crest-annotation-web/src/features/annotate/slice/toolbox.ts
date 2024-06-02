@@ -1,4 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { addAnnotation } from "./annotations";
 import { Label } from "../../../api/openApi";
 import { RootState } from "../../../app/store";
 import { MaybePromise } from "../../../types/maybe-promise";
@@ -18,6 +19,7 @@ import {
 
 export interface ToolboxSlice {
   tools: Record<Tool, unknown>;
+  modifiers: Record<Modifiers, unknown>;
   // active selection
   selection: {
     tool: Tool;
@@ -35,6 +37,9 @@ const initialState: ToolboxSlice = {
     [Tool.Edit]: undefined,
     [Tool.Cv]: undefined,
   },
+  modifiers: {
+    [Modifiers.Group]: undefined,
+  },
   // active selection
   selection: {
     tool: Tool.Pen,
@@ -49,7 +54,7 @@ export const slice = createSlice({
   name: "tools",
   initialState,
   reducers: {
-    resetToolState: (
+    setToolState: (
       state,
       action: PayloadAction<{ tool: Tool; state: unknown }>
     ) => {
@@ -68,12 +73,19 @@ export const slice = createSlice({
           ...patch,
         };
     },
+    setModifierState: (
+      state,
+      action: PayloadAction<{ modifier: Modifiers; state: unknown }>
+    ) => {
+      state.modifiers[action.payload.modifier] = action.payload.state;
+    },
     updateToolboxSelection: (
       state,
       action: PayloadAction<{
         tool?: Tool;
-        modifier: Modifiers[];
+        modifier?: Modifiers[];
         labelId?: string;
+        groupId?: string;
       }>
     ) => {
       state.selection = { ...state.selection, ...action.payload };
@@ -113,6 +125,22 @@ export const slice = createSlice({
       else state.selection.modifiers.push(action.payload);
     },
   },
+  extraReducers: (builder) => {
+    // group modifier
+    builder.addCase(addAnnotation, (state, { payload }) => {
+      console.log(payload);
+      if (state.selection.modifiers.includes(Modifiers.Group))
+        state.modifiers[Modifiers.Group] = payload.id;
+    });
+    builder.addMatcher(
+      (action) => action.type === "tools/toggleToolboxModifier",
+      (state, action) => {
+        const payload = (action as PayloadAction<Modifiers>).payload;
+        if (payload === Modifiers.Group)
+          state.modifiers[Modifiers.Group] = undefined;
+      }
+    );
+  },
 });
 
 export const {
@@ -134,12 +162,16 @@ export const selectToolboxLabelId = (state: RootState) =>
 export default slice.reducer;
 
 // generic versions to improve type-safety without too many constraints
-export const resetToolState = <T>(payload: { tool: Tool; state: T }) =>
-  slice.actions.resetToolState(payload);
+export const setToolState = <T>(payload: { tool: Tool; state: T }) =>
+  slice.actions.setToolState(payload);
 export const updateToolState = <T>(payload: {
   tool: Tool;
   state: Partial<T>;
 }) => slice.actions.updateToolState(payload);
+export const setModifierState = <T>(payload: {
+  modifier: Modifiers;
+  state: T;
+}) => slice.actions.setModifierState(payload);
 
 const getTargetTool = (state: RootState): Tool => {
   const {

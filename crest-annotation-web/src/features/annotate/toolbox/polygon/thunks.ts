@@ -1,5 +1,6 @@
 import { PolygonToolOperation } from "./types";
 import { PolygonShape } from "../../components/shapes/Polygon";
+import { updateAnnotation } from "../../slice/annotations";
 import { operationBegin } from "../../slice/operation";
 import {
   GestureEvent,
@@ -14,6 +15,7 @@ import {
   ToolGesturePayload,
   ToolThunk,
   ToolThunks,
+  ToolboxThunkApi,
 } from "../../types/toolbox-thunks";
 import {
   createActivateThunk,
@@ -21,16 +23,31 @@ import {
   createToolSelectors,
   withCurrentOperationContext,
 } from "../create-custom-tool";
+import { selectGroupModifierState } from "../tool-modifiers";
 
 const activate = createActivateThunk({ tool: Tool.Polygon });
 
 const proceedClose = (
   operation: PolygonToolOperation,
   contextApi: OperationContextApi<PolygonToolOperation>,
+  thunkApi: ToolboxThunkApi,
   { requestLabel, cancelLabel }: ToolApi
 ) => {
   // discard if polygon is too small
   if (operation.state.shape.points.length < 6) return contextApi.cancel();
+
+  const shape = { ...operation.state.shape, closed: true };
+  const group = selectGroupModifierState(thunkApi.getState());
+  if (group)
+    return contextApi.complete().then(() => {
+      thunkApi.dispatch(
+        updateAnnotation({
+          ...group,
+          // append the shape to the existing group annotation
+          shapes: [...(group.shapes || []), shape],
+        })
+      );
+    });
 
   // complete polygon and request label
   return contextApi
@@ -38,7 +55,7 @@ const proceedClose = (
       ...operation,
       state: {
         ...operation.state,
-        shape: { ...operation.state.shape, closed: true },
+        shape,
         preview: undefined,
         labeling: true,
       },
@@ -52,6 +69,7 @@ const proceedClick = (
   { transformation, transformed: { x, y } }: GestureEvent,
   operation: PolygonToolOperation,
   contextApi: OperationContextApi<PolygonToolOperation>,
+  thunkApi: ToolboxThunkApi,
   toolApi: ToolApi
 ) => {
   // labeling process can be canceled by clicking
@@ -62,7 +80,7 @@ const proceedClick = (
   const dy = operation.state.shape.points[1] - y;
   const threshold = 5 / transformation.scale;
   if (dx * dx + dy * dy < threshold * threshold)
-    return proceedClose(operation, contextApi, toolApi);
+    return proceedClose(operation, contextApi, thunkApi, toolApi);
 
   // append new point
   return contextApi.update({
@@ -91,6 +109,7 @@ const proceedMove = (
 const proceed = (
   gesture: GestureEvent,
   contextApi: OperationContextApi<PolygonToolOperation>,
+  thunkApi: ToolboxThunkApi,
   toolApi: ToolApi
 ) => {
   const operation = contextApi.getState();
@@ -104,9 +123,9 @@ const proceed = (
   ) {
     switch (gesture.overload) {
       case GestureOverload.Primary:
-        return proceedClick(gesture, operation, contextApi, toolApi);
+        return proceedClick(gesture, operation, contextApi, thunkApi, toolApi);
       case GestureOverload.Secondary:
-        return proceedClose(operation, contextApi, toolApi);
+        return proceedClose(operation, contextApi, thunkApi, toolApi);
       case GestureOverload.Tertiary:
         return contextApi.cancel();
     }
@@ -153,7 +172,7 @@ export const gesture: ToolThunk<ToolGesturePayload> = (
   withCurrentOperationContext<PolygonToolOperation>(
     { thunkApi, type: "tool/polygon" },
     // proceed with existing polygon
-    (contextApi) => proceed(gesture, contextApi, toolApi),
+    (contextApi) => proceed(gesture, contextApi, thunkApi, toolApi),
     // start with new polygon
     () => begin(gesture, thunkApi, toolApi)
   );

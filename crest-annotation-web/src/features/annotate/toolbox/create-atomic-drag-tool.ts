@@ -1,4 +1,6 @@
 import { withCurrentOperationContext } from "./create-custom-tool";
+import { selectGroupModifierState } from "./tool-modifiers";
+import { updateAnnotation } from "../slice/annotations";
 import { operationBegin, operationCancel } from "../slice/operation";
 import {
   GestureEvent,
@@ -90,11 +92,25 @@ export const createAtomicDragTool =
           if (gesture.overload !== GestureOverload.Primary)
             return contextApi.cancel();
 
+          // TODO: write emitShapes() encapsulation
+          const state = options.end(gesture, current.state);
+          const group = selectGroupModifierState(thunkApi.getState());
+          if (group)
+            return void contextApi.complete().then(() => {
+              thunkApi.dispatch(
+                updateAnnotation({
+                  ...group,
+                  // append the shape to the existing group annotation
+                  shapes: [...(group.shapes || []), state.shape],
+                })
+              );
+            });
+
           // request a label for the shape
           return contextApi
             .update({
               ...current,
-              state: options.end(gesture, current.state),
+              state,
               cancellation: cancelLabel,
               completion: cancelLabel,
             })
