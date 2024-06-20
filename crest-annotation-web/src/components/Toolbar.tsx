@@ -1,5 +1,4 @@
 import React, { CSSProperties, ReactNode } from "react";
-import { Security } from "@mui/icons-material";
 import {
   Box,
   Toolbar as MuiToolbar,
@@ -7,6 +6,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { Logo } from "./Logo";
 import { ToolbarButton } from "./ToolbarButton";
 
 interface IProps {
@@ -41,8 +41,13 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
             onClick={() => navigate("/")}
             sx={{ columnGap: theme.spacing(1) }}
           >
-            <Security />
-            <Typography fontFamily="Times New Roman" variant="h5" noWrap>
+            <Logo size={32} color="#fff" />
+            <Typography
+              fontFamily="Times New Roman"
+              variant="h5"
+              color="#fff"
+              noWrap
+            >
               CREST
             </Typography>
           </ToolbarButton>

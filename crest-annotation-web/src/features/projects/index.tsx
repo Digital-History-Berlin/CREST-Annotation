@@ -54,8 +54,13 @@ const ProjectsPage = () => {
         header={<Toolbar title="Projects" />}
         placeholder={
           <PlaceholderLayout
-            title="Welcome to CREST"
-            description="It is time to create your first project and start annotating!"
+            title={
+              <span>
+                Welcome to
+                <span style={{ fontFamily: "Times New Roman" }}> CREST</span>!
+              </span>
+            }
+            description="It is time to create your first project and start annotating."
           >
             <Box mt={4}>{addButton}</Box>
           </PlaceholderLayout>
