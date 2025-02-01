@@ -15,7 +15,9 @@ RUN npm run build
 
 FROM nginx:1.19
 
-COPY ./crest-annotation-docker/web/nginx.conf.template /etc/nginx/templates/default.conf.template
+ARG NGINX_CONF
+
+COPY ./crest-annotation-docker/web/${NGINX_CONF} /etc/nginx/templates/default.conf.template
 COPY ./crest-annotation-docker/web/.htpasswd /etc/nginx/.htpasswd
 
 WORKDIR /usr/share/nginx/html/

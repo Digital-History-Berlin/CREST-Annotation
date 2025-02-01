@@ -35,3 +35,5 @@ Database versioning and migration is done using Alembic. Whenever a database mod
 1. From the virtual environment run `alembic revision --autogenerate -m "<commit message>"`
 
 This will auto-generate a migration file. Now `alembic upgrade head` will apply these changes to any database.
+
+To do this on a remote instance, a quick and easy solution is to edit `.env.local`.

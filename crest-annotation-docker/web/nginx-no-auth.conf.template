@@ -1,0 +1,26 @@
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	root /usr/share/nginx/html;
+
+	index index.html index.htm;
+
+	server_name _;
+
+	location / {
+		# append trailing slash for non-file paths
+		rewrite ^([^.]*[^/])$ $1/ permanent;
+		# serve static frontend first
+		try_files $uri /index.html;
+	}
+
+	location /api/ {
+		proxy_pass http://${BACKEND_DNS}:8000/;
+		proxy_http_version 1.1;
+		proxy_set_header Upgrade $http_upgrade;
+		proxy_set_header Connection 'upgrade';
+		proxy_set_header Host $host;
+		proxy_cache_bypass $http_upgrade;
+	}
+}

@@ -42,6 +42,7 @@ services:
         # image is statically build and served by nginx
         # environment variables need to be defined at build time
         - REACT_APP_BACKEND=/api
+        - NGINX_CONF=${NGINX_CONF:-nginx.conf.template}
     environment:
       # nginx image will use runtime environment variables
       # to update the nginx.conf.template
