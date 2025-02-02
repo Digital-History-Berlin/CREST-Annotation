@@ -27,7 +27,7 @@ export const StatusbarProgress = () => {
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            Bereit
+            Ready
           </Typography>
         )}
       </Stack>

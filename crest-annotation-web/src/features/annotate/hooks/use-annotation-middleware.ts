@@ -1,8 +1,11 @@
 import { useEffect, useMemo } from "react";
+import { v4 as uuidv4 } from "uuid";
 import {
   useGetImageUriQuery,
   useGetObjectQuery,
   useGetProjectQuery,
+  useLockObjectMutation,
+  useUnlockObjectMutation,
 } from "../../../api/enhancedApi";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { updateObject } from "../slice/annotations";
@@ -42,6 +45,10 @@ export const useAnnotationMiddleware = ({
     { skip: !objectId }
   );
 
+  // control access to the object
+  const [lockRequest] = useLockObjectMutation();
+  const [unlockRequest] = useUnlockObjectMutation();
+
   const localProject = useAppSelector((state) => state.annotations.project);
   const localObject = useAppSelector((state) => state.annotations.object);
   const localImage = useAppSelector((state) => state.annotations.image);
@@ -78,17 +85,30 @@ export const useAnnotationMiddleware = ({
       if (!objectId) return redirect(projectId);
       // update local state once data is available
       if (remoteProject && remoteObject && remoteImage) {
+        // generate a unique session id
+        const session = sessionStorage.getItem("session") || uuidv4();
+        sessionStorage.setItem("session", session);
+
+        // provide application wide access
         dispatch(
           updateObject({
             project: remoteProject,
             object: remoteObject,
             image: remoteImage,
+            session: session,
           })
         );
         // ensure ongoing operation is canceled when object changes
         dispatch(operationCancel({ id: undefined }));
         // re-activate the current tool
         dispatch(activateTool({ tool: undefined }));
+
+        // acquire remote lock on current object
+        lockRequest({ objectId, sessionId: session });
+        // unlock on unmount
+        return () => {
+          unlockRequest({ objectId, sessionId: session });
+        };
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

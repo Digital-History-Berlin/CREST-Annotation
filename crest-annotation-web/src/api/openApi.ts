@@ -74,6 +74,25 @@ const injectedRtkApi = api.injectEndpoints({
         params: { finished: queryArg.finished },
       }),
     }),
+    getLockStatus: build.query<GetLockStatusApiResponse, GetLockStatusApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/lock/${queryArg.objectId}/${queryArg.sessionId}`,
+      }),
+    }),
+    lockObject: build.mutation<LockObjectApiResponse, LockObjectApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/lock/${queryArg.objectId}/${queryArg.sessionId}`,
+        method: "POST",
+        params: { force: queryArg.force },
+      }),
+    }),
+    unlockObject: build.mutation<UnlockObjectApiResponse, UnlockObjectApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/unlock/${queryArg.objectId}`,
+        method: "POST",
+        params: { session_id: queryArg.sessionId },
+      }),
+    }),
     getImageUri: build.query<GetImageUriApiResponse, GetImageUriApiArg>({
       query: (queryArg) => ({
         url: `/objects/uri/${queryArg.objectId}`,
@@ -86,6 +105,9 @@ const injectedRtkApi = api.injectEndpoints({
       GetCachedImageApiArg
     >({
       query: (queryArg) => ({ url: `/objects/cache/${queryArg.encoded}` }),
+    }),
+    getLocalImage: build.query<GetLocalImageApiResponse, GetLocalImageApiArg>({
+      query: (queryArg) => ({ url: `/objects/local/${queryArg.encoded}` }),
     }),
     getAnnotations: build.query<
       GetAnnotationsApiResponse,
@@ -103,6 +125,7 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/objects/annotations/${queryArg.objectId}`,
         method: "POST",
         body: queryArg.body,
+        params: { session_id: queryArg.sessionId },
       }),
     }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
@@ -271,6 +294,23 @@ export type FinishObjectApiArg = {
   objectId: string;
   finished?: boolean;
 };
+export type GetLockStatusApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetLockStatusApiArg = {
+  objectId: string;
+  sessionId: string;
+};
+export type LockObjectApiResponse = /** status 200 Successful Response */ any;
+export type LockObjectApiArg = {
+  objectId: string;
+  sessionId: string;
+  force?: boolean;
+};
+export type UnlockObjectApiResponse = /** status 200 Successful Response */ any;
+export type UnlockObjectApiArg = {
+  objectId: string;
+  sessionId?: string;
+};
 export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
 export type GetImageUriApiArg = {
   objectId: string;
@@ -279,6 +319,11 @@ export type GetImageUriApiArg = {
 export type GetCachedImageApiResponse =
   /** status 200 Successful Response */ any;
 export type GetCachedImageApiArg = {
+  encoded: string;
+};
+export type GetLocalImageApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetLocalImageApiArg = {
   encoded: string;
 };
 export type GetAnnotationsApiResponse =
@@ -290,6 +335,7 @@ export type StoreAnnotationsApiResponse =
   /** status 200 Successful Response */ any;
 export type StoreAnnotationsApiArg = {
   objectId: string;
+  sessionId?: string;
   body: string;
 };
 export type GetProjectsApiResponse =
@@ -460,9 +506,20 @@ export type Ontology = {
   labels: OntologyLabel[];
   problems: string[];
 };
+export type FilesystemObjectData = {
+  path: string;
+  type?: string;
+};
+export type FilesystemObject = {
+  id?: string;
+  object_uuid?: string;
+  annotated?: boolean;
+  annotation_data?: string;
+  object_data: FilesystemObjectData;
+};
 export type FilesystemImport = {
-  objects: string[];
-  added: string[];
+  objects: FilesystemObject[];
+  added: FilesystemObject[];
 };
 export type Id = string;
 export type LngString = object;
@@ -541,8 +598,12 @@ export const {
   useGetAllObjectsQuery,
   useGetObjectQuery,
   useFinishObjectMutation,
+  useGetLockStatusQuery,
+  useLockObjectMutation,
+  useUnlockObjectMutation,
   useGetImageUriQuery,
   useGetCachedImageQuery,
+  useGetLocalImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
   useGetProjectsQuery,

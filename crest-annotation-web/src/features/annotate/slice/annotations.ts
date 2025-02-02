@@ -32,6 +32,7 @@ export interface AnnotationsSlice {
   project: Project | null;
   object: DataObject | null;
   image: string | null;
+  session: string | null;
 }
 
 const initialState: AnnotationsSlice = {
@@ -41,6 +42,7 @@ const initialState: AnnotationsSlice = {
   project: null,
   object: null,
   image: null,
+  session: null,
 };
 
 const replaceAnnotation = (
@@ -89,11 +91,13 @@ export const slice = createSlice({
         object: DataObject;
         project: Project;
         image: string;
+        session: string;
       } | null>
     ) => {
       state.object = action.payload?.object || null;
       state.project = action.payload?.project || null;
       state.image = action.payload?.image || null;
+      state.session = action.payload?.session || null;
     },
     updateAnnotations: (state, action: PayloadAction<Annotation[]>) => {
       state.annotations = action.payload;
@@ -246,6 +250,11 @@ export const useAnnotationImage = (): string =>
   // (index blocks rendering if not set)
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   useAppSelector((state) => state.annotations.image!);
+export const useAnnotationSession = (): string =>
+  // safe to use from within annotation components
+  // (index blocks rendering if not set)
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  useAppSelector((state) => state.annotations.session!);
 
 export const selectAnnotations = (state: RootState) =>
   state.annotations.annotations;
@@ -268,6 +277,8 @@ const pullAnnotations = createAppAsyncThunk(
     { objectId, projectId }: { objectId: string; projectId: string },
     { dispatch }
   ) => {
+    // re-fetch object lock
+    dispatch(enhancedApi.util.invalidateTags(["Lock"]));
     // re-fetch the annotations
     const json = await dispatch(
       enhancedApi.endpoints.getAnnotations.initiate(
@@ -305,16 +316,32 @@ export const annotateMiddleware: Middleware<{}, RootState> =
       // ignore unexpected actions
       return;
 
-    const state = store.getState();
+    const { annotations, project, object, session } =
+      store.getState().annotations;
+
     // track and push modifications to the backend
-    if (isServerMutation(action as Action) && state.annotations.object)
-      store.dispatch(
-        // @ts-expect-error circular dependency
-        enhancedApi.endpoints.storeAnnotations.initiate({
-          objectId: state.annotations.object.id,
-          body: toJson(state.annotations.annotations),
-        })
-      );
+    if (isServerMutation(action as Action) && project && object && session)
+      // @ts-expect-error circular dependency
+      store
+        .dispatch(
+          // @ts-expect-error circular dependency
+          enhancedApi.endpoints.storeAnnotations.initiate({
+            objectId: object.id,
+            sessionId: session,
+            body: toJson(annotations),
+          })
+        )
+        .unwrap()
+        // recover from failed requests
+        .catch(() => {
+          store.dispatch(
+            // @ts-expect-error circular dependency
+            pullAnnotations({
+              projectId: project.id,
+              objectId: object.id,
+            })
+          );
+        });
 
     // pull notifications from the backend
     if (isObjectChange(action as Action)) {

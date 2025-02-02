@@ -55,6 +55,7 @@ export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
     },
     "&.Mui-disabled": {
       color: theme.palette.primary.light,
+      border: "none",
     },
   },
 }));

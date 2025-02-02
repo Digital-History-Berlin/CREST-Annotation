@@ -1,7 +1,7 @@
 import { crestApi as api } from "./openApi";
 
 export const enhancedApi = api.enhanceEndpoints({
-  addTagTypes: ["Project", "Label", "Object", "Annotation"],
+  addTagTypes: ["Project", "Label", "Object", "Annotation", "Lock"],
   endpoints: {
     getProject: {
       providesTags: ["Project"],
@@ -56,6 +56,16 @@ export const enhancedApi = api.enhanceEndpoints({
     importOntology: {
       invalidatesTags: ["Label"],
     },
+
+    getLockStatus: {
+      providesTags: ["Lock"],
+    },
+    lockObject: {
+      invalidatesTags: ["Lock"],
+    },
+    unlockObject: {
+      invalidatesTags: ["Lock"],
+    },
   },
 });
 
@@ -70,8 +80,12 @@ export const {
   useGetAllObjectsQuery,
   useGetObjectQuery,
   useFinishObjectMutation,
+  useGetLockStatusQuery,
+  useLockObjectMutation,
+  useUnlockObjectMutation,
   useGetImageUriQuery,
   useGetCachedImageQuery,
+  useGetLocalImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
   useGetProjectsQuery,

@@ -2,11 +2,13 @@ import React, { CSSProperties, Fragment, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { PriorityHigh } from "@mui/icons-material";
 import { CircularProgress, Stack, useTheme } from "@mui/material";
+import ToolbarUnlock from "./ToolbarUnlock";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import {
   ToolbarDivider,
   ToolbarToggleButtonWithTooltip,
 } from "../../../../components/ToolbarButton";
+import { useObjectLock } from "../../hooks/use-object-lock";
 import { useToolInfo } from "../../hooks/use-tool-info";
 import {
   activateTool,
@@ -30,6 +32,7 @@ const ToolbarTools = () => {
   const dispatch = useAppDispatch();
   const theme = useTheme();
   const info = useToolInfo();
+  const lock = useObjectLock();
 
   const tool = useAppSelector(selectToolboxTool);
   const handleActivate = useCallback(
@@ -42,6 +45,10 @@ const ToolbarTools = () => {
     (modifier: Modifiers) => dispatch(toggleToolboxModifier(modifier)),
     [dispatch]
   );
+
+  // editing is not allowed if object is not locked
+  if (lock === undefined) return <CircularProgress color="inherit" size={24} />;
+  if (lock === false) return <ToolbarUnlock />;
 
   return (
     <Stack direction="row">

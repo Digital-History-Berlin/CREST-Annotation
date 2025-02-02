@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import Dot from "../../../../components/Dot";
 import Loader from "../../../../components/Loader";
 import SidebarContainer from "../../../../components/SidebarContainer";
+import { useObjectLock } from "../../hooks/use-object-lock";
 import {
   Annotation,
   deleteAnnotation,
@@ -34,6 +35,7 @@ const AnnotationsContainer = () => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const annotations = useAppSelector(selectAnnotations);
+  const lock = useObjectLock();
 
   const renderActions = (annotation: Annotation) => (
     <Stack direction="row">
@@ -99,7 +101,8 @@ const AnnotationsContainer = () => {
                 disablePadding
                 disableGutters
                 key={annotation.id}
-                secondaryAction={renderActions(annotation)}
+                // editing is not allowed if object is not locked
+                secondaryAction={lock ? renderActions(annotation) : undefined}
               >
                 <ListItemButton
                   onClick={() => dispatch(toggleAnnotation(annotation))}

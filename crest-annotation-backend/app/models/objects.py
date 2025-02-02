@@ -7,11 +7,15 @@ class Object(Base):
     __tablename__ = "objects"
 
     id = Column(String, primary_key=True, index=True, default=make_uuid)
-    project_id = Column(String, ForeignKey("projects.id", ondelete="CASCADE", name="objects_project_id_fkey"))
+    project_id = Column(
+        String,
+        ForeignKey("projects.id", ondelete="CASCADE", name="objects_project_id_fkey"),
+    )
     object_uuid = Column(String)
     annotated = Column(Boolean, default=False)
     annotation_data = Column(String, default="[]")
     object_data = Column(String)
+    locked_by = Column(String, default=None)
 
 
 Index("objects_project_id_uri", Object.project_id, Object.object_uuid)

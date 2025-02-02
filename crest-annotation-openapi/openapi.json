@@ -552,6 +552,170 @@
     }
    }
   },
+  "/objects/lock/{object_id}/{session_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Lock Status",
+    "operationId": "get_lock_status",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      },
+      "name": "session_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Lock Object",
+    "operationId": "lock_object",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      },
+      "name": "session_id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Force",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "force",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/unlock/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Unlock Object",
+    "operationId": "unlock_object",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      },
+      "name": "session_id",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/objects/uri/{object_id}": {
    "post": {
     "tags": [
@@ -648,6 +812,49 @@
     }
    }
   },
+  "/objects/local/{encoded}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Local Image",
+    "operationId": "get_local_image",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Encoded",
+       "type": "string"
+      },
+      "name": "encoded",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/objects/annotations/{object_id}": {
    "get": {
     "tags": [
@@ -705,6 +912,15 @@
       },
       "name": "object_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Session Id",
+       "type": "string"
+      },
+      "name": "session_id",
+      "in": "query"
      }
     ],
     "requestBody": {
@@ -1409,17 +1625,65 @@
       "title": "Objects",
       "type": "array",
       "items": {
-       "type": "string"
+       "$ref": "#/components/schemas/FilesystemObject"
       }
      },
      "added": {
       "title": "Added",
       "type": "array",
       "items": {
-       "type": "string"
+       "$ref": "#/components/schemas/FilesystemObject"
       }
      }
     }
+   },
+   "FilesystemObject": {
+    "title": "FilesystemObject",
+    "required": [
+     "object_data"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "object_uuid": {
+      "title": "Object Uuid",
+      "type": "string"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
+     },
+     "annotation_data": {
+      "title": "Annotation Data",
+      "type": "string"
+     },
+     "object_data": {
+      "$ref": "#/components/schemas/FilesystemObjectData"
+     }
+    }
+   },
+   "FilesystemObjectData": {
+    "title": "FilesystemObjectData",
+    "required": [
+     "path"
+    ],
+    "type": "object",
+    "properties": {
+     "path": {
+      "title": "Path",
+      "type": "string"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string",
+      "default": "fs",
+      "const": "fs"
+     }
+    },
+    "description": "Specific data for objects imported from file system"
    },
    "HTTPValidationError": {
     "title": "HTTPValidationError",

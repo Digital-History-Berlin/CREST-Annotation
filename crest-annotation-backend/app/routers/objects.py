@@ -122,9 +122,54 @@ async def finish_object(
         raise HTTPException(status_code=404, detail="Object not found")
 
     data_object.annotated = finished
+    data_object.locked = False
     db.commit()
 
     return Response()
+
+
+@router.post("/lock/{object_id}/{session_id}")
+async def lock_object(
+    object_id: str, session_id: str, force: bool = False, db: Session = Depends(get_db)
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    if force or data_object.locked_by is None:
+        data_object.locked_by = session_id
+
+    db.commit()
+
+    return Response()
+
+
+@router.post("/unlock/{object_id}")
+async def unlock_object(
+    object_id: str, session_id: str | None = None, db: Session = Depends(get_db)
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    if session_id is None or data_object.locked_by == session_id:
+        data_object.locked_by = None
+
+    data_object.locked_by = None
+    db.commit()
+
+    return Response()
+
+
+@router.get("/lock/{object_id}/{session_id}")
+async def get_lock_status(
+    object_id: str, session_id: str, db: Session = Depends(get_db)
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    return JSONResponse({"locked": data_object.locked_by == session_id})
 
 
 @router.post("/uri/{object_id}")
@@ -183,11 +228,17 @@ async def get_annotations(object_id: str, db: Session = Depends(get_db)):
 
 @router.post("/annotations/{object_id}")
 async def store_annotations(
-    object_id: str, annotation_data: str = Body(), db: Session = Depends(get_db)
+    object_id: str,
+    session_id: str | None = None,
+    annotation_data: str = Body(),
+    db: Session = Depends(get_db),
 ):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
+
+    if session_id is not None and data_object.locked_by != session_id:
+        raise HTTPException(status_code=403, detail="Object is locked")
 
     data_object.annotated = False
     data_object.annotation_data = annotation_data
