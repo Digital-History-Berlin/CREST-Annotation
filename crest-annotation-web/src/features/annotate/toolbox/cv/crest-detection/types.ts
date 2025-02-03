@@ -16,6 +16,8 @@ export interface SamMask {
   mask: number[][];
 }
 
+export type CvCrestDetectionSorting = "rating" | "position";
+
 export interface CvCrestDetectionToolConfig {
   autostart: boolean;
   showOverview: boolean;
@@ -24,6 +26,7 @@ export interface CvCrestDetectionToolConfig {
   overlapThreshold: number;
   skipCovered: boolean;
   coverageThreshold: number;
+  sorting: CvCrestDetectionSorting;
 }
 
 export interface CvCrestDetectionToolData {
@@ -59,6 +62,7 @@ export const defaultConfig: CvCrestDetectionToolConfig = {
   overlapThreshold: 0.1,
   skipCovered: true,
   coverageThreshold: 0.1,
+  sorting: "position",
 };
 
 export const defaultData: CvCrestDetectionToolData = {

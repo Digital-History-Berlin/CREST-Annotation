@@ -15,6 +15,10 @@ type ToolbarToggleButtonProps = {
   tooltip: string;
 } & ToggleButtonProps;
 
+type ToolbarTabButtonProps = {
+  tooltip: string;
+} & ToggleButtonProps;
+
 /**
  * Button optimized to be used inside the toolbar
  */
@@ -33,6 +37,7 @@ export const ToolbarButton = styled(Button)(({ theme }) => ({
     },
     "&.Mui-disabled": {
       color: theme.palette.primary.light,
+      border: "none",
     },
   },
 }));
@@ -60,9 +65,32 @@ export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
   },
 }));
 
+/**
+ * Button optimized to be used inside the toolbar as a tab
+ */
+export const ToolbarTabButton = styled(ToggleButton)(({ theme }) => ({
+  "&": {
+    minWidth: 48,
+    marginLeft: theme.spacing(0.5),
+    marginRight: theme.spacing(0.5),
+    justifyContent: "center",
+    color: theme.palette.primary.contrastText,
+
+    border: 0,
+    "&.Mui-selected": {
+      color: theme.palette.primary.main,
+      backgroundColor: theme.palette.common.white,
+    },
+    "&.Mui-disabled": {
+      color: theme.palette.primary.light,
+      border: "none",
+    },
+  },
+}));
+
 export const ToolbarDivider = styled(Divider)(({ theme }) => ({
   "&": {
-    backgroundColor: theme.palette.primary.contrastText,
+    backgroundColor: theme.palette.primary.light,
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
   },
@@ -93,6 +121,18 @@ export const ToolbarToggleButtonWithTooltip = ({
   return (
     <Tooltip title={tooltip} arrow placement={"bottom"}>
       <ToolbarToggleButton {...props}>{children}</ToolbarToggleButton>
+    </Tooltip>
+  );
+};
+
+export const ToolbarTabButtonWithTooltip = ({
+  tooltip,
+  children,
+  ...props
+}: ToolbarTabButtonProps) => {
+  return (
+    <Tooltip title={tooltip} arrow placement={"bottom"}>
+      <ToolbarTabButton {...props}>{children}</ToolbarTabButton>
     </Tooltip>
   );
 };

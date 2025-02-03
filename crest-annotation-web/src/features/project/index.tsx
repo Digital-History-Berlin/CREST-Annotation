@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { PlayArrow } from "@mui/icons-material";
 import {
   Box,
   Container,
@@ -9,8 +8,7 @@ import {
   Tabs,
   Typography,
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
-import ObjectsIcon from "@mui/icons-material/Apps";
+import { useNavigate } from "react-router-dom";
 import LabelsTab from "./components/LabelsTab";
 import SettingsTab from "./components/SettingsTab";
 import TasksTab from "./components/TasksTab";
@@ -19,17 +17,13 @@ import { useGetProjectQuery } from "../../api/enhancedApi";
 import Layout from "../../components/layouts/Layout";
 import Loader from "../../components/Loader";
 import Toolbar from "../../components/Toolbar";
-import { ToolbarButtonWithTooltip } from "../../components/ToolbarButton";
+import ToolbarTabs from "../../components/ToolbarTabs";
+import { withProject } from "../../hocs/with-project";
 
-const ProjectPage = () => {
+const ProjectPage = withProject(({ projectId }) => {
   const navigate = useNavigate();
-  const { projectId } = useParams();
 
-  const projectQuery = useGetProjectQuery(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    { projectId: projectId! },
-    { skip: !projectId }
-  );
+  const projectQuery = useGetProjectQuery({ projectId });
 
   const [currentTab, setCurrentTab] = useState(0);
 
@@ -40,18 +34,7 @@ const ProjectPage = () => {
 
   const renderActions = () => (
     <Stack direction="row">
-      <ToolbarButtonWithTooltip
-        onClick={() => navigate(`/annotate/${projectId}`)}
-        tooltip={"Annotate Images"}
-      >
-        <PlayArrow />
-      </ToolbarButtonWithTooltip>
-      <ToolbarButtonWithTooltip
-        onClick={() => navigate(`/objects/${projectId}`)}
-        tooltip={"Project Overview"}
-      >
-        <ObjectsIcon />
-      </ToolbarButtonWithTooltip>
+      <ToolbarTabs active="settings" />
     </Stack>
   );
 
@@ -107,6 +90,6 @@ const ProjectPage = () => {
       </Container>
     </Layout>
   );
-};
+});
 
 export default ProjectPage;

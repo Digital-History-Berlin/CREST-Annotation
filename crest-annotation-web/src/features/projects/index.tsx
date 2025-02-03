@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Stack } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ProjectCard from "./components/ProjectCard";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
@@ -10,6 +10,7 @@ import DeleteProjectDialog from "../../components/dialogs/DeleteProjectDialog";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import Toolbar from "../../components/Toolbar";
+import ToolbarTabs from "../../components/ToolbarTabs";
 
 const ProjectsPage = () => {
   const createDialog = useDialog();
@@ -32,6 +33,12 @@ const ProjectsPage = () => {
     </Button>
   );
 
+  const renderActions = () => (
+    <Stack direction="row">
+      <ToolbarTabs active="projects" />
+    </Stack>
+  );
+
   return (
     <>
       <AddProjectDialog
@@ -51,7 +58,7 @@ const ProjectsPage = () => {
             onDelete={() => deleteDialog.handleOpen(project)}
           />
         )}
-        header={<Toolbar title="Projects" />}
+        header={<Toolbar title="Projects" actions={renderActions()} />}
         placeholder={
           <PlaceholderLayout
             title={

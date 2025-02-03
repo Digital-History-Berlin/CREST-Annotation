@@ -3,6 +3,7 @@ import json
 import logging
 import hashlib
 import requests
+import torch
 
 import numpy as np
 import cv2
@@ -10,8 +11,8 @@ import cv2
 from uuid import uuid4
 from urllib import request
 
-from segment_anything import SamAutomaticMaskGenerator
-from segment_anything.predictor import Sam
+from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+from sam2.sam2_image_predictor import SAM2Base
 
 from fastapi import Body, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -19,7 +20,7 @@ from fastapi.responses import JSONResponse, Response
 
 from app.schemas.common import TaskStatus
 from app.dependencies.task_pool import get_task_manager
-from app.dependencies.facebook_sam import get_sam_model
+from app.dependencies.facebook_sam import get_sam2_model
 from . import router
 
 
@@ -32,9 +33,11 @@ segmentations_path = "./cache/custom_crest_detection/"
 backend = "http://localhost:8000"
 
 
+@torch.inference_mode()
+@torch.autocast("cuda", dtype=torch.bfloat16)
 def run_segmentation(
     url: str,
-    sam: Sam,
+    sam2: SAM2Base,
     logger: logging.Logger,
 ):
     hashed_url = hashlib.sha256(url.encode()).hexdigest()
@@ -58,7 +61,7 @@ def run_segmentation(
     cv_data = cv2.imdecode(np_data, cv2.IMREAD_COLOR)
 
     logger.info("Preparing generator")
-    generator = SamAutomaticMaskGenerator(sam)
+    generator = SAM2AutomaticMaskGenerator(sam2)
     logger.info("Generating masks...")
     masks = generator.generate(cv_data)
 
@@ -73,7 +76,7 @@ def run_segmentation(
 def segmentation_task(task: TaskStatus):
     task_manager = get_task_manager()
     logger = task_manager.get_logger(task.id)
-    sam = get_sam_model()
+    sam2 = get_sam2_model()
 
     logger.info(f"Task starting...")
     task_manager.update_status(task.id, "processing")
@@ -82,7 +85,7 @@ def segmentation_task(task: TaskStatus):
             f"{backend}/objects/uri/{task.object_id}",
             json={"height": 1024},
         )
-        run_segmentation(uri_response.json(), sam, logger)
+        run_segmentation(uri_response.json(), sam2, logger)
 
         logger.info(f"Task completed")
         task_manager.update_status(task.id, "completed")
@@ -130,7 +133,7 @@ def get_mask(mask_index: int):
 
 
 @router.post("/prepare")
-async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)):
+async def prepare(url: str | None = Body(embed=True), sam2=Depends(get_sam2_model)):
     global masks
     global cache_index
 
@@ -138,7 +141,7 @@ async def prepare(url: str | None = Body(embed=True), sam=Depends(get_sam_model)
         logging.info("Image cached")
         return
 
-    masks = run_segmentation(url, sam, logging.root)
+    masks = run_segmentation(url, sam2, logging.root)
     cache_index = url
 
 

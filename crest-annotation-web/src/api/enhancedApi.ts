@@ -98,5 +98,6 @@ export const {
   useImportFilesystemMutation,
   useImportIiif3Mutation,
   useImportIiif2Mutation,
+  useImportDigitalHeraldryMutation,
   useGetYamlExportQuery,
 } = enhancedApi;

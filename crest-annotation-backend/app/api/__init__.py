@@ -21,6 +21,7 @@ from .import_labels_ontology import router
 from .import_objects_filesystem import router
 from .import_objects_iiif3 import router
 from .import_objects_iiif2 import router
+from .import_objects_digital_heraldry import router
 from .export_yaml import router
 
 from .. import schemas
@@ -29,6 +30,7 @@ from .. import schemas
 from .import_objects_iiif3.dependencies import Iiif3ObjectData
 from .import_objects_iiif2.dependencies import Iiif2ObjectData
 from .import_objects_filesystem.dependencies import FilesystemObjectData
+from .import_objects_digital_heraldry.dependencies import DigitalHeraldryObjectData
 
 
 from ..models.objects import Object
@@ -48,6 +50,8 @@ def get_object_data_schema(object_data):
         return Iiif2ObjectData
     if object_data.get("type") == "fs":
         return FilesystemObjectData
+    if object_data.get("type") == "dh":
+        return DigitalHeraldryObjectData
 
     raise ModuleNotFoundError(name=id)
 

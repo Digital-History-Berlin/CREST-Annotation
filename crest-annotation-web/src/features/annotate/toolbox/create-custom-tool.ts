@@ -117,7 +117,7 @@ export const withOperationContext = <O extends ToolOperation>(
     .catch((error) => {
       if (options.cancelOnError) context.cancel();
       if (options.throwOnError) throw error;
-      else console.error(error);
+      else console.error(`Exception in operation ${id}`);
     });
 };
 

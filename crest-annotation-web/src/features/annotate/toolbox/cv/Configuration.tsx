@@ -128,13 +128,13 @@ export const Configuration: ConfigFC = () => {
               <Check />
             </IconButton>
           </Stack>
-          {algorithm?.state === true && (
+          {algorithm?.id === unsafeAlgorithm && algorithm?.state === true && (
             <Stack direction="row" alignItems="center" gap={1}>
               <CheckCircle color="success" />
               <Typography color="success">Algorithm active</Typography>
             </Stack>
           )}
-          {algorithm?.state === false && (
+          {algorithm?.id === unsafeAlgorithm && algorithm?.state === false && (
             <Stack direction="row" alignItems="center" gap={1}>
               <Cancel color="error" />
               <Typography color="error">

@@ -12,5 +12,9 @@ class Environment(BaseSettings):
     sam_model_type: str
     sam_device: str | None = None
 
+    # sam2 configuration
+    sam2_checkpoint: str
+    sam2_config: str
+
 
 env = Environment()

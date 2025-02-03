@@ -24,7 +24,7 @@ async def get_ontology_import(
 ):
     jsonld.set_document_loader(jsonld.requests_document_loader(timeout=30))
 
-    logger.info(f"pulling ontology from {url}")
+    logger.info(f"Pulling ontology from {url}")
     document = jsonld.expand(url)
 
     # filter relevant items

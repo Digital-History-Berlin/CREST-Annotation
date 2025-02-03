@@ -11,12 +11,15 @@ import {
   FormLabel,
   IconButton,
   LinearProgress,
+  MenuItem,
   Stack,
   Switch,
+  TextField,
   Typography,
   useTheme,
 } from "@mui/material";
 import { decide, edit, select } from "./thunks";
+import { validateSorting } from "./tools";
 import {
   CvCrestDetectionToolConfig,
   operationState,
@@ -202,6 +205,20 @@ export const Configuration: ConfigFC = () => {
 
       <Divider />
       <FormLabel>Mask selection</FormLabel>
+      <TextField
+        select
+        fullWidth
+        variant="filled"
+        label="Mask sorting"
+        value={config.sorting}
+        onChange={(e) =>
+          handleChange({ sorting: validateSorting(e.target.value) })
+        }
+      >
+        <MenuItem value="position">Position</MenuItem>
+        <MenuItem value="rating">Rating</MenuItem>
+      </TextField>
+
       <FormGroup>
         <Stack direction="row" justifyContent="space-between">
           <FormControlLabel

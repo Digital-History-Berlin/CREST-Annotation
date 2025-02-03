@@ -227,6 +227,20 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    importDigitalHeraldry: build.mutation<
+      ImportDigitalHeraldryApiResponse,
+      ImportDigitalHeraldryApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/import/digital-heraldry`,
+        method: "POST",
+        params: {
+          url: queryArg.url,
+          project_id: queryArg.projectId,
+          commit: queryArg.commit,
+        },
+      }),
+    }),
     getYamlExport: build.query<GetYamlExportApiResponse, GetYamlExportApiArg>({
       query: (queryArg) => ({
         url: `/export/yaml`,
@@ -394,6 +408,13 @@ export type ImportIiif3ApiArg = {
 export type ImportIiif2ApiResponse =
   /** status 200 Successful Response */ Iiif2Import;
 export type ImportIiif2ApiArg = {
+  url: string;
+  projectId: string;
+  commit?: boolean;
+};
+export type ImportDigitalHeraldryApiResponse =
+  /** status 200 Successful Response */ DigitalHeraldryImport;
+export type ImportDigitalHeraldryApiArg = {
   url: string;
   projectId: string;
   commit?: boolean;
@@ -587,6 +608,25 @@ export type Iiif2Import = {
   added: Iiif2Object[];
   problems: string[];
 };
+export type DigitalHeraldryObjectData = {
+  manifest: string;
+  sequence: string;
+  canvas: string;
+  image?: string;
+  type?: string;
+};
+export type DigitalHeraldryObject = {
+  id?: string;
+  object_uuid?: string;
+  annotated?: boolean;
+  annotation_data?: string;
+  object_data: DigitalHeraldryObjectData;
+};
+export type DigitalHeraldryImport = {
+  objects: DigitalHeraldryObject[];
+  added: DigitalHeraldryObject[];
+  problems: string[];
+};
 export const {
   useGetProjectLabelsQuery,
   useCreateLabelMutation,
@@ -616,5 +656,6 @@ export const {
   useImportFilesystemMutation,
   useImportIiif3Mutation,
   useImportIiif2Mutation,
+  useImportDigitalHeraldryMutation,
   useGetYamlExportQuery,
 } = injectedRtkApi;

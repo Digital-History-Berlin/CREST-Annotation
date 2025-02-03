@@ -1,12 +1,10 @@
 import requests
-import json
-
-from iiif_prezi3 import Manifest
 
 from pydantic import ValidationError
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from rdflib import Graph
 
 from app.dependencies.db import get_db
 from app.dependencies.logger import get_logger
@@ -15,10 +13,11 @@ from app.models.objects import Object
 
 from .. import import_router as router
 
-from .dependencies import Iiif3, Iiif3Import, Iiif3Object
+from .dependencies import DigitalHeraldry, DigitalHeraldryObject, DigitalHeraldryImport
+from .queries import select_image_urls_from_iiif_manifest
 
 
-def map_object(project_id: str, object: Iiif3Object) -> Object:
+def map_object(project_id: str, object: DigitalHeraldryObject) -> Object:
     return Object(
         project_id=project_id,
         object_uuid=object.object_uuid,
@@ -26,12 +25,12 @@ def map_object(project_id: str, object: Iiif3Object) -> Object:
     )
 
 
-@router.post("/iiif/3", response_model=Iiif3Import)
-async def import_iiif3(
+@router.post("/digital-heraldry", response_model=DigitalHeraldryImport)
+async def import_digital_heraldry(
     url: str,
     project_id: str,
     commit: bool = False,
-    iiif: Iiif3 = Depends(Iiif3),
+    digital_heraldry: DigitalHeraldry = Depends(DigitalHeraldry),
     db: Session = Depends(get_db),
     logger=Depends(get_logger),
 ):
@@ -39,22 +38,27 @@ async def import_iiif3(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    logger.info(f"Pulling IIIF manifest from {url}")
-    manifest_json = requests.get(url).json()
+    logger.info(f"Pulling RDF turtle representation from {url}")
 
     problems = []
+    graph = Graph()
+    graph.parse(url)
 
-    try:
-        manifest = Manifest(**manifest_json)
-    except ValidationError as e:
-        logger.exception("Invalid manifest")
-        # TODO: improve error message
-        problems.append(str(e))
-        # try to disable validation to be able to proceed
-        manifest = Manifest.construct(**manifest_json)
+    logger.info(f"Querying objects")
 
-    objects = iiif.extract_objects(manifest)
+    result = graph.query(
+        select_image_urls_from_iiif_manifest.QUERY,
+        initBindings={
+            "manifestIRI": "https://gallica.bnf.fr/iiif/ark:/12148/btv1b55009806h/manifest.json"
+        },
+    )
 
+    print(result.serialize())
+
+    for row in result:
+        print(row)
+
+    """
     # compare against known objects
     query = db.query(Object.object_uuid).filter_by(project_id=project_id)
     known = set(obj.object_uuid for obj in query)
@@ -64,13 +68,12 @@ async def import_iiif3(
     if commit:
         db.add_all(map_object(project_id, obj) for obj in objects)
         db.commit()
+    """
 
     return JSONResponse(
-        Iiif3Import(
-            title=dict(manifest.label),
-            display=str(manifest.behavior),
-            objects=objects,
-            added=added,
+        DigitalHeraldryImport(
+            objects=[],
+            added=[],
             problems=problems,
         ).dict()
     )

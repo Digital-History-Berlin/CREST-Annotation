@@ -89,7 +89,7 @@ export const createLoaderThunk =
         progress: options.progress,
         cancellation,
       },
-      { thunkApi, autoComplete: true },
+      { thunkApi, autoComplete: true, cancelOnError: true },
       execute
     );
   };

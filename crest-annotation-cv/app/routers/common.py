@@ -27,8 +27,8 @@ async def info():
                         frontend="generic-single-mask",
                     ),
                     AlgorithmInfo(
-                        id="example-segment",
-                        name="Square (Example)",
+                        id="facebook-sam2",
+                        name="Segment Anything 2 (Meta AI)",
                         frontend="generic-single-mask",
                     ),
                     AlgorithmInfo(

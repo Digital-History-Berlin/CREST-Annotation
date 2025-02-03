@@ -169,6 +169,8 @@ export const navigateMaskIndex: ToolboxThunk<{
   if (data?.boundingBoxes === undefined)
     throw new ToolStateError(Tool.Cv, "Bounding boxes not found");
 
+  // TODO: iterate by position
+
   // automatically skip unlikely masks
   const { annotations } = thunkApi.getState().annotations;
   while (

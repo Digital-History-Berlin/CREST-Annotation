@@ -38,7 +38,7 @@ async def import_iiif2(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    logger.info(f"pulling IIIF manifest from {url}")
+    logger.info(f"Pulling IIIF manifest from {url}")
     manifest_json = requests.get(url).json()
 
     problems = []

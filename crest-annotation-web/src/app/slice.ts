@@ -8,6 +8,8 @@ export interface ObjectFilters {
 
 export interface GlobalSlice {
   objectFilters: ObjectFilters;
+  // current project
+  projectId?: string;
 }
 
 const initialState: GlobalSlice = {
@@ -21,10 +23,13 @@ export const slice = createSlice({
     updateObjectFilters: (state, action: PayloadAction<ObjectFilters>) => {
       state.objectFilters = action.payload;
     },
+    updateProject: (state, action: PayloadAction<string>) => {
+      state.projectId = action.payload;
+    },
   },
 });
 
-export const { updateObjectFilters } = slice.actions;
+export const { updateObjectFilters, updateProject } = slice.actions;
 
 export const selectObjectFilters = (state: RootState) =>
   state.global.objectFilters;

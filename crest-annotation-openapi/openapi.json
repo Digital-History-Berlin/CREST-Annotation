@@ -1497,6 +1497,70 @@
     }
    }
   },
+  "/import/digital-heraldry": {
+   "post": {
+    "tags": [
+     "import"
+    ],
+    "summary": "Import Digital Heraldry",
+    "operationId": "import_digital_heraldry",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Url",
+       "type": "string"
+      },
+      "name": "url",
+      "in": "query"
+     },
+     {
+      "required": true,
+      "schema": {
+       "title": "Project Id",
+       "type": "string"
+      },
+      "name": "project_id",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Commit",
+       "type": "boolean",
+       "default": false
+      },
+      "name": "commit",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DigitalHeraldryImport"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/export/yaml": {
    "get": {
     "tags": [
@@ -1612,6 +1676,100 @@
       }
      }
     }
+   },
+   "DigitalHeraldryImport": {
+    "title": "DigitalHeraldryImport",
+    "required": [
+     "objects",
+     "added",
+     "problems"
+    ],
+    "type": "object",
+    "properties": {
+     "objects": {
+      "title": "Objects",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/DigitalHeraldryObject"
+      }
+     },
+     "added": {
+      "title": "Added",
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/DigitalHeraldryObject"
+      }
+     },
+     "problems": {
+      "title": "Problems",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "DigitalHeraldryObject": {
+    "title": "DigitalHeraldryObject",
+    "required": [
+     "object_data"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "object_uuid": {
+      "title": "Object Uuid",
+      "type": "string"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "boolean"
+     },
+     "annotation_data": {
+      "title": "Annotation Data",
+      "type": "string"
+     },
+     "object_data": {
+      "$ref": "#/components/schemas/DigitalHeraldryObjectData"
+     }
+    }
+   },
+   "DigitalHeraldryObjectData": {
+    "title": "DigitalHeraldryObjectData",
+    "required": [
+     "manifest",
+     "sequence",
+     "canvas"
+    ],
+    "type": "object",
+    "properties": {
+     "manifest": {
+      "title": "Manifest",
+      "type": "string"
+     },
+     "sequence": {
+      "title": "Sequence",
+      "type": "string"
+     },
+     "canvas": {
+      "title": "Canvas",
+      "type": "string"
+     },
+     "image": {
+      "title": "Image",
+      "type": "string"
+     },
+     "type": {
+      "title": "Type",
+      "type": "string",
+      "default": "dh",
+      "const": "dh"
+     }
+    },
+    "description": "Specific data for objects imported from Digital Heraldry"
    },
    "FilesystemImport": {
     "title": "FilesystemImport",
