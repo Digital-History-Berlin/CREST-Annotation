@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import {
+  CvCrestDetectionSorting,
   CvCrestDetectionToolConfig,
   CvCrestDetectionToolOperation,
   CvCrestDetectionToolState,
@@ -157,35 +158,55 @@ const calculateRating = (
   return 1.0;
 };
 
+const sortByPosition = (a: SamBoundingBox, b: SamBoundingBox) => {
+  const ax = a.bbox[0] + a.bbox[2] / 2;
+  const ay = a.bbox[1] + a.bbox[3] / 2;
+  const bx = b.bbox[0] + b.bbox[2] / 2;
+  const by = b.bbox[1] + b.bbox[3] / 2;
+
+  // sort (mainly) by Y, use X only when close
+  // TODO: maybe this can be improved
+  return ay * 5 + ax - by * 5 - bx;
+};
+
+const sortByRating = (a: SamBoundingBox, b: SamBoundingBox) => {
+  return b.predictedIou - a.predictedIou;
+};
+
+const sortBy = (
+  boundingBoxes: SamBoundingBox[],
+  sorting: CvCrestDetectionSorting
+) => {
+  if (sorting === "position") return [...boundingBoxes].sort(sortByPosition);
+  if (sorting === "rating") return [...boundingBoxes].sort(sortByRating);
+  return boundingBoxes;
+};
+
 // show a mask with for given index
 export const navigateMaskIndex: ToolboxThunk<{
   index: number;
   label: Label;
-}> = ({ index, label }, thunkApi) => {
-  const { backend, algorithm, config, data } = toolState(thunkApi.getState());
+  boundingBoxes: SamBoundingBox[];
+}> = ({ index, label, boundingBoxes }, thunkApi) => {
+  const { backend, algorithm, config } = toolState(thunkApi.getState());
 
   if (config === undefined)
     throw new ToolStateError(Tool.Cv, "Configuration not found");
-  if (data?.boundingBoxes === undefined)
-    throw new ToolStateError(Tool.Cv, "Bounding boxes not found");
-
-  // TODO: iterate by position
 
   // automatically skip unlikely masks
   const { annotations } = thunkApi.getState().annotations;
   while (
-    index < data.boundingBoxes.length &&
-    calculateRating(data.boundingBoxes[index], config, annotations) < 0.5
+    index < boundingBoxes.length &&
+    calculateRating(boundingBoxes[index], config, annotations) < 0.5
   )
     index++;
 
-  if (index >= data.boundingBoxes.length)
-    return console.log("All masks annotated");
+  if (index >= boundingBoxes.length) return console.log("All masks annotated");
 
-  const boundingBox = data.boundingBoxes[index];
+  const boundingBox = boundingBoxes[index];
   const operation: CvCrestDetectionToolOperation = {
     type: "tool/cv/crest-detection",
-    state: { tool: Tool.Cv, index, label, boundingBox },
+    state: { tool: Tool.Cv, index, label, boundingBoxes, boundingBox },
   };
 
   // begin a new mask selection operation
@@ -225,7 +246,18 @@ export const navigateMaskIndex: ToolboxThunk<{
 export const select = createCustomToolThunk<{ index: number; label: Label }>(
   "toolbox/cv/crestDetection/select",
   Tool.Cv,
-  navigateMaskIndex
+  ({ index, label }, thunkApi) => {
+    const { config, data } = toolState(thunkApi.getState());
+
+    if (config === undefined)
+      throw new ToolStateError(Tool.Cv, "Configuration not found");
+    if (data?.boundingBoxes === undefined)
+      throw new ToolStateError(Tool.Cv, "Bounding boxes not found");
+
+    // sort the bounding boxes according to selection
+    const boundingBoxes = sortBy(data.boundingBoxes, config?.sorting);
+    return navigateMaskIndex({ index, label, boundingBoxes }, thunkApi);
+  }
 );
 
 export const edit = createCustomToolThunk<void>(
@@ -287,7 +319,11 @@ export const decide = createCustomToolThunk<{
         // proceed with next mask
         if (proceed)
           navigateMaskIndex(
-            { index: state.index + 1, label: state.label },
+            {
+              index: state.index + 1,
+              label: state.label,
+              boundingBoxes: state.boundingBoxes,
+            },
             thunkApi
           );
       }

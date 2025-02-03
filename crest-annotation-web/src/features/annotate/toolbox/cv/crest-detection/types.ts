@@ -44,6 +44,7 @@ export interface CvCrestDetectionToolOperationState {
 
   index: number;
   label: Label;
+  boundingBoxes: SamBoundingBox[];
   boundingBox: SamBoundingBox;
   mask?: SamMask;
   edit?: boolean;

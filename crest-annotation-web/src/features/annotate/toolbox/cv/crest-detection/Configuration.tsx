@@ -210,6 +210,7 @@ export const Configuration: ConfigFC = () => {
         fullWidth
         variant="filled"
         label="Mask sorting"
+        disabled={!!operation}
         value={config.sorting}
         onChange={(e) =>
           handleChange({ sorting: validateSorting(e.target.value) })
