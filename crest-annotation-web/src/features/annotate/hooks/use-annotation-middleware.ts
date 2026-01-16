@@ -25,7 +25,7 @@ export const useAnnotationMiddleware = ({
 }: {
   projectId?: string;
   objectId?: string;
-  redirect: (projectId: string | undefined) => void;
+  redirect: () => void;
 }): { valid: boolean } => {
   const dispatch = useAppDispatch();
 
@@ -79,10 +79,8 @@ export const useAnnotationMiddleware = ({
 
   useEffect(
     () => {
-      // redirect because of missing project
-      if (!projectId) return redirect(undefined);
-      // redirect because of missing object
-      if (!objectId) return redirect(projectId);
+      // redirect because of invalid state
+      if (!projectId || !objectId) return redirect();
       // update local state once data is available
       if (remoteProject && remoteObject && remoteImage) {
         // generate a unique session id

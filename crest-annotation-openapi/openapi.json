@@ -228,13 +228,13 @@
     }
    }
   },
-  "/objects/random-of/{project_id}": {
-   "post": {
+  "/objects/at/{project_id}": {
+   "get": {
     "tags": [
      "object"
     ],
-    "summary": "Get Random Object",
-    "operationId": "get_random_object",
+    "summary": "Get Object At",
+    "operationId": "get_object_at",
     "parameters": [
      {
       "required": true,
@@ -246,10 +246,11 @@
       "in": "path"
      },
      {
-      "required": true,
+      "required": false,
       "schema": {
        "title": "Offset",
-       "type": "integer"
+       "type": "integer",
+       "default": 0
       },
       "name": "offset",
       "in": "query"
@@ -309,6 +310,88 @@
     }
    }
   },
+  "/objects/offset/{object_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Navigate From",
+    "operationId": "navigate_from",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Offset",
+       "type": "integer",
+       "default": 0
+      },
+      "name": "offset",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Annotated",
+       "type": "boolean"
+      },
+      "name": "annotated",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Synced",
+       "type": "boolean"
+      },
+      "name": "synced",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Search",
+       "type": "string"
+      },
+      "name": "search",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ObjectNavigate"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/objects/total-of/{project_id}": {
    "get": {
     "tags": [
@@ -332,7 +415,9 @@
       "description": "Successful Response",
       "content": {
        "application/json": {
-        "schema": {}
+        "schema": {
+         "$ref": "#/components/schemas/TotalOf"
+        }
        }
       }
      },
@@ -470,7 +555,7 @@
          "title": "Response Get All Objects Objects All Of  Project Id  Get",
          "type": "array",
          "items": {
-          "$ref": "#/components/schemas/Object"
+          "$ref": "#/components/schemas/SummaryObject"
          }
         }
        }
@@ -515,7 +600,9 @@
       "description": "Successful Response",
       "content": {
        "application/json": {
-        "schema": {}
+        "schema": {
+         "$ref": "#/components/schemas/Object"
+        }
        }
       }
      },
@@ -1956,6 +2043,7 @@
    "DigitalHeraldryObject": {
     "title": "DigitalHeraldryObject",
     "required": [
+     "position",
      "object_data"
     ],
     "type": "object",
@@ -1967,6 +2055,10 @@
      "object_uuid": {
       "title": "Object Uuid",
       "type": "string"
+     },
+     "position": {
+      "title": "Position",
+      "type": "integer"
      },
      "annotated": {
       "title": "Annotated",
@@ -2044,6 +2136,7 @@
    "FilesystemObject": {
     "title": "FilesystemObject",
     "required": [
+     "position",
      "object_data"
     ],
     "type": "object",
@@ -2055,6 +2148,10 @@
      "object_uuid": {
       "title": "Object Uuid",
       "type": "string"
+     },
+     "position": {
+      "title": "Position",
+      "type": "integer"
      },
      "annotated": {
       "title": "Annotated",
@@ -2152,6 +2249,7 @@
    "Iiif2Object": {
     "title": "Iiif2Object",
     "required": [
+     "position",
      "object_data"
     ],
     "type": "object",
@@ -2163,6 +2261,10 @@
      "object_uuid": {
       "title": "Object Uuid",
       "type": "string"
+     },
+     "position": {
+      "title": "Position",
+      "type": "integer"
      },
      "annotated": {
       "title": "Annotated",
@@ -2268,6 +2370,7 @@
    "Iiif3Object": {
     "title": "Iiif3Object",
     "required": [
+     "position",
      "object_data"
     ],
     "type": "object",
@@ -2279,6 +2382,10 @@
      "object_uuid": {
       "title": "Object Uuid",
       "type": "string"
+     },
+     "position": {
+      "title": "Position",
+      "type": "integer"
      },
      "annotated": {
       "title": "Annotated",
@@ -2411,6 +2518,7 @@
     "title": "Object",
     "required": [
      "id",
+     "position",
      "annotation_data"
     ],
     "type": "object",
@@ -2423,6 +2531,10 @@
       "title": "Object Uuid",
       "type": "string"
      },
+     "position": {
+      "title": "Position",
+      "type": "integer"
+     },
      "annotated": {
       "title": "Annotated",
       "type": "boolean"
@@ -2433,6 +2545,19 @@
      },
      "annotation_data": {
       "title": "Annotation Data",
+      "type": "string"
+     }
+    }
+   },
+   "ObjectNavigate": {
+    "title": "ObjectNavigate",
+    "required": [
+     "id"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "title": "Id",
       "type": "string"
      }
     }
@@ -2795,7 +2920,8 @@
    "SummaryObject": {
     "title": "SummaryObject",
     "required": [
-     "id"
+     "id",
+     "position"
     ],
     "type": "object",
     "properties": {
@@ -2807,6 +2933,10 @@
       "title": "Object Uuid",
       "type": "string"
      },
+     "position": {
+      "title": "Position",
+      "type": "integer"
+     },
      "annotated": {
       "title": "Annotated",
       "type": "boolean"
@@ -2814,6 +2944,24 @@
      "synced": {
       "title": "Synced",
       "type": "boolean"
+     }
+    }
+   },
+   "TotalOf": {
+    "title": "TotalOf",
+    "required": [
+     "total",
+     "annotated"
+    ],
+    "type": "object",
+    "properties": {
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     },
+     "annotated": {
+      "title": "Annotated",
+      "type": "integer"
      }
     }
    },

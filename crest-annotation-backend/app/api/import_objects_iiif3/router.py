@@ -18,14 +18,6 @@ from .. import import_router as router
 from .dependencies import Iiif3, Iiif3Import, Iiif3Object
 
 
-def map_object(project_id: str, object: Iiif3Object) -> Object:
-    return Object(
-        project_id=project_id,
-        object_uuid=object.object_uuid,
-        object_data=object.object_data.json(),
-    )
-
-
 @router.post("/iiif/3", response_model=Iiif3Import)
 def import_iiif3(
     url: str,
@@ -59,10 +51,19 @@ def import_iiif3(
     query = db.query(Object.object_uuid).filter_by(project_id=project_id)
     known = set(obj.object_uuid for obj in query)
     added = list(obj for obj in objects if obj.object_uuid not in known)
+    count = len(known)
 
     # insert new objects
     if commit:
-        db.add_all(map_object(project_id, obj) for obj in objects)
+        db.add_all(
+            Object(
+                project_id=project_id,
+                object_uuid=obj.object_uuid,
+                position=count + i,
+                object_data=obj.object_data.json(),
+            )
+            for i, obj in enumerate(objects)
+        )
         db.commit()
 
     return JSONResponse(

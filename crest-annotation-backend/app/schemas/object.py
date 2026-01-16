@@ -7,6 +7,7 @@ from .modifiers import create, patch, response
 class BaseObject(BaseModel):
     id: str
     object_uuid: str | None
+    position: int
     annotated: bool | None
     synced: bool | None
     annotation_data: str
@@ -37,3 +38,12 @@ class ObjectFilters(BaseModel):
     annotated: bool | None
     synced: bool | None
     search: str | None
+
+
+class ObjectNavigate(BaseModel):
+    id: str
+
+
+class TotalOf(BaseModel):
+    total: int
+    annotated: int

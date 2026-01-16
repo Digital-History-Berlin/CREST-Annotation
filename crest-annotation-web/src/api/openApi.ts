@@ -35,13 +35,20 @@ const injectedRtkApi = api.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    getRandomObject: build.mutation<
-      GetRandomObjectApiResponse,
-      GetRandomObjectApiArg
-    >({
+    getObjectAt: build.query<GetObjectAtApiResponse, GetObjectAtApiArg>({
       query: (queryArg) => ({
-        url: `/objects/random-of/${queryArg.projectId}`,
-        method: "POST",
+        url: `/objects/at/${queryArg.projectId}`,
+        params: {
+          offset: queryArg.offset,
+          annotated: queryArg.annotated,
+          synced: queryArg.synced,
+          search: queryArg.search,
+        },
+      }),
+    }),
+    navigateFrom: build.query<NavigateFromApiResponse, NavigateFromApiArg>({
+      query: (queryArg) => ({
+        url: `/objects/offset/${queryArg.objectId}`,
         params: {
           offset: queryArg.offset,
           annotated: queryArg.annotated,
@@ -314,17 +321,26 @@ export type DeleteLabelApiResponse = /** status 200 Successful Response */ any;
 export type DeleteLabelApiArg = {
   labelId: string;
 };
-export type GetRandomObjectApiResponse =
+export type GetObjectAtApiResponse =
   /** status 200 Successful Response */ Object;
-export type GetRandomObjectApiArg = {
+export type GetObjectAtApiArg = {
   projectId: string;
-  offset: number;
+  offset?: number;
+  annotated?: boolean;
+  synced?: boolean;
+  search?: string;
+};
+export type NavigateFromApiResponse =
+  /** status 200 Successful Response */ ObjectNavigate;
+export type NavigateFromApiArg = {
+  objectId: string;
+  offset?: number;
   annotated?: boolean;
   synced?: boolean;
   search?: string;
 };
 export type GetObjectsCountApiResponse =
-  /** status 200 Successful Response */ any;
+  /** status 200 Successful Response */ TotalOf;
 export type GetObjectsCountApiArg = {
   projectId: string;
 };
@@ -339,11 +355,11 @@ export type GetObjectsApiArg = {
   size: number;
 };
 export type GetAllObjectsApiResponse =
-  /** status 200 Successful Response */ Object[];
+  /** status 200 Successful Response */ SummaryObject[];
 export type GetAllObjectsApiArg = {
   projectId: string;
 };
-export type GetObjectApiResponse = /** status 200 Successful Response */ any;
+export type GetObjectApiResponse = /** status 200 Successful Response */ Object;
 export type GetObjectApiArg = {
   objectId: string;
 };
@@ -531,13 +547,22 @@ export type PatchLabel = {
 export type Object = {
   id: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
   annotation_data: string;
 };
+export type ObjectNavigate = {
+  id: string;
+};
+export type TotalOf = {
+  total: number;
+  annotated: number;
+};
 export type SummaryObject = {
   id: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
 };
@@ -615,6 +640,7 @@ export type FilesystemObjectData = {
 export type FilesystemObject = {
   id?: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
   annotation_data?: string;
@@ -651,6 +677,7 @@ export type Iiif3ObjectData = {
 export type Iiif3Object = {
   id?: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
   annotation_data?: string;
@@ -681,6 +708,7 @@ export type Iiif2ObjectData = {
 export type Iiif2Object = {
   id?: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
   annotation_data?: string;
@@ -703,6 +731,7 @@ export type DigitalHeraldryObjectData = {
 export type DigitalHeraldryObject = {
   id?: string;
   object_uuid?: string;
+  position: number;
   annotated?: boolean;
   synced?: boolean;
   annotation_data?: string;
@@ -721,7 +750,8 @@ export const {
   useCreateLabelMutation,
   useUpdateLabelMutation,
   useDeleteLabelMutation,
-  useGetRandomObjectMutation,
+  useGetObjectAtQuery,
+  useNavigateFromQuery,
   useGetObjectsCountQuery,
   useGetObjectsQuery,
   useGetAllObjectsQuery,

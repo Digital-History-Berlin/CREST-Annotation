@@ -6,6 +6,8 @@ from .object import (
     CreateObject,
     ImageRequest,
     ObjectFilters,
+    ObjectNavigate,
+    TotalOf,
 )
 from .project import Project, PatchProject, CreateProject
 from .sorting import SortDirection, Paginated

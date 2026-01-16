@@ -5,7 +5,7 @@ import {
   SkipNext,
   SkipPrevious,
 } from "@mui/icons-material";
-import { Stack } from "@mui/material";
+import { Chip, Stack, useTheme } from "@mui/material";
 import { useAppSelector } from "../../../../app/hooks";
 import { selectObjectFilters } from "../../../../app/slice";
 import StateSelect from "../../../../components/StateSelect";
@@ -19,6 +19,7 @@ import { useObjectController } from "../../hooks/use-object-controller";
 import { selectExternal, useAnnotationObject } from "../../slice/annotations";
 
 const ToolbarActions = () => {
+  const theme = useTheme();
   const object = useAnnotationObject();
 
   const { finishObject, nextObject, previousObject, changeObjectFilters } =
@@ -38,6 +39,11 @@ const ToolbarActions = () => {
         onChange={(synced) => changeObjectFilters({ synced })}
       />
       <ToolbarDivider />
+      <Chip
+        // user readable offset
+        label={object.position}
+        sx={{ background: theme.palette.grey[100] }}
+      />
       <ToolbarButtonWithTooltip
         onClick={previousObject}
         tooltip={"Previous Image"}

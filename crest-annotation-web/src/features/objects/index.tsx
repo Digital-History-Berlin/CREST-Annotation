@@ -23,22 +23,24 @@ const ObjectsPage = withProject(({ projectId }) => {
   const filters = useAppSelector(selectObjectFilters);
 
   const { data: project } = useGetProjectQuery({ projectId });
+
+  const pageSize = 12;
   const objectsQuery = useGetObjectsQuery({
     projectId,
     page: page,
-    size: 12,
+    size: pageSize,
     search: search,
     ...filters,
   });
 
   const changeState = (annotated: boolean | undefined) => {
-    dispatch(updateObjectFilters({ ...filters, annotated, offset: 0 }));
+    dispatch(updateObjectFilters({ ...filters, annotated }));
     // reset the page when filtering
     setPage(1);
   };
 
   const changeSynced = (synced: boolean | undefined) => {
-    dispatch(updateObjectFilters({ ...filters, synced, offset: 0 }));
+    dispatch(updateObjectFilters({ ...filters, synced }));
     // reset the page when filtering
     setPage(1);
   };

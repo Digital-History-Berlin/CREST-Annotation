@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle } from "@mui/icons-material";
-import { Card, CardActionArea, CardMedia, useTheme } from "@mui/material";
+import { Card, CardActionArea, CardMedia, Chip, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useGetImageUriQuery } from "../../../api/enhancedApi";
 import { SummaryObject } from "../../../api/openApi";
@@ -36,12 +36,23 @@ const ObjectCard = ({ projectId, object }: IProps) => {
           query={imageQuery}
           render={({ data: uri }) => (
             <>
+              {object.position && (
+                <Chip
+                  label={object.position}
+                  sx={{
+                    position: "absolute",
+                    left: theme.spacing(1),
+                    bottom: theme.spacing(1),
+                    background: theme.palette.grey[100],
+                  }}
+                />
+              )}
               {object.annotated && (
                 <CheckCircle
                   color="success"
                   sx={{
                     position: "absolute",
-                    left: theme.spacing(1),
+                    right: theme.spacing(1),
                     top: theme.spacing(1),
                   }}
                 />

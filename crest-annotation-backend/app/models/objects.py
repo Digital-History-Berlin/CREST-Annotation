@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, Boolean, Index
+from sqlalchemy import Column, ForeignKey, String, Integer, Boolean, Index
 
 from ..database import Base, make_uuid
 
@@ -12,6 +12,7 @@ class Object(Base):
         ForeignKey("projects.id", ondelete="CASCADE", name="objects_project_id_fkey"),
     )
     object_uuid = Column(String)
+    position = Column(Integer)
     annotated = Column(Boolean, default=False)
     synced = Column(Boolean, default=True)
     annotation_data = Column(String, default="[]")

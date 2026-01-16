@@ -1,11 +1,15 @@
 import { useCallback } from "react";
-import { useNavigateRandom } from "./use-navigate-random";
+import { useNavigate } from "react-router-dom";
 import {
   useFinishObjectMutation,
   usePushAnnotationsMutation,
 } from "../../../api/enhancedApi";
-import { useAppSelector } from "../../../app/hooks";
-import { ObjectFilters, selectObjectFilters } from "../../../app/slice";
+import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import {
+  ObjectFilters,
+  getObjectFrom,
+  updateObjectFilters,
+} from "../../../app/slice";
 import {
   selectAnnotations,
   useAnnotationObject,
@@ -16,11 +20,11 @@ import {
  * Provides tools to manage object state
  */
 export const useObjectController = () => {
-  const { navigateRandom } = useNavigateRandom();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const project = useAnnotationProject();
   const object = useAnnotationObject();
-  const filters = useAppSelector(selectObjectFilters);
   const annotations = useAppSelector(selectAnnotations);
 
   const [requestFinishObject] = useFinishObjectMutation();
@@ -44,64 +48,55 @@ export const useObjectController = () => {
       }
     }
 
+    // retrieve next object before this object is completed
+    const next = await dispatch(
+      getObjectFrom({ objectId: object.id, offset: +1 })
+    ).unwrap();
+
     await requestFinishObject({
       objectId: object.id,
       finished: annotated,
     }).unwrap();
 
-    if (
-      project.id &&
-      filters.annotated !== undefined &&
-      filters.annotated !== annotated
-    )
-      // update current object if neccessary
-      navigateRandom(project.id);
+    navigate(`/annotate/${project.id}/${next}`);
   }, [
+    dispatch,
+    navigate,
     requestFinishObject,
     requestPush,
-    navigateRandom,
     project,
     object,
-    filters,
     annotations,
   ]);
 
-  const previousObject = useCallback(async () => {
-    if (project?.id)
-      navigateRandom(project.id, (filters) => ({
-        ...filters,
-        // navigate to the previous object
-        offset: filters.offset - 1,
-      }));
-  }, [navigateRandom, project]);
+  const navigateFromObject = useCallback(
+    async (offset: number) => {
+      await dispatch(getObjectFrom({ objectId: object.id, offset }))
+        .unwrap()
+        .then(({ id }) => navigate(`/annotate/${project.id}/${id}`));
+    },
+    [dispatch, navigate, project, object]
+  );
 
-  const nextObject = useCallback(async () => {
-    if (project?.id)
-      navigateRandom(project.id, (filters) => ({
-        ...filters,
-        // navigate to the next object
-        offset: filters.offset + 1,
-      }));
-  }, [navigateRandom, project]);
+  const nextObject = useCallback(
+    () => navigateFromObject(+1),
+    [navigateFromObject]
+  );
 
-  console.log(filters.offset);
+  const previousObject = useCallback(
+    () => navigateFromObject(-1),
+    [navigateFromObject]
+  );
 
   const changeObjectFilters = useCallback(
     (patch: Partial<ObjectFilters>) => {
-      if (project?.id)
-        navigateRandom(project.id, (filters) => ({
-          ...filters,
-          // change the filter
-          ...patch,
-          // navigate back to the first object
-          offset: 0,
-        }));
+      dispatch(updateObjectFilters(patch));
+      // TODO: navigate to valid object
     },
-    [navigateRandom, project]
+    [dispatch]
   );
 
   return {
-    navigateRandom,
     finishObject,
     nextObject,
     previousObject,

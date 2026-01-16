@@ -6,7 +6,7 @@ from typing import Callable
 
 from fastapi import APIRouter, Depends, Body, HTTPException, Query
 from fastapi.responses import JSONResponse, FileResponse, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from ..environment import env
 from ..dependencies.db import get_db, get_paginate
@@ -32,6 +32,7 @@ def to_schema(data_object: Object) -> schemas.Object:
     return schemas.Object(
         id=data_object.id,
         object_uuid=data_object.object_uuid,
+        position=data_object.position,
         annotated=data_object.annotated,
         annotation_data=data_object.annotation_data,
     )
@@ -41,46 +42,98 @@ def to_summary_schema(data_object: Object) -> schemas.SummaryObject:
     return schemas.SummaryObject(
         id=data_object.id,
         object_uuid=data_object.object_uuid,
+        position=data_object.position,
         annotated=data_object.annotated,
     )
 
 
-def to_dict(data_object: Object):
-    return to_schema(data_object).dict()
+def with_filters(query, filters: schemas.ObjectFilters):
+    if filters.annotated is not None:
+        query = query.filter_by(annotated=filters.annotated)
+    if filters.synced is not None:
+        query = query.filter_by(synced=filters.synced)
+    if filters.search:
+        search_term = f"%{filters.search}%"
+        query = query.filter(
+            Object.object_uuid.ilike(search_term)
+            | Object.object_data.ilike(search_term)
+        )
+    return query
 
 
-def to_summary_dict(data_object: Object):
-    return to_summary_schema(data_object).dict()
-
-
-# use post to avoid RTK-query caching
-@router.post("/random-of/{project_id}", response_model=schemas.Object)
-def get_random_object(
+@router.get("/at/{project_id}", response_model=schemas.Object)
+def get_object_at(
     project_id: str,
     filters: schemas.ObjectFilters = Depends(),
-    offset: int | None = Query(),
+    offset: int | None = Query(default=0),
     db: Session = Depends(get_db),
 ):
     query = db.query(Object).filter_by(project_id=project_id)
-    if filters.annotated is not None:
-        query = query.filter_by(annotated=filters.annotated)
-    data_object: Object = query.offset(offset or 0).first()
+    query = with_filters(query, filters)
+    query = query.order_by(Object.position)
+
+    total = query.count()
+    data_object: Object = query.order_by(Object.position).offset(offset or 0).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return JSONResponse(to_dict(data_object))
+    return schemas.Object(
+        object=to_schema(data_object),
+        total=total,
+    )
 
 
-@router.get("/total-of/{project_id}")
+@router.get("/offset/{object_id}", response_model=schemas.ObjectNavigate)
+def navigate_from(
+    object_id: str,
+    filters: schemas.ObjectFilters = Depends(),
+    offset: int = Query(default=0),
+    db: Session = Depends(get_db),
+):
+    if offset == 0:
+        return schemas.ObjectNavigate(id=object_id)
+
+    # self-join to find current object
+    current = aliased(Object)
+    query = db.query(Object).join(
+        current,
+        (Object.project_id == current.project_id) & (current.id == object_id),
+    )
+    query = with_filters(query, filters)
+
+    # find next image
+    if offset > 0:
+        query = (
+            query.filter(Object.position > current.position)
+            .order_by(Object.position.asc())
+            .offset(offset - 1)
+        )
+
+    # find previous image
+    if offset < 0:
+        query = (
+            query.filter(Object.position < current.position)
+            .order_by(Object.position.desc())
+            .offset(-offset - 1)
+        )
+
+    # validate result
+    data_object = query.first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="No objects match filters")
+
+    print(str(query))
+    return schemas.ObjectNavigate(id=data_object.id)
+
+
+@router.get("/total-of/{project_id}", response_model=schemas.TotalOf)
 def get_objects_count(project_id: str, db: Session = Depends(get_db)):
     total = db.query(Object).filter_by(project_id=project_id)
     annotated = total.filter_by(annotated=True)
 
-    return JSONResponse(
-        {
-            "total": total.count(),
-            "annotated": annotated.count(),
-        }
+    return schemas.TotalOf(
+        total=total.count(),
+        annotated=annotated.count(),
     )
 
 
@@ -92,38 +145,26 @@ def get_objects(
     db: Session = Depends(get_db),
 ):
     query = db.query(Object).filter_by(project_id=project_id)
-    if filters.annotated is not None:
-        query = query.filter_by(annotated=filters.annotated)
-    if filters.synced is not None:
-        query = query.filter_by(synced=filters.synced)
-    if filters.search:
-        search_term = f"%{filters.search}%"
-        query = query.filter(
-            Object.object_uuid.ilike(search_term)
-            | Object.object_data.ilike(search_term)
-        )
-    objects: schemas.Paginated[schemas.Object] = paginate(query, to_summary_schema)
+    query = with_filters(query, filters)
+    query = query.order_by(Object.position)
 
-    return JSONResponse(objects.dict())
+    return paginate(query, to_summary_schema)
 
 
-@router.get("/all-of/{project_id}", response_model=list[schemas.Object])
-def get_all_objects(
-    project_id: str,
-    db: Session = Depends(get_db),
-):
+@router.get("/all-of/{project_id}", response_model=list[schemas.SummaryObject])
+def get_all_objects(project_id: str, db: Session = Depends(get_db)):
     objects: list[schemas.Object] = db.query(Object).filter_by(project_id=project_id)
 
-    return JSONResponse(list(map(to_summary_dict, objects)))
+    return map(to_summary_schema, objects)
 
 
-@router.get("/id/{object_id}")
+@router.get("/id/{object_id}", response_model=schemas.Object)
 def get_object(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
 
-    return JSONResponse(to_dict(data_object))
+    return to_schema(data_object)
 
 
 @router.post("/finish/{object_id}")
