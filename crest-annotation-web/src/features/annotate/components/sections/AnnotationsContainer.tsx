@@ -1,14 +1,12 @@
 import React, { useState } from "react";
-import { CloudDone, CloudOff, LinkRounded } from "@mui/icons-material";
+import { LinkRounded } from "@mui/icons-material";
 import {
-  Chip,
   IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
   Stack,
-  Tooltip,
   useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +26,6 @@ import {
   hideAnnotation,
   lockAnnotation,
   selectAnnotations,
-  selectChangesCount,
   selectExternal,
   showAnnotation,
   startEditAnnotation,
@@ -42,7 +39,6 @@ const AnnotationsContainer = () => {
 
   const annotations = useAppSelector(selectAnnotations);
   const external = useAppSelector(selectExternal);
-  const changes = useAppSelector(selectChangesCount);
   const lock = useObjectLock();
 
   const [reference, setReference] = useState(false);
@@ -56,32 +52,6 @@ const AnnotationsContainer = () => {
     return theme.palette.success.dark;
   };
 
-  const renderBadge = () => {
-    // no synchronization state needed
-    if (!external) return null;
-    // unsynchronized changes
-    if (changes)
-      return (
-        <Tooltip title="Some changes have not been synchronized to the external annotation source.">
-          <Chip
-            icon={<CloudOff />}
-            size="small"
-            color="warning"
-            label={changes}
-          />
-        </Tooltip>
-      );
-    // everything synchronized
-    return (
-      <Chip
-        icon={<CloudDone />}
-        size="small"
-        color="success"
-        label="No changes"
-      />
-    );
-  };
-
   const renderListActions = () => {
     const background = (toggled: boolean) => {
       return toggled ? theme.palette.grey[300] : "transparent";
@@ -89,7 +59,6 @@ const AnnotationsContainer = () => {
 
     return (
       <Stack direction="row" alignItems="center" spacing={0.5}>
-        {renderBadge()}
         <IconButton
           onClick={() => setReference((current) => !current)}
           sx={{ backgroundColor: background(reference) }}

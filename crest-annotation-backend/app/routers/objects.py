@@ -77,10 +77,7 @@ def get_object_at(
     if not data_object:
         raise HTTPException(status_code=404, detail="No objects found")
 
-    return schemas.Object(
-        object=to_schema(data_object),
-        total=total,
-    )
+    return to_schema(data_object)
 
 
 @router.get("/offset/{object_id}", response_model=schemas.ObjectNavigate)
