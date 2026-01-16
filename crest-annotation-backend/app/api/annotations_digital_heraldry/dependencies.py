@@ -101,7 +101,9 @@ class DigitalHeraldryAnnotationsProvider:
         """
 
         for binding in bindings:
-            annotation = binding.require("annotationImageFile")
+            annotation = binding.optional("annotationImageFile")
+            if not annotation:
+                continue
 
             yield {
                 "id": binding.require("blazon"),
