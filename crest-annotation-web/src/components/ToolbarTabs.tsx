@@ -1,9 +1,6 @@
 import { useCallback } from "react";
+import { Apps, Home, Image, Settings } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import ObjectsIcon from "@mui/icons-material/Apps";
-import ProjectsIcon from "@mui/icons-material/Collections";
-import AnnotateIcon from "@mui/icons-material/LocalOffer";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { ToolbarTabButtonWithTooltip } from "./ToolbarButton";
 import { useAppSelector } from "../app/hooks";
 
@@ -43,7 +40,7 @@ const ToolbarTabs = ({ active }: IProps) => {
         selected={active === "projects"}
         value="projects"
       >
-        <ProjectsIcon />
+        <Home />
       </ToolbarTabButtonWithTooltip>
       <ToolbarTabButtonWithTooltip
         onClick={navigateObjects}
@@ -52,7 +49,7 @@ const ToolbarTabs = ({ active }: IProps) => {
         value="objects"
         disabled={!projectId}
       >
-        <ObjectsIcon />
+        <Apps />
       </ToolbarTabButtonWithTooltip>
       <ToolbarTabButtonWithTooltip
         onClick={navigateAnnotate}
@@ -61,7 +58,7 @@ const ToolbarTabs = ({ active }: IProps) => {
         value="annotate"
         disabled={!projectId}
       >
-        <AnnotateIcon />
+        <Image />
       </ToolbarTabButtonWithTooltip>
       <ToolbarTabButtonWithTooltip
         onClick={navigateSettings}
@@ -70,7 +67,7 @@ const ToolbarTabs = ({ active }: IProps) => {
         value="settings"
         disabled={!projectId}
       >
-        <SettingsIcon />
+        <Settings />
       </ToolbarTabButtonWithTooltip>
     </>
   );

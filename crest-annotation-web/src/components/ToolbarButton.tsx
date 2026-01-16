@@ -51,6 +51,9 @@ export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
 
     border: 0,
     "&.Mui-selected": {
+      "&:hover": {
+        backgroundColor: theme.palette.primary.light,
+      },
       color: theme.palette.primary.contrastText,
       backgroundColor: theme.palette.primary.light,
     },
@@ -67,13 +70,18 @@ export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
 export const ToolbarTabButton = styled(ToggleButton)(({ theme }) => ({
   "&": {
     minWidth: 48,
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
     justifyContent: "center",
     color: theme.palette.primary.contrastText,
 
+    // HACK: overflow to bottom to indicate a tab
+    marginBottom: -15,
+    paddingBottom: 26,
+
     border: 0,
     "&.Mui-selected": {
+      "&:hover": {
+        backgroundColor: theme.palette.common.white,
+      },
       color: theme.palette.primary.main,
       backgroundColor: theme.palette.common.white,
     },

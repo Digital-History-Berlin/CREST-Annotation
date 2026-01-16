@@ -1,7 +1,11 @@
-import { CloudUpload, LockReset } from "@mui/icons-material";
+import {
+  Check,
+  CloudUpload,
+  LockReset,
+  SkipNext,
+  SkipPrevious,
+} from "@mui/icons-material";
 import { Stack } from "@mui/material";
-import FinishedIcon from "@mui/icons-material/Check";
-import SkipIcon from "@mui/icons-material/SkipNext";
 import { useAppSelector } from "../../../../app/hooks";
 import { selectObjectFilters } from "../../../../app/slice";
 import StateSelect from "../../../../components/StateSelect";
@@ -11,14 +15,13 @@ import {
   ToolbarDivider,
   ToolbarToggleButtonWithTooltip,
 } from "../../../../components/ToolbarButton";
-import ToolbarTabs from "../../../../components/ToolbarTabs";
 import { useObjectController } from "../../hooks/use-object-controller";
 import { selectExternal, useAnnotationObject } from "../../slice/annotations";
 
 const ToolbarActions = () => {
   const object = useAnnotationObject();
 
-  const { finishObject, skipObject, changeObjectFilters } =
+  const { finishObject, nextObject, previousObject, changeObjectFilters } =
     useObjectController();
 
   const filters = useAppSelector(selectObjectFilters);
@@ -35,29 +38,36 @@ const ToolbarActions = () => {
         onChange={(synced) => changeObjectFilters({ synced })}
       />
       <ToolbarDivider />
+      <ToolbarButtonWithTooltip
+        onClick={previousObject}
+        tooltip={"Previous Image"}
+      >
+        <SkipPrevious />
+      </ToolbarButtonWithTooltip>
       <ToolbarToggleButtonWithTooltip
         value={"annotated"}
         onClick={finishObject}
         selected={!!object?.annotated}
         tooltip={"Finish Image"}
       >
-        <FinishedIcon />
+        <Check />
       </ToolbarToggleButtonWithTooltip>
-      <ToolbarButtonWithTooltip onClick={skipObject} tooltip={"Next Image"}>
-        <SkipIcon />
+      <ToolbarButtonWithTooltip onClick={nextObject} tooltip={"Next Image"}>
+        <SkipNext />
       </ToolbarButtonWithTooltip>
       {external && (
-        <ToolbarButtonWithTooltip onClick={skipObject} tooltip={"Next Image"}>
-          <CloudUpload />
-        </ToolbarButtonWithTooltip>
+        <>
+          <ToolbarDivider />
+          <ToolbarButtonWithTooltip
+            tooltip={"Synchronize to external annotation source"}
+          >
+            <CloudUpload />
+          </ToolbarButtonWithTooltip>
+          <ToolbarButtonWithTooltip tooltip={"Discard local changes"}>
+            <LockReset />
+          </ToolbarButtonWithTooltip>
+        </>
       )}
-      {external && (
-        <ToolbarButtonWithTooltip onClick={skipObject} tooltip={"Next Image"}>
-          <LockReset />
-        </ToolbarButtonWithTooltip>
-      )}
-      <ToolbarDivider />
-      <ToolbarTabs active="annotate" />
     </Stack>
   );
 };

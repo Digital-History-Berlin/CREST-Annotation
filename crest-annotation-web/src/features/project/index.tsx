@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Container,
-  Paper,
-  Stack,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
+import { Box, Container, Paper, Tab, Tabs, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import AnnotationsTab from "./components/AnnotationsTab";
 import LabelsTab from "./components/LabelsTab";
@@ -33,19 +25,13 @@ const ProjectPage = withProject(({ projectId }) => {
     if (group === "labels") setCurrentTab(1);
   };
 
-  const renderActions = () => (
-    <Stack direction="row">
-      <ToolbarTabs active="settings" />
-    </Stack>
-  );
-
   return (
     <Layout
       scrollable
       header={
         <Toolbar
           title={projectQuery.data?.name ?? "Project Settings"}
-          actions={renderActions()}
+          tabs={<ToolbarTabs active="settings" />}
         />
       }
     >

@@ -11,7 +11,6 @@ import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import StateSelect from "../../components/StateSelect";
 import SyncSelect from "../../components/SyncSelect";
 import Toolbar from "../../components/Toolbar";
-import { ToolbarDivider } from "../../components/ToolbarButton";
 import ToolbarTabs from "../../components/ToolbarTabs";
 import { withProject } from "../../hocs/with-project";
 
@@ -58,8 +57,6 @@ const ObjectsPage = withProject(({ projectId }) => {
     <Stack direction="row" spacing={1} alignItems="center">
       <StateSelect annotated={filters.annotated} onChange={changeState} />
       <SyncSelect synced={filters.synced} onChange={changeSynced} />
-      <ToolbarDivider />
-      <ToolbarTabs active="objects" />
     </Stack>
   );
 
@@ -74,6 +71,7 @@ const ObjectsPage = withProject(({ projectId }) => {
         header={
           <Toolbar
             title={project?.name ?? "Objects"}
+            tabs={<ToolbarTabs active="objects" />}
             actions={renderActions()}
           />
         }

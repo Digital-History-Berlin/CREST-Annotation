@@ -66,7 +66,16 @@ export const useObjectController = () => {
     annotations,
   ]);
 
-  const skipObject = useCallback(async () => {
+  const previousObject = useCallback(async () => {
+    if (project?.id)
+      navigateRandom(project.id, (filters) => ({
+        ...filters,
+        // navigate to the previous object
+        offset: filters.offset - 1,
+      }));
+  }, [navigateRandom, project]);
+
+  const nextObject = useCallback(async () => {
     if (project?.id)
       navigateRandom(project.id, (filters) => ({
         ...filters,
@@ -74,6 +83,8 @@ export const useObjectController = () => {
         offset: filters.offset + 1,
       }));
   }, [navigateRandom, project]);
+
+  console.log(filters.offset);
 
   const changeObjectFilters = useCallback(
     (patch: Partial<ObjectFilters>) => {
@@ -92,7 +103,8 @@ export const useObjectController = () => {
   return {
     navigateRandom,
     finishObject,
-    skipObject,
+    nextObject,
+    previousObject,
     changeObjectFilters,
   };
 };

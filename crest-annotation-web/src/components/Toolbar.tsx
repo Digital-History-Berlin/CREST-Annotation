@@ -2,6 +2,7 @@ import React, { CSSProperties, ReactNode } from "react";
 import {
   Box,
   Toolbar as MuiToolbar,
+  Stack,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -11,6 +12,7 @@ import { ToolbarButton } from "./ToolbarButton";
 
 interface IProps {
   title?: string;
+  tabs?: ReactNode;
   tools?: ReactNode;
   actions?: ReactNode;
   sx?: CSSProperties;
@@ -24,7 +26,7 @@ const defaultProps = {};
  * Combines header and toolbar and should be used as the _header_ component
  * in all views with default layout.
  */
-const Toolbar = ({ title, tools, actions, sx }: IProps) => {
+const Toolbar = ({ title, tabs, tools, actions, sx }: IProps) => {
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -35,24 +37,28 @@ const Toolbar = ({ title, tools, actions, sx }: IProps) => {
         color: theme.palette.primary.contrastText,
       }}
     >
-      <MuiToolbar sx={sx}>
-        <Box flex="1 0 0" display="flex" justifyContent="flex-start">
-          <ToolbarButton
-            onClick={() => navigate("/")}
-            sx={{ columnGap: theme.spacing(1) }}
-          >
-            <Logo size={32} color="#fff" />
-            <Typography
-              fontFamily="Times New Roman"
-              variant="h5"
-              color="#fff"
-              noWrap
+      <MuiToolbar sx={{ ...sx, overflow: "hidden" }}>
+        {/* ensure exact placement of center box using flex */}
+        <Stack direction="row" flex="1 0 0">
+          <Box mr={8}>
+            <ToolbarButton
+              onClick={() => navigate("/")}
+              sx={{ columnGap: theme.spacing(1) }}
             >
-              CREST
-            </Typography>
-          </ToolbarButton>
-        </Box>
-        <Box>
+              <Logo size={32} color="#fff" />
+              <Typography
+                fontFamily="Times New Roman"
+                variant="h5"
+                color="#fff"
+                noWrap
+              >
+                CREST
+              </Typography>
+            </ToolbarButton>
+          </Box>
+          {tabs}
+        </Stack>
+        <Box flex="1 0 0" display="flex" justifyContent="center">
           {title && (
             <Typography variant="h4" noWrap component="div">
               {title}

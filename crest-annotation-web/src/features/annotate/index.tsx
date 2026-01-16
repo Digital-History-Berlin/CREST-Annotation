@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import Layout from "../../components/layouts/Layout";
 import Sidebar from "../../components/Sidebar";
 import Toolbar from "../../components/Toolbar";
+import ToolbarTabs from "../../components/ToolbarTabs";
 import { withProject } from "../../hocs/with-project";
 
 const AnnotatePage = withProject(
@@ -59,7 +60,11 @@ const AnnotatePage = withProject(
       <Layout
         sx={{ display: "flex" }}
         header={
-          <Toolbar tools={<ToolbarTools />} actions={<ToolbarActions />} />
+          <Toolbar
+            tabs={<ToolbarTabs active="annotate" />}
+            tools={<ToolbarTools />}
+            actions={<ToolbarActions />}
+          />
         }
         status={
           <>
