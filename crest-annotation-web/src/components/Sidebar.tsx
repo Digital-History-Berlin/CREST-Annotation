@@ -11,7 +11,6 @@ const Sidebar = ({ position, children }: PropsWithChildren<IProps>) => {
   return (
     <Stack
       sx={{
-        width: "440px",
         // show divider on correct side
         borderLeft:
           position === "right"

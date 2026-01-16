@@ -10,3 +10,6 @@ class Project(Base):
     name = Column(String)
     source = Column(String)
     color_table = Column(String)
+    sync_type = Column(String)
+    sync_config = Column(String)
+    custom_fields = Column(String)

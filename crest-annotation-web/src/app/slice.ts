@@ -3,6 +3,7 @@ import { RootState } from "./store";
 
 export interface ObjectFilters {
   annotated: boolean | undefined;
+  synced: boolean | undefined;
   offset: number;
 }
 
@@ -13,7 +14,7 @@ export interface GlobalSlice {
 }
 
 const initialState: GlobalSlice = {
-  objectFilters: { annotated: undefined, offset: 0 },
+  objectFilters: { annotated: undefined, synced: undefined, offset: 0 },
 };
 
 export const slice = createSlice({

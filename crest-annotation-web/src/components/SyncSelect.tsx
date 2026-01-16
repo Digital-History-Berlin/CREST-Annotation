@@ -3,29 +3,29 @@ import { MenuItem, TextFieldProps } from "@mui/material";
 import { ToolbarSelect } from "./ToolbarSelect";
 
 type IProps = {
-  annotated?: boolean;
-  onChange?: (annotated: boolean | undefined) => void;
+  synced?: boolean;
+  onChange?: (synced: boolean | undefined) => void;
 } & Omit<TextFieldProps, "label" | "value" | "onChange">;
 
-const StateSelect = ({ annotated, onChange, ...other }: IProps) => {
+const SyncSelect = ({ synced, onChange, ...other }: IProps) => {
   const state =
-    annotated === true ? "labeled" : annotated === false ? "unlabeled" : "all";
+    synced === true ? "synced" : synced === false ? "unsynced" : "all";
 
   const mapState = (state: string) =>
-    state === "labeled" ? true : state === "unlabeled" ? false : undefined;
+    state === "synced" ? true : state === "unsynced" ? false : undefined;
 
   return (
     <ToolbarSelect
       value={state}
-      label="State"
+      label="Synchronization"
       onChange={(e) => onChange?.(mapState(e.target.value as string))}
       {...other}
     >
       <MenuItem value={"all"}>All</MenuItem>
-      <MenuItem value={"labeled"}>Labeled</MenuItem>
-      <MenuItem value={"unlabeled"}>Unlabeled</MenuItem>
+      <MenuItem value={"synced"}>Synchronized</MenuItem>
+      <MenuItem value={"unsynced"}>Not synchronized</MenuItem>
     </ToolbarSelect>
   );
 };
 
-export default StateSelect;
+export default SyncSelect;

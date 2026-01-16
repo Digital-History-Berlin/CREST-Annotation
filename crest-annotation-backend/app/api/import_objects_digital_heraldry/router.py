@@ -1,9 +1,8 @@
-import requests
-
 from pydantic import ValidationError
-from fastapi import Depends, HTTPException
+from fastapi import Body, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib import Graph
 
 from app.dependencies.db import get_db
@@ -13,8 +12,12 @@ from app.models.objects import Object
 
 from .. import import_router as router
 
-from .dependencies import DigitalHeraldry, DigitalHeraldryObject, DigitalHeraldryImport
-from .queries import select_image_urls_from_iiif_manifest
+from ..bundle_digital_heraldry import SparqlQueryResponse
+from .dependencies import (
+    DigitalHeraldry,
+    DigitalHeraldryObject,
+    DigitalHeraldryImport,
+)
 
 
 def map_object(project_id: str, object: DigitalHeraldryObject) -> Object:
@@ -26,10 +29,11 @@ def map_object(project_id: str, object: DigitalHeraldryObject) -> Object:
 
 
 @router.post("/digital-heraldry", response_model=DigitalHeraldryImport)
-async def import_digital_heraldry(
-    url: str,
+def import_digital_heraldry(
+    endpoint: str,
     project_id: str,
     commit: bool = False,
+    query: str = Body(embed=True),
     digital_heraldry: DigitalHeraldry = Depends(DigitalHeraldry),
     db: Session = Depends(get_db),
     logger=Depends(get_logger),
@@ -38,27 +42,17 @@ async def import_digital_heraldry(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    logger.info(f"Pulling RDF turtle representation from {url}")
+    logger.info(f"Executing SPARQL query on {endpoint}")
+    sparql = SPARQLWrapper(endpoint=endpoint, returnFormat=JSON)
+    sparql.setQuery(query)
 
     problems = []
-    graph = Graph()
-    graph.parse(url)
 
-    logger.info(f"Querying objects")
+    # TODO: error handling
+    result = sparql.queryAndConvert()
+    response = SparqlQueryResponse(**result)
+    objects = digital_heraldry.extract_objects(response)
 
-    result = graph.query(
-        select_image_urls_from_iiif_manifest.QUERY,
-        initBindings={
-            "manifestIRI": "https://gallica.bnf.fr/iiif/ark:/12148/btv1b55009806h/manifest.json"
-        },
-    )
-
-    print(result.serialize())
-
-    for row in result:
-        print(row)
-
-    """
     # compare against known objects
     query = db.query(Object.object_uuid).filter_by(project_id=project_id)
     known = set(obj.object_uuid for obj in query)
@@ -68,12 +62,11 @@ async def import_digital_heraldry(
     if commit:
         db.add_all(map_object(project_id, obj) for obj in objects)
         db.commit()
-    """
 
     return JSONResponse(
         DigitalHeraldryImport(
             objects=[],
-            added=[],
-            problems=problems,
+            added=added,
+            problems=[],
         ).dict()
     )

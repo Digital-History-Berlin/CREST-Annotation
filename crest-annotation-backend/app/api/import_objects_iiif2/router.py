@@ -26,7 +26,7 @@ def map_object(project_id: str, object: Iiif2Object) -> Object:
 
 
 @router.post("/iiif/2", response_model=Iiif2Import)
-async def import_iiif2(
+def import_iiif2(
     url: str,
     project_id: str,
     commit: bool = False,

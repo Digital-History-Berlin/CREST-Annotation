@@ -76,7 +76,7 @@ export const Mask: ShapeFC<MaskShape> = ({
 
     context.putImageData(id, 0, 0);
     const duration = performance.now() - time;
-    console.log(`Rendering done in ${duration} ms`);
+    console.debug(`Rendering done in ${duration} ms`);
 
     // enforce component re-render
     setImageKey((value) => value + 1);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import { KeyboardArrowRight } from "@mui/icons-material";
 import {
   List,
@@ -71,8 +71,8 @@ const WizardsTab = ({ project, onSuccess }: IProps) => {
 
   return (
     <List disablePadding>
-      {wizardsByGroup.map(({ name, entries }) => (
-        <>
+      {wizardsByGroup.map(({ name, entries }, i) => (
+        <Fragment key={i}>
           <ListSubheader sx={{ lineHeight: "28px", bgcolor: "secondary.main" }}>
             {name}
           </ListSubheader>
@@ -90,7 +90,7 @@ const WizardsTab = ({ project, onSuccess }: IProps) => {
               </ListItem>
             );
           })}
-        </>
+        </Fragment>
       ))}
     </List>
   );

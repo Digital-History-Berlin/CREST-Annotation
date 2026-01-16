@@ -57,15 +57,18 @@ const AnnotationsLayer = ({ onRequestCursor }: IProps) => {
         modifiers.includes(Modifiers.Group) &&
         annotation.id !== groupAnnotationId;
 
+      const color =
+        annotation.label?.color ?? annotation.inlineLabel?.color ?? "#f00";
+
       return (
         <ComponentShape
           key={`${annotation.id}.${index}`}
           identifier={`${annotation.id}.${index}`}
           shape={shape}
-          color={annotation.label?.color ?? "#f00"}
+          color={color}
           transformation={transformation}
           selected={annotation.selected === true}
-          editable={editable}
+          editable={editable && !annotation.locked}
           transparent={transparent}
           onClick={toggle}
           onUpdate={update}

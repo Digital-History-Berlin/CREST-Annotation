@@ -1,15 +1,24 @@
-import { LinearProgress, Stack, Typography, useTheme } from "@mui/material";
+import { PropsWithChildren } from "react";
+import {
+  Box,
+  LinearProgress,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { useAppSelector } from "../../../../app/hooks";
 
-export const StatusbarProgress = () => {
+export const StatusbarProgress = ({ children }: PropsWithChildren) => {
   const theme = useTheme();
 
   const operationProgress = useAppSelector(
     (state) => state.operation.current?.progress
   );
+
   const operationName = useAppSelector(
     (state) => state.operation.current?.name
   );
+
   return (
     <div
       style={{
@@ -30,6 +39,8 @@ export const StatusbarProgress = () => {
             Ready
           </Typography>
         )}
+        <Box flexGrow={1} />
+        {children}
       </Stack>
     </div>
   );

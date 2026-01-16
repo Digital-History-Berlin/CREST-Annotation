@@ -4,6 +4,8 @@ import {
   CircularProgress,
   IconButton,
   InputBase,
+  Stack,
+  Typography,
   styled,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -46,6 +48,10 @@ const Row = styled(Box)(({ theme }) => ({
     "& .MuiInputBase-root": {
       marginLeft: theme.spacing(2),
       marginRight: theme.spacing(2),
+
+      "& input": {
+        paddingBottom: 0,
+      },
     },
   },
 }));
@@ -94,15 +100,23 @@ const LabelRow = ({ label, autoFocus, onChange, onDelete }: IProps) => {
   return (
     <Row onClick={(e) => e.stopPropagation()}>
       <Dot color={label.color ?? "#fff"} />
-      <InputBase
-        fullWidth
-        placeholder="Enter label name"
-        autoFocus={autoFocus}
-        value={changes.name}
-        onKeyDown={handleKeyDown}
-        onChange={(e) => setChanges({ ...changes, name: e.target.value })}
-        onBlur={() => commitChanges(changes)}
-      />
+      <Stack>
+        <InputBase
+          fullWidth
+          size="small"
+          placeholder="Enter label name"
+          autoFocus={autoFocus}
+          value={changes.name}
+          onKeyDown={handleKeyDown}
+          onChange={(e) => setChanges({ ...changes, name: e.target.value })}
+          onBlur={() => commitChanges(changes)}
+        />
+        {label.reference && (
+          <Typography variant="body2" color="text.secondary" px={2} noWrap>
+            {label.reference}
+          </Typography>
+        )}
+      </Stack>
       {loading && <CircularProgress size="18px" />}
       {label.starred !== undefined && (
         <IconButton sx={{ color: "#eb0" }} onClick={onStar}>

@@ -1,32 +1,51 @@
-import React, { useState } from "react";
-import { Button, Stack, TextField, Typography } from "@mui/material";
-import StartIcon from "@mui/icons-material/Download";
+import React, { Suspense, lazy, useState } from "react";
+import { PlayArrow } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Divider,
+  LinearProgress,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { defaultQuery } from "./queries";
 import { useImportDigitalHeraldryMutation } from "../../../../api/enhancedApi";
 import { DigitalHeraldryImport, Project } from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 
+const MonacoEditor = lazy(() => import("@monaco-editor/react"));
+
 interface IProps {
   project: Project;
   onCancel: () => void;
-  onProceed: (source: string, data: DigitalHeraldryImport) => void;
+  onProceed: (
+    source: string,
+    query: string,
+    data: DigitalHeraldryImport
+  ) => void;
 }
 
 const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
   const [source, setSource] = useState<string>();
+  const [query, setQuery] = useState<string | undefined>(defaultQuery);
 
   const [importRequest, importQuery] = useImportDigitalHeraldryMutation();
 
   // fetch import info
   const startImport = async () => {
-    if (!source) return;
+    if (!source || !query) return;
 
     const data = await importRequest({
       projectId: project.id,
-      url: source,
+      endpoint: source,
       commit: false,
+      bodyImportDigitalHeraldryImportDigitalHeraldryPost: {
+        query,
+      },
     }).unwrap();
     // continue with next step
-    onProceed(source, data);
+    onProceed(source, query, data);
   };
 
   return (
@@ -34,25 +53,51 @@ const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
       onCancel={onCancel}
       customActions={
         <Button
-          startIcon={<StartIcon />}
+          startIcon={<PlayArrow />}
           onClick={startImport}
           variant="contained"
-          disabled={!source?.trim().length || importQuery.isLoading}
+          disabled={
+            !source?.trim().length ||
+            !query?.trim().length ||
+            importQuery.isLoading
+          }
         >
-          Download
+          Execute query
         </Button>
       }
     >
       <Stack padding={2} spacing={1}>
-        <Typography variant="h4">Import Digital Heraldry Ontology</Typography>
+        <Typography variant="h4">
+          Import from the Digital Heraldry Ontology
+        </Typography>
         <TextField
-          label="Link to RDF turtle representation"
+          label="SPARQL endpoint"
           variant="filled"
           value={source ?? ""}
           onChange={(e) => setSource(e.target.value)}
           sx={{ flexGrow: 1 }}
         />
       </Stack>
+      <Divider />
+      <Box padding={2}>
+        Provide a custom SPARQL query to filter the objects to import. The
+        resulting objects should provide the following bindings:
+        <ul>
+          <li style={{ fontFamily: "monospace" }}>manifestIRI</li>
+          <li style={{ fontFamily: "monospace" }}>imageURL</li>
+        </ul>
+        Additional bindings will be stored alongside each object and can be used
+        in the synchronization script.
+      </Box>
+      <Suspense fallback={<LinearProgress />}>
+        <MonacoEditor
+          theme="vs-dark"
+          language="sparql"
+          value={query}
+          onChange={setQuery}
+          height="400px"
+        />
+      </Suspense>
     </Layout>
   );
 };

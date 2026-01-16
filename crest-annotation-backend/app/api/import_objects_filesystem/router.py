@@ -22,7 +22,7 @@ def map_object(project_id: str, object: FilesystemObject) -> Object:
 
 
 @router.post("/filesystem", response_model=FilesystemImport)
-async def import_filesystem(
+def import_filesystem(
     path: str,
     project_id: str,
     commit: bool = False,

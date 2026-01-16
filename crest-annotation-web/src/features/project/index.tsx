@@ -9,6 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import AnnotationsTab from "./components/AnnotationsTab";
 import LabelsTab from "./components/LabelsTab";
 import SettingsTab from "./components/SettingsTab";
 import TasksTab from "./components/TasksTab";
@@ -48,7 +49,7 @@ const ProjectPage = withProject(({ projectId }) => {
         />
       }
     >
-      <Container maxWidth="sm">
+      <Container maxWidth="md">
         <Typography variant="h5" color="info">
           Project Settings
         </Typography>
@@ -64,6 +65,7 @@ const ProjectPage = withProject(({ projectId }) => {
                 >
                   <Tab label="Settings" />
                   <Tab label="Labels" />
+                  <Tab label="Annotations" />
                   <Tab label="Wizards" />
                   <Tab label="Tasks" />
                 </Tabs>
@@ -75,13 +77,16 @@ const ProjectPage = withProject(({ projectId }) => {
                 <LabelsTab project={project} />
               </Box>
               <Box hidden={currentTab !== 2}>
+                <AnnotationsTab project={project} />
+              </Box>
+              <Box hidden={currentTab !== 3}>
                 <WizardsTab
                   project={project}
                   // show labels tab after successful import
                   onSuccess={completeWizard}
                 />
               </Box>
-              <Box hidden={currentTab !== 3}>
+              <Box hidden={currentTab !== 4}>
                 <TasksTab project={project} />
               </Box>
             </Paper>

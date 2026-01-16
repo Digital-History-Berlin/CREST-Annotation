@@ -3,6 +3,7 @@ import Canvas from "./components/canvas/Canvas";
 import EditAnnotationDialog from "./components/dialogs/EditAnnotationDialog";
 import AnnotationsContainer from "./components/sections/AnnotationsContainer";
 import ConfigurationContainer from "./components/sections/ConfigurationContainer";
+import { ImageDescription } from "./components/sections/ImageDescription";
 import LabelsContainer from "./components/sections/LabelsContainer";
 import { StatusbarProgress } from "./components/sections/StatusbarProgress";
 import ToolbarActions from "./components/sections/ToolbarActions";
@@ -60,7 +61,13 @@ const AnnotatePage = withProject(
         header={
           <Toolbar tools={<ToolbarTools />} actions={<ToolbarActions />} />
         }
-        status={<StatusbarProgress />}
+        status={
+          <>
+            <StatusbarProgress>
+              <ImageDescription />
+            </StatusbarProgress>
+          </>
+        }
         left={
           <Sidebar position="left">
             <AnnotationsContainer />

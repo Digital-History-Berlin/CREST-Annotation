@@ -44,7 +44,7 @@ export const Configuration: ConfigFC = () => {
   const validateAlgorithm = useCallback(
     async (id: string, algorithms?: CvAlgorithm[]) => {
       const algorithm = algorithms?.find((algorithm) => algorithm.id === id);
-      if (!algorithm) return console.log(`Unknown algorithm: ${id}`);
+      if (!algorithm) return console.warn(`Unknown algorithm: ${id}`);
 
       // activate the algorithm
       dispatch(cvActivateAlgorithm(algorithm));
@@ -67,6 +67,7 @@ export const Configuration: ConfigFC = () => {
       setUnsafeAlgorithm(event.target.value),
     []
   );
+
   const handleValidateAlgorithm = useCallback(() => {
     validateAlgorithm(unsafeAlgorithm, backend?.algorithms);
   }, [validateAlgorithm, unsafeAlgorithm, backend]);

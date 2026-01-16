@@ -38,6 +38,9 @@ class Iiif2ObjectData(BaseModel):
 
         raise HTTPException(status_code=404, detail="No compatible image service")
 
+    def get_image_description(self):
+        return self.image
+
 
 class Iiif2Object(schemas.CreateObject):
     object_data: Iiif2ObjectData

@@ -19,7 +19,7 @@ from . import schemas
 
 
 @router.get("/ontology", response_model=schemas.Ontology)
-async def get_ontology_import(
+def get_ontology_import(
     url: str, ontology: Ontology = Depends(Ontology), logger=Depends(get_logger)
 ):
     jsonld.set_document_loader(jsonld.requests_document_loader(timeout=30))
@@ -28,7 +28,7 @@ async def get_ontology_import(
     document = jsonld.expand(url)
 
     # filter relevant items
-    items = ontology.by_type(document, ontology.class_id)
+    items = ontology.by_types(document, ontology.class_ids)
     items = ontology.with_tags(items, ["@id"])
 
     # validate items
@@ -58,7 +58,7 @@ async def get_ontology_import(
 
 
 @router.post("/ontology")
-async def import_ontology(
+def import_ontology(
     url: str,
     project_id: str,
     classes: list[str],
@@ -114,7 +114,7 @@ async def import_ontology(
     document = jsonld.expand(url)
 
     # add selected labels
-    items = ontology.by_type(document, ontology.class_id)
+    items = ontology.by_types(document, ontology.class_ids)
     items = ontology.with_tags(items, ["@id"])
     labels = ontology.as_tree(
         items,

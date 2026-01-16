@@ -2,6 +2,7 @@ import {
   Action,
   Middleware,
   PayloadAction,
+  createAsyncThunk,
   createSlice,
 } from "@reduxjs/toolkit";
 import { enhancedApi } from "../../../api/enhancedApi";
@@ -11,16 +12,27 @@ import { RootState } from "../../../app/store";
 import { createAppAsyncThunk } from "../../../types/thunks";
 import { Shape } from "../types/shapes";
 
+export interface InlineLabel {
+  name: string;
+  color?: string;
+  reference?: string;
+}
+
 export interface Annotation {
   id: string;
   position?: number;
   label?: Label;
+  inlineLabel?: InlineLabel;
   shapes?: Shape[];
 
   // default to false
   selected?: boolean;
   hidden?: boolean;
   locked?: boolean;
+  // true if annotation comes from external source
+  external?: boolean;
+  // true if annotation has been modified locally
+  dirty?: boolean;
 }
 
 export interface AnnotationsSlice {
@@ -106,6 +118,7 @@ export const slice = createSlice({
       state.annotations.push({
         ...action.payload,
         position: state.annotations.length,
+        dirty: true,
       });
     },
     addShape: (
@@ -117,6 +130,7 @@ export const slice = createSlice({
           ? {
               ...annotation,
               shapes: [...(annotation.shapes || []), shape],
+              dirty: true,
             }
           : annotation
       );
@@ -137,6 +151,7 @@ export const slice = createSlice({
                 shape,
                 ...annotation.shapes.slice(index + 1),
               ],
+              dirty: true,
             }
           : annotation
       );
@@ -154,6 +169,7 @@ export const slice = createSlice({
         // update the label of the editing annotation
         state.annotations = replaceAnnotation(state, state.editing.id, {
           label: action.payload,
+          dirty: true,
         });
       state.editing = null;
     },
@@ -207,6 +223,12 @@ export const slice = createSlice({
         hidden: false,
       });
     },
+    clearDirty: (state) => {
+      state.annotations = state.annotations.map((annotation) => ({
+        ...annotation,
+        dirty: false,
+      }));
+    },
   },
   extraReducers: (builder) => {
     builder.addMatcher(isServerMutation, (state) => {
@@ -233,6 +255,7 @@ export const {
   unlockAnnotation,
   hideAnnotation,
   showAnnotation,
+  clearDirty,
 } = slice.actions;
 
 export const useAnnotationProject = (): Project =>
@@ -258,6 +281,10 @@ export const useAnnotationSession = (): string =>
 
 export const selectAnnotations = (state: RootState) =>
   state.annotations.annotations;
+export const selectExternal = (state: RootState) =>
+  !!state.annotations.project?.sync_type;
+export const selectChangesCount = (state: RootState) =>
+  state.annotations.annotations.filter(({ dirty }) => !!dirty).length;
 
 export default slice.reducer;
 
@@ -271,38 +298,94 @@ const toJson = (annotations: Annotation[]): string => {
   );
 };
 
-const pullAnnotations = createAppAsyncThunk(
+const normalize = <T extends object>(entries: T[], key: keyof T) =>
+  Object.fromEntries(
+    entries.map((entry) => [entry[key], entry]).filter(([key]) => !!key)
+  );
+
+const pullAnnotations = createAsyncThunk(
   "annotations/pullAnnotations",
   async (
-    { objectId, projectId }: { objectId: string; projectId: string },
+    { project, objectId }: { project: Project; objectId: string },
     { dispatch }
   ) => {
-    // re-fetch object lock
-    dispatch(enhancedApi.util.invalidateTags(["Lock"]));
-    // re-fetch the annotations
+    // pull from default backend source
     const json = await dispatch(
       enhancedApi.endpoints.getAnnotations.initiate(
         { objectId: objectId },
         { forceRefetch: true }
       )
     ).unwrap();
+
+    const annotations = JSON.parse(json);
+    if (!project?.sync_type) return annotations;
+
+    // merge with external source if configured
+    console.info(`Pulling annotations from ${project.sync_type} backend`);
+
+    const external = await dispatch(
+      enhancedApi.endpoints.pullAnnotations.initiate({ objectId })
+    ).unwrap();
+
+    // merge with external-wins strategy
+    return Object.values({
+      ...normalize(annotations, "id"),
+      ...normalize(external, "id"),
+    });
+  }
+);
+
+const resolveLabels = createAppAsyncThunk(
+  "annotations/resolveLabels",
+  async (
+    { project, annotations }: { project: Project; annotations: Annotation[] },
+    { dispatch }
+  ) => {
     // request the labels for hydration
     const labels = await dispatch(
       enhancedApi.endpoints.getProjectLabels.initiate({
-        projectId: projectId,
+        projectId: project.id,
       })
     ).unwrap();
-    // map labels to their identifiers
-    const lookup = Object.fromEntries(labels.map((label) => [label.id, label]));
-    // hydrate the annotations
-    const annotations: Annotation[] = JSON.parse(json).map(
-      (annotation: Annotation) => ({
-        ...annotation,
-        label: annotation.label && lookup[annotation.label.id],
-      })
-    );
+
+    const ids = normalize(labels, "id");
+    const references = normalize(labels, "reference");
+    console.log(annotations, references);
+
+    const resolve = (label?: Partial<Label>) =>
+      (label?.id && ids[label.id]) ||
+      (label?.reference && references[label.reference]);
+
+    return annotations.map((annotation) => ({
+      ...annotation,
+      // hydrate label from project labels
+      // (preserve inlineLabel as fallback)
+      label: resolve(annotation.label),
+      inlineLabel: annotation.inlineLabel,
+    }));
+  }
+);
+
+const resolveAnnotations = createAppAsyncThunk(
+  "annotations/pullAnnotations",
+  async ({ objectId }: { objectId: string }, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const project = state.annotations.project;
+    if (!project) return;
+
+    // re-fetch object lock
+    dispatch(enhancedApi.util.invalidateTags(["Lock"]));
+
+    // fetch and hydrate annotations
+    const annotations = await dispatch(
+      pullAnnotations({ project, objectId })
+    ).unwrap();
+    const resolved = await dispatch(
+      resolveLabels({ project, annotations })
+    ).unwrap();
+
     // update the store
-    dispatch(updateAnnotations(annotations));
+    dispatch(updateAnnotations(resolved));
   }
 );
 
@@ -336,8 +419,7 @@ export const annotateMiddleware: Middleware<{}, RootState> =
         .catch(() => {
           store.dispatch(
             // @ts-expect-error circular dependency
-            pullAnnotations({
-              projectId: project.id,
+            resolveAnnotations({
               objectId: object.id,
             })
           );
@@ -353,8 +435,7 @@ export const annotateMiddleware: Middleware<{}, RootState> =
       if (payload?.project && payload.object)
         store.dispatch(
           // @ts-expect-error circular dependency
-          pullAnnotations({
-            projectId: payload.project.id,
+          resolveAnnotations({
             objectId: payload.object.id,
           })
         );

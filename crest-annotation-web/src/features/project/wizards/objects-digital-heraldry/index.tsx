@@ -12,6 +12,7 @@ const ObjectsDigitalHeraldry = ({ project, onCancel, onSuccess }: IProps) => {
   const [step, setStep] = useState<number>(0);
   // data from steps
   const [source, setSource] = useState<string>();
+  const [query, setQuery] = useState<string>();
   const [data, setData] = useState<DigitalHeraldryImport>();
 
   // proceed to next step (as one-liner)
@@ -22,8 +23,9 @@ const ObjectsDigitalHeraldry = ({ project, onCancel, onSuccess }: IProps) => {
       <SourcePage
         project={project}
         onCancel={onCancel}
-        onProceed={(source, data) => {
+        onProceed={(source, query, data) => {
           setSource(source);
+          setQuery(query);
           setData(data);
           proceed();
         }}
@@ -31,13 +33,14 @@ const ObjectsDigitalHeraldry = ({ project, onCancel, onSuccess }: IProps) => {
     );
 
   // missing data after step
-  if (!source || !data) return null;
+  if (!source || !query || !data) return null;
 
   if (step === 1)
     return (
       <InfoPage
         project={project}
         source={source}
+        query={query}
         data={data}
         onCancel={onCancel}
         onProceed={onSuccess}
@@ -52,7 +55,7 @@ const wizard = {
   component: ObjectsDigitalHeraldry,
   group: "objects",
   name: "Digital Heraldry",
-  description: "Import images from a Digital Heraldry Ontology",
+  description: "Import images from the Digital Heraldry Ontology",
 };
 
 export default wizard;

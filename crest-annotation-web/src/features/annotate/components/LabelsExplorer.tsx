@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LinkRounded } from "@mui/icons-material";
 import {
   IconButton,
   Link,
@@ -29,6 +30,7 @@ const LabelsExplorer = ({ selected, onSelect }: IProps) => {
   const project = useAnnotationProject();
 
   // first label is currently active
+  const [reference, setReference] = useState(false);
   const [stack, setStack] = useState<Label[]>([]);
   const [view, setView] = useState("list");
 
@@ -47,25 +49,32 @@ const LabelsExplorer = ({ selected, onSelect }: IProps) => {
   };
 
   const renderListActions = () => {
-    const background = (self: string) => {
-      return view === self ? theme.palette.grey[300] : "transparent";
+    const background = (toggled: boolean) => {
+      return toggled ? theme.palette.grey[300] : "transparent";
     };
 
     return (
       <Stack direction="row">
         <IconButton
           onClick={() => setView("list")}
-          sx={{ backgroundColor: background("list") }}
+          sx={{ backgroundColor: background(view === "list") }}
           size="small"
         >
           <ListView />
         </IconButton>
         <IconButton
           onClick={() => setView("starred")}
-          sx={{ backgroundColor: background("starred") }}
+          sx={{ backgroundColor: background(view === "starred") }}
           size="small"
         >
           <StarredView />
+        </IconButton>
+        <IconButton
+          onClick={() => setReference((current) => !current)}
+          sx={{ backgroundColor: background(reference) }}
+          size="small"
+        >
+          <LinkRounded />
         </IconButton>
       </Stack>
     );
@@ -123,6 +132,8 @@ const LabelsExplorer = ({ selected, onSelect }: IProps) => {
                     disableGutters
                     selected={selected === label.id}
                     onClick={onSelect && (() => onSelect(label))}
+                    // reduce list item size
+                    sx={{ minHeight: 40, py: 0 }}
                   >
                     <Dot color={label.color} />
                     <ListItemText
@@ -131,6 +142,11 @@ const LabelsExplorer = ({ selected, onSelect }: IProps) => {
                         fontWeight:
                           // make sure user knows about active label
                           selected === label.id ? "bold" : "normal",
+                      }}
+                      secondary={reference && label.reference}
+                      secondaryTypographyProps={{
+                        // avoid overflowing action buttons
+                        sx: { wordWrap: "break-word" },
                       }}
                     />
                   </ListItemButton>

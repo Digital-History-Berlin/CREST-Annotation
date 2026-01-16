@@ -46,7 +46,7 @@ def order_by(sorting):
 
 
 @router.get("/of/{project_id}", response_model=list[schemas.Label])
-async def get_project_labels(
+def get_project_labels(
     project_id: str,
     sorting: Sorting = Sorting.name,
     direction: schemas.SortDirection = schemas.SortDirection.asc,
@@ -83,7 +83,7 @@ async def get_project_labels(
 
 
 @router.patch("/", response_model=schemas.Label)
-async def update_label(
+def update_label(
     patch: schemas.PatchLabel,
     db: Session = Depends(get_db),
 ):
@@ -101,7 +101,7 @@ async def update_label(
 
 
 @router.post("/", response_model=schemas.Label)
-async def create_label(
+def create_label(
     create: schemas.CreateLabel,
     db: Session = Depends(get_db),
 ):
@@ -115,7 +115,7 @@ async def create_label(
 
 
 @router.delete("/{label_id}")
-async def delete_label(
+def delete_label(
     label_id: str,
     db: Session = Depends(get_db),
 ):

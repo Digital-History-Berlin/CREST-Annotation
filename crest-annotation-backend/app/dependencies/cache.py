@@ -2,12 +2,13 @@ import os
 import hashlib
 import base64
 import pathlib
+import threading
+import urllib.request
 
 from typing import Callable
 from fastapi import Depends
 from pydantic import BaseModel
-from datetime import datetime, timedelta
-from urllib import request
+from datetime import datetime
 
 from ..dependencies.logger import get_logger
 from ..environment import env
@@ -20,6 +21,14 @@ if env.image_cache:
         parents=True,
         exist_ok=True,
     )
+
+
+# inject uer agent to avoid being blocked by IIIF servers
+# TODO: make this configurable
+USER_AGENT = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+}
 
 
 class Entry(BaseModel):
@@ -46,10 +55,14 @@ class Cache:
     def __init__(
         self,
         logger=Depends(get_logger),
+        concurreny_limit: int = 3,
     ):
         self._path = env.image_cache_path
         self._duration = env.image_cache_duration
         self._logger = logger
+
+        # limit the number of concurrent requests
+        self._semaphore = threading.Semaphore(concurreny_limit)
 
     def encode(self, object_id: str, usage: schemas.ImageRequest) -> str:
         """
@@ -79,7 +92,14 @@ class Cache:
 
         self._logger.debug(f"Caching {url} as {file}")
         path = os.path.join(self._path, file)
-        request.urlretrieve(url, path)
+
+        # limit concurrent downloads to avoid overwhelming IIIF servers
+        with self._semaphore:
+            # use browser-like headers to avoid 403 from IIIF servers
+            req = urllib.request.Request(url, headers=USER_AGENT)
+            with urllib.request.urlopen(req, timeout=30) as response:
+                with open(path, "wb") as out_file:
+                    out_file.write(response.read())
 
         return path
 

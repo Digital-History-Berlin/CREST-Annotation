@@ -22,6 +22,9 @@ class FilesystemObjectData(BaseModel):
     def get_image_uri(self, usage: schemas.ImageRequest):
         return f"{env.image_local_url}/{self.path}"
 
+    def get_image_description(self):
+        return self.path
+
 
 class FilesystemObject(schemas.CreateObject):
     object_data: FilesystemObjectData

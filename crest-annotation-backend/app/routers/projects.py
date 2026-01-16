@@ -1,3 +1,4 @@
+import json
 from typing import Callable
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -21,26 +22,41 @@ class Mapper:
         self._colors = colors
 
     def to_schema(self, project: Project) -> schemas.Project:
+        custom_fields = None
+        if project.custom_fields:
+            try:
+                custom_fields = json.loads(project.custom_fields)
+            except json.JSONDecodeError:
+                custom_fields = None
+
         return schemas.Project(
             id=project.id,
             name=project.name,
             source=project.source,
             # parse color table from JSON or use default
             color_table=self._colors.parse(project.color_table).colors,
+            sync_type=project.sync_type,
+            sync_config=project.sync_config,
+            custom_fields=custom_fields,
         )
 
     def to_dict(self, project: Project):
         return self.to_schema(project).dict()
 
     def map_dict(self, project_dict) -> Project:
-        color_table = project_dict["color_table"]
+        color_table = project_dict.get("color_table")
         if color_table is not None:
             project_dict["color_table"] = ColorTable(color_table).jsonify()
+
+        custom_fields = project_dict.get("custom_fields")
+        if custom_fields is not None:
+            project_dict["custom_fields"] = json.dumps(custom_fields)
+
         return project_dict
 
 
 @router.get("/", response_model=schemas.Paginated[schemas.Project])
-async def get_projects(
+def get_projects(
     mapper: Mapper = Depends(Mapper),
     paginate: Callable = Depends(get_paginate),
     db: Session = Depends(get_db),
@@ -53,7 +69,7 @@ async def get_projects(
 
 
 @router.get("/by-id/{project_id}", response_model=schemas.Project)
-async def get_project(
+def get_project(
     project_id: str,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
@@ -66,7 +82,7 @@ async def get_project(
 
 
 @router.patch("/", response_model=schemas.Project)
-async def update_project(
+def update_project(
     patch: schemas.PatchProject,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
@@ -85,7 +101,7 @@ async def update_project(
 
 
 @router.post("/", response_model=schemas.Project)
-async def create_project(
+def create_project(
     create: schemas.CreateProject,
     mapper: Mapper = Depends(Mapper),
     db: Session = Depends(get_db),
@@ -100,7 +116,7 @@ async def create_project(
 
 
 @router.delete("/{project_id}")
-async def delete_project(
+def delete_project(
     project_id: str,
     db: Session = Depends(get_db),
 ):

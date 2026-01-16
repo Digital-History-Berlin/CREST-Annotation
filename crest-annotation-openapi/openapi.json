@@ -262,6 +262,24 @@
       },
       "name": "annotated",
       "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Synced",
+       "type": "boolean"
+      },
+      "name": "synced",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Search",
+       "type": "string"
+      },
+      "name": "search",
+      "in": "query"
      }
     ],
     "responses": {
@@ -358,6 +376,24 @@
        "type": "boolean"
       },
       "name": "annotated",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Synced",
+       "type": "boolean"
+      },
+      "name": "synced",
+      "in": "query"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Search",
+       "type": "string"
+      },
+      "name": "search",
       "in": "query"
      },
      {
@@ -732,6 +768,16 @@
       },
       "name": "object_id",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Concurreny Limit",
+       "type": "integer",
+       "default": 3
+      },
+      "name": "concurreny_limit",
+      "in": "query"
      }
     ],
     "requestBody": {
@@ -744,6 +790,59 @@
      },
      "required": true
     },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/describe/{object_id}": {
+   "get": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Get Image Description",
+    "operationId": "get_image_description",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Concurreny Limit",
+       "type": "integer",
+       "default": 3
+      },
+      "name": "concurreny_limit",
+      "in": "query"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -785,6 +884,16 @@
       },
       "name": "encoded",
       "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "title": "Concurreny Limit",
+       "type": "integer",
+       "default": 3
+      },
+      "name": "concurreny_limit",
+      "in": "query"
      }
     ],
     "responses": {
@@ -921,6 +1030,103 @@
       },
       "name": "session_id",
       "in": "query"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "title": "Annotation Data",
+        "type": "string"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/annotations/pull/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Pull Annotations",
+    "operationId": "pull_annotations",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/objects/annotations/push/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Push Annotations",
+    "operationId": "push_annotations",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
      }
     ],
     "requestBody": {
@@ -1508,10 +1714,10 @@
      {
       "required": true,
       "schema": {
-       "title": "Url",
+       "title": "Endpoint",
        "type": "string"
       },
-      "name": "url",
+      "name": "endpoint",
       "in": "query"
      },
      {
@@ -1534,6 +1740,16 @@
       "in": "query"
      }
     ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_import_digital_heraldry_import_digital_heraldry_post"
+       }
+      }
+     },
+     "required": true
+    },
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -1607,6 +1823,19 @@
  },
  "components": {
   "schemas": {
+   "Body_import_digital_heraldry_import_digital_heraldry_post": {
+    "title": "Body_import_digital_heraldry_import_digital_heraldry_post",
+    "required": [
+     "query"
+    ],
+    "type": "object",
+    "properties": {
+     "query": {
+      "title": "Query",
+      "type": "string"
+     }
+    }
+   },
    "CreateLabel": {
     "title": "CreateLabel",
     "required": [
@@ -1674,6 +1903,21 @@
       "items": {
        "type": "string"
       }
+     },
+     "sync_type": {
+      "title": "Sync Type",
+      "type": "string"
+     },
+     "sync_config": {
+      "title": "Sync Config",
+      "type": "string"
+     },
+     "custom_fields": {
+      "title": "Custom Fields",
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
+      }
      }
     }
    },
@@ -1728,6 +1972,10 @@
       "title": "Annotated",
       "type": "boolean"
      },
+     "synced": {
+      "title": "Synced",
+      "type": "boolean"
+     },
      "annotation_data": {
       "title": "Annotation Data",
       "type": "string"
@@ -1741,8 +1989,7 @@
     "title": "DigitalHeraldryObjectData",
     "required": [
      "manifest",
-     "sequence",
-     "canvas"
+     "bindings"
     ],
     "type": "object",
     "properties": {
@@ -1750,17 +1997,16 @@
       "title": "Manifest",
       "type": "string"
      },
-     "sequence": {
-      "title": "Sequence",
-      "type": "string"
-     },
-     "canvas": {
-      "title": "Canvas",
-      "type": "string"
-     },
      "image": {
       "title": "Image",
       "type": "string"
+     },
+     "bindings": {
+      "title": "Bindings",
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
+      }
      },
      "type": {
       "title": "Type",
@@ -1812,6 +2058,10 @@
      },
      "annotated": {
       "title": "Annotated",
+      "type": "boolean"
+     },
+     "synced": {
+      "title": "Synced",
       "type": "boolean"
      },
      "annotation_data": {
@@ -1916,6 +2166,10 @@
      },
      "annotated": {
       "title": "Annotated",
+      "type": "boolean"
+     },
+     "synced": {
+      "title": "Synced",
       "type": "boolean"
      },
      "annotation_data": {
@@ -2028,6 +2282,10 @@
      },
      "annotated": {
       "title": "Annotated",
+      "type": "boolean"
+     },
+     "synced": {
+      "title": "Synced",
       "type": "boolean"
      },
      "annotation_data": {
@@ -2167,6 +2425,10 @@
      },
      "annotated": {
       "title": "Annotated",
+      "type": "boolean"
+     },
+     "synced": {
+      "title": "Synced",
       "type": "boolean"
      },
      "annotation_data": {
@@ -2398,6 +2660,21 @@
       "items": {
        "type": "string"
       }
+     },
+     "sync_type": {
+      "title": "Sync Type",
+      "type": "string"
+     },
+     "sync_config": {
+      "title": "Sync Config",
+      "type": "string"
+     },
+     "custom_fields": {
+      "title": "Custom Fields",
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
+      }
      }
     }
    },
@@ -2426,6 +2703,21 @@
       "title": "Color Table",
       "type": "array",
       "items": {
+       "type": "string"
+      }
+     },
+     "sync_type": {
+      "title": "Sync Type",
+      "type": "string"
+     },
+     "sync_config": {
+      "title": "Sync Config",
+      "type": "string"
+     },
+     "custom_fields": {
+      "title": "Custom Fields",
+      "type": "object",
+      "additionalProperties": {
        "type": "string"
       }
      }
@@ -2517,6 +2809,10 @@
      },
      "annotated": {
       "title": "Annotated",
+      "type": "boolean"
+     },
+     "synced": {
+      "title": "Synced",
       "type": "boolean"
      }
     }

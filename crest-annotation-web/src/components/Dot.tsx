@@ -15,6 +15,7 @@ const DotBox = styled(Box)(({ theme }) => ({
     height: "14px",
     borderRadius: "7px",
     border: `1px solid ${theme.palette.divider}`,
+    flex: "0 0 14px",
   },
 }));
 

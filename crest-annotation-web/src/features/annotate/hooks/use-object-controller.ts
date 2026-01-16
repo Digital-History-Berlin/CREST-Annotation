@@ -1,9 +1,13 @@
 import { useCallback } from "react";
 import { useNavigateRandom } from "./use-navigate-random";
-import { useFinishObjectMutation } from "../../../api/enhancedApi";
-import { useAppSelector } from "../../../app/hooks";
-import { selectObjectFilters } from "../../../app/slice";
 import {
+  useFinishObjectMutation,
+  usePushAnnotationsMutation,
+} from "../../../api/enhancedApi";
+import { useAppSelector } from "../../../app/hooks";
+import { ObjectFilters, selectObjectFilters } from "../../../app/slice";
+import {
+  selectAnnotations,
   useAnnotationObject,
   useAnnotationProject,
 } from "../slice/annotations";
@@ -17,10 +21,29 @@ export const useObjectController = () => {
   const project = useAnnotationProject();
   const object = useAnnotationObject();
   const filters = useAppSelector(selectObjectFilters);
+  const annotations = useAppSelector(selectAnnotations);
 
   const [requestFinishObject] = useFinishObjectMutation();
+  const [requestPush] = usePushAnnotationsMutation();
+
   const finishObject = useCallback(async () => {
     const annotated = !object.annotated;
+
+    // push to external sync source if configured and marking as finished
+    if (project.sync_type && annotated) {
+      try {
+        const body = JSON.stringify(
+          annotations.map((a) => ({
+            ...a,
+            label: a.label && { id: a.label.id },
+          }))
+        );
+        await requestPush({ objectId: object.id, body }).unwrap();
+      } catch {
+        // sync push failed, continue anyway
+      }
+    }
+
     await requestFinishObject({
       objectId: object.id,
       finished: annotated,
@@ -33,7 +56,15 @@ export const useObjectController = () => {
     )
       // update current object if neccessary
       navigateRandom(project.id);
-  }, [requestFinishObject, navigateRandom, project, object, filters]);
+  }, [
+    requestFinishObject,
+    requestPush,
+    navigateRandom,
+    project,
+    object,
+    filters,
+    annotations,
+  ]);
 
   const skipObject = useCallback(async () => {
     if (project?.id)
@@ -45,12 +76,12 @@ export const useObjectController = () => {
   }, [navigateRandom, project]);
 
   const changeObjectFilters = useCallback(
-    (annotated: boolean | undefined) => {
+    (patch: Partial<ObjectFilters>) => {
       if (project?.id)
         navigateRandom(project.id, (filters) => ({
           ...filters,
           // change the filter
-          annotated,
+          ...patch,
           // navigate back to the first object
           offset: 0,
         }));

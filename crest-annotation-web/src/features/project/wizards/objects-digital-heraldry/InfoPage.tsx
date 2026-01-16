@@ -1,20 +1,31 @@
 import React from "react";
 import { Button, Divider, Stack } from "@mui/material";
-import { useImportIiif3Mutation } from "../../../../api/enhancedApi";
-import { DigitalHeraldryImport, Project } from "../../../../api/openApi";
+import {
+  DigitalHeraldryImport,
+  Project,
+  useImportDigitalHeraldryMutation,
+} from "../../../../api/openApi";
 import Layout from "../../components/Layout";
 import ProblemsList from "../../components/wizards/ProblemsList";
 
 interface IProps {
   project: Project;
   source: string;
+  query: string;
   data: DigitalHeraldryImport;
   onCancel: () => void;
   onProceed: () => void;
 }
 
-const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
-  const [importRequest, importQuery] = useImportIiif3Mutation();
+const InfoPage = ({
+  project,
+  source,
+  query,
+  data,
+  onCancel,
+  onProceed,
+}: IProps) => {
+  const [importRequest, importQuery] = useImportDigitalHeraldryMutation();
 
   // fetch import info
   const executeImport = async () => {
@@ -22,8 +33,11 @@ const InfoPage = ({ project, source, data, onCancel, onProceed }: IProps) => {
 
     await importRequest({
       projectId: project.id,
-      url: source,
+      endpoint: source,
       commit: true,
+      bodyImportDigitalHeraldryImportDigitalHeraldryPost: {
+        query,
+      },
     }).unwrap();
     // continue with next step
     onProceed();

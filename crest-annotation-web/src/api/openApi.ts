@@ -42,7 +42,12 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/objects/random-of/${queryArg.projectId}`,
         method: "POST",
-        params: { offset: queryArg.offset, annotated: queryArg.annotated },
+        params: {
+          offset: queryArg.offset,
+          annotated: queryArg.annotated,
+          synced: queryArg.synced,
+          search: queryArg.search,
+        },
       }),
     }),
     getObjectsCount: build.query<
@@ -56,6 +61,8 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/objects/of/${queryArg.projectId}`,
         params: {
           annotated: queryArg.annotated,
+          synced: queryArg.synced,
+          search: queryArg.search,
           page: queryArg.page,
           size: queryArg.size,
         },
@@ -98,13 +105,26 @@ const injectedRtkApi = api.injectEndpoints({
         url: `/objects/uri/${queryArg.objectId}`,
         method: "POST",
         body: queryArg.imageRequest,
+        params: { concurreny_limit: queryArg.concurrenyLimit },
+      }),
+    }),
+    getImageDescription: build.query<
+      GetImageDescriptionApiResponse,
+      GetImageDescriptionApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/describe/${queryArg.objectId}`,
+        params: { concurreny_limit: queryArg.concurrenyLimit },
       }),
     }),
     getCachedImage: build.query<
       GetCachedImageApiResponse,
       GetCachedImageApiArg
     >({
-      query: (queryArg) => ({ url: `/objects/cache/${queryArg.encoded}` }),
+      query: (queryArg) => ({
+        url: `/objects/cache/${queryArg.encoded}`,
+        params: { concurreny_limit: queryArg.concurrenyLimit },
+      }),
     }),
     getLocalImage: build.query<GetLocalImageApiResponse, GetLocalImageApiArg>({
       query: (queryArg) => ({ url: `/objects/local/${queryArg.encoded}` }),
@@ -126,6 +146,25 @@ const injectedRtkApi = api.injectEndpoints({
         method: "POST",
         body: queryArg.body,
         params: { session_id: queryArg.sessionId },
+      }),
+    }),
+    pullAnnotations: build.mutation<
+      PullAnnotationsApiResponse,
+      PullAnnotationsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/annotations/pull/${queryArg.objectId}`,
+        method: "POST",
+      }),
+    }),
+    pushAnnotations: build.mutation<
+      PushAnnotationsApiResponse,
+      PushAnnotationsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/annotations/push/${queryArg.objectId}`,
+        method: "POST",
+        body: queryArg.body,
       }),
     }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
@@ -234,8 +273,9 @@ const injectedRtkApi = api.injectEndpoints({
       query: (queryArg) => ({
         url: `/import/digital-heraldry`,
         method: "POST",
+        body: queryArg.bodyImportDigitalHeraldryImportDigitalHeraldryPost,
         params: {
-          url: queryArg.url,
+          endpoint: queryArg.endpoint,
           project_id: queryArg.projectId,
           commit: queryArg.commit,
         },
@@ -280,6 +320,8 @@ export type GetRandomObjectApiArg = {
   projectId: string;
   offset: number;
   annotated?: boolean;
+  synced?: boolean;
+  search?: string;
 };
 export type GetObjectsCountApiResponse =
   /** status 200 Successful Response */ any;
@@ -291,6 +333,8 @@ export type GetObjectsApiResponse =
 export type GetObjectsApiArg = {
   projectId: string;
   annotated?: boolean;
+  synced?: boolean;
+  search?: string;
   page: number;
   size: number;
 };
@@ -328,12 +372,20 @@ export type UnlockObjectApiArg = {
 export type GetImageUriApiResponse = /** status 200 Successful Response */ any;
 export type GetImageUriApiArg = {
   objectId: string;
+  concurrenyLimit?: number;
   imageRequest: ImageRequest;
+};
+export type GetImageDescriptionApiResponse =
+  /** status 200 Successful Response */ any;
+export type GetImageDescriptionApiArg = {
+  objectId: string;
+  concurrenyLimit?: number;
 };
 export type GetCachedImageApiResponse =
   /** status 200 Successful Response */ any;
 export type GetCachedImageApiArg = {
   encoded: string;
+  concurrenyLimit?: number;
 };
 export type GetLocalImageApiResponse =
   /** status 200 Successful Response */ any;
@@ -350,6 +402,17 @@ export type StoreAnnotationsApiResponse =
 export type StoreAnnotationsApiArg = {
   objectId: string;
   sessionId?: string;
+  body: string;
+};
+export type PullAnnotationsApiResponse =
+  /** status 200 Successful Response */ any;
+export type PullAnnotationsApiArg = {
+  objectId: string;
+};
+export type PushAnnotationsApiResponse =
+  /** status 200 Successful Response */ any;
+export type PushAnnotationsApiArg = {
+  objectId: string;
   body: string;
 };
 export type GetProjectsApiResponse =
@@ -415,9 +478,10 @@ export type ImportIiif2ApiArg = {
 export type ImportDigitalHeraldryApiResponse =
   /** status 200 Successful Response */ DigitalHeraldryImport;
 export type ImportDigitalHeraldryApiArg = {
-  url: string;
+  endpoint: string;
   projectId: string;
   commit?: boolean;
+  bodyImportDigitalHeraldryImportDigitalHeraldryPost: BodyImportDigitalHeraldryImportDigitalHeraldryPost;
 };
 export type GetYamlExportApiResponse =
   /** status 200 Successful Response */ any;
@@ -468,12 +532,14 @@ export type Object = {
   id: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
   annotation_data: string;
 };
 export type SummaryObject = {
   id: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
 };
 export type PaginatedSummaryObject = {
   items: SummaryObject[];
@@ -491,6 +557,11 @@ export type Project = {
   name: string;
   source?: string;
   color_table: string[];
+  sync_type?: string;
+  sync_config?: string;
+  custom_fields?: {
+    [key: string]: string;
+  };
 };
 export type PaginatedProject = {
   items: Project[];
@@ -503,12 +574,22 @@ export type CreateProject = {
   name: string;
   source?: string;
   color_table?: string[];
+  sync_type?: string;
+  sync_config?: string;
+  custom_fields?: {
+    [key: string]: string;
+  };
 };
 export type PatchProject = {
   id: string;
   name?: string;
   source?: string;
   color_table?: string[];
+  sync_type?: string;
+  sync_config?: string;
+  custom_fields?: {
+    [key: string]: string;
+  };
 };
 export type OntologyDescription = {
   language: string;
@@ -535,6 +616,7 @@ export type FilesystemObject = {
   id?: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
   annotation_data?: string;
   object_data: FilesystemObjectData;
 };
@@ -570,6 +652,7 @@ export type Iiif3Object = {
   id?: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
   annotation_data?: string;
   object_data: Iiif3ObjectData;
 };
@@ -599,6 +682,7 @@ export type Iiif2Object = {
   id?: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
   annotation_data?: string;
   object_data: Iiif2ObjectData;
 };
@@ -610,15 +694,17 @@ export type Iiif2Import = {
 };
 export type DigitalHeraldryObjectData = {
   manifest: string;
-  sequence: string;
-  canvas: string;
   image?: string;
+  bindings: {
+    [key: string]: string;
+  };
   type?: string;
 };
 export type DigitalHeraldryObject = {
   id?: string;
   object_uuid?: string;
   annotated?: boolean;
+  synced?: boolean;
   annotation_data?: string;
   object_data: DigitalHeraldryObjectData;
 };
@@ -626,6 +712,9 @@ export type DigitalHeraldryImport = {
   objects: DigitalHeraldryObject[];
   added: DigitalHeraldryObject[];
   problems: string[];
+};
+export type BodyImportDigitalHeraldryImportDigitalHeraldryPost = {
+  query: string;
 };
 export const {
   useGetProjectLabelsQuery,
@@ -642,10 +731,13 @@ export const {
   useLockObjectMutation,
   useUnlockObjectMutation,
   useGetImageUriQuery,
+  useGetImageDescriptionQuery,
   useGetCachedImageQuery,
   useGetLocalImageQuery,
   useGetAnnotationsQuery,
   useStoreAnnotationsMutation,
+  usePullAnnotationsMutation,
+  usePushAnnotationsMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

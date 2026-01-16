@@ -46,7 +46,7 @@ const SidebarContainer = ({
   return (
     // stretch stack to available size
     // share equally between multiple stacks
-    <Stack flex="1 1 0" sx={{ overflow: "hidden" }}>
+    <Stack flex="1 1 0" sx={{ overflow: "hidden", width: "600px" }}>
       <TitleBox>
         {onBack && (
           <IconButton onClick={onBack}>

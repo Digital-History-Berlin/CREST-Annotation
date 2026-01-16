@@ -23,7 +23,7 @@ const ObjectCard = ({ projectId, object }: IProps) => {
   return (
     <Card
       sx={{
-        maxWidth: "260px",
+        maxWidth: "100%",
         height: "140px",
         display: "flex",
         justifyContent: "center",

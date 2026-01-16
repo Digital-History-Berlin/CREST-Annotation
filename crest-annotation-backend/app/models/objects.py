@@ -13,6 +13,7 @@ class Object(Base):
     )
     object_uuid = Column(String)
     annotated = Column(Boolean, default=False)
+    synced = Column(Boolean, default=True)
     annotation_data = Column(String, default="[]")
     object_data = Column(String)
     locked_by = Column(String, default=None)

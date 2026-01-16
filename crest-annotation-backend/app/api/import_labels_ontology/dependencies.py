@@ -64,7 +64,10 @@ class Ontology:
         self._logger = logger
 
         self.ontology_id = "http://www.w3.org/2002/07/owl#Ontology"
-        self.class_id = "http://www.w3.org/2002/07/owl#Class"
+        self.class_ids = [
+            "http://www.w3.org/2002/07/owl#Class",
+            "http://www.w3.org/2000/01/rdf-schema#Class",
+        ]
         self.label_id = "http://www.w3.org/2000/01/rdf-schema#label"
         self.sub_class_of_id = "http://www.w3.org/2000/01/rdf-schema#subClassOf"
 
@@ -79,14 +82,14 @@ class Ontology:
 
         return True
 
-    def by_type(self, items, type_id):
+    def by_types(self, items, type_ids):
         """
         Filter items by @type
         """
 
         return list(
             filter(
-                lambda item: type_id in item.get("@type", []),
+                lambda item: any(id in item.get("@type", []) for id in type_ids),
                 items,
             )
         )

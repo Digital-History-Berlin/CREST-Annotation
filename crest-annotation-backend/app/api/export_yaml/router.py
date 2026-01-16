@@ -12,7 +12,7 @@ from .. import export_router as router
 
 
 @router.get("/yaml")
-async def get_yaml_export(project_id: str, db: Session = Depends(get_db)):
+def get_yaml_export(project_id: str, db: Session = Depends(get_db)):
     objects: list[Object] = db.query(Object).filter_by(project_id=project_id)
 
     return PlainTextResponse(

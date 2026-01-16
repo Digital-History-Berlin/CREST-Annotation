@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 
 import_router = APIRouter(
@@ -32,8 +32,13 @@ from .import_objects_iiif2.dependencies import Iiif2ObjectData
 from .import_objects_filesystem.dependencies import FilesystemObjectData
 from .import_objects_digital_heraldry.dependencies import DigitalHeraldryObjectData
 
+# annotation providers
+from .annotations_digital_heraldry.dependencies import (
+    DigitalHeraldryAnnotationsProvider,
+)
 
 from ..models.objects import Object
+from ..models.projects import Project
 
 
 def get_object_data_schema(object_data):
@@ -43,14 +48,15 @@ def get_object_data_schema(object_data):
 
     if object_data is None:
         raise ValueError()
+    id = object_data.get("type")
 
-    if object_data.get("type") == "iiif3":
+    if id == "iiif3":
         return Iiif3ObjectData
-    if object_data.get("type") == "iiif2":
+    if id == "iiif2":
         return Iiif2ObjectData
-    if object_data.get("type") == "fs":
+    if id == "fs":
         return FilesystemObjectData
-    if object_data.get("type") == "dh":
+    if id == "dh":
         return DigitalHeraldryObjectData
 
     raise ModuleNotFoundError(name=id)
@@ -66,3 +72,29 @@ def get_object_image_uri(data_object: Object, usage: schemas.ImageRequest):
     data = schema(**object_data)
 
     return data.get_image_uri(usage)
+
+
+def get_object_image_description(data_object: Object):
+    """
+    Get image description from object
+    """
+
+    object_data = json.loads(data_object.object_data)
+    schema = get_object_data_schema(object_data)
+    data = schema(**object_data)
+
+    return data.get_image_description()
+
+
+def get_annotations_provider(project: Project):
+    """
+    Get annotations provider by type identifier
+    """
+
+    if project.sync_type == "digital-heraldry":
+        return DigitalHeraldryAnnotationsProvider()
+
+    raise HTTPException(
+        status_code=500,
+        detail=f"Invalid annotations provider {project.sync_type}",
+    )

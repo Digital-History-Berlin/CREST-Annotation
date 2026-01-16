@@ -10,8 +10,8 @@ const Palette = () => ({
   },
   warning: {
     light: yellow[100],
-    main: yellow[200],
-    dark: yellow[300],
+    main: yellow[400],
+    dark: yellow[700],
     contrastText: grey[900],
   },
 });

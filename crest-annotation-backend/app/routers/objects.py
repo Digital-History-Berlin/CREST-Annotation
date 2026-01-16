@@ -14,7 +14,12 @@ from ..dependencies.cache import Cache
 from ..models.objects import Object
 from .. import schemas
 
-from ..api import get_object_image_uri
+from ..api import (
+    get_object_image_uri,
+    get_object_image_description,
+    get_annotations_provider,
+)
+from ..models.projects import Project
 
 router = APIRouter(
     prefix="/objects",
@@ -50,7 +55,7 @@ def to_summary_dict(data_object: Object):
 
 # use post to avoid RTK-query caching
 @router.post("/random-of/{project_id}", response_model=schemas.Object)
-async def get_random_object(
+def get_random_object(
     project_id: str,
     filters: schemas.ObjectFilters = Depends(),
     offset: int | None = Query(),
@@ -67,7 +72,7 @@ async def get_random_object(
 
 
 @router.get("/total-of/{project_id}")
-async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
+def get_objects_count(project_id: str, db: Session = Depends(get_db)):
     total = db.query(Object).filter_by(project_id=project_id)
     annotated = total.filter_by(annotated=True)
 
@@ -80,7 +85,7 @@ async def get_objects_count(project_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/of/{project_id}", response_model=schemas.Paginated[schemas.SummaryObject])
-async def get_objects(
+def get_objects(
     project_id: str,
     filters: schemas.ObjectFilters = Depends(),
     paginate: Callable = Depends(get_paginate),
@@ -89,13 +94,21 @@ async def get_objects(
     query = db.query(Object).filter_by(project_id=project_id)
     if filters.annotated is not None:
         query = query.filter_by(annotated=filters.annotated)
+    if filters.synced is not None:
+        query = query.filter_by(synced=filters.synced)
+    if filters.search:
+        search_term = f"%{filters.search}%"
+        query = query.filter(
+            Object.object_uuid.ilike(search_term)
+            | Object.object_data.ilike(search_term)
+        )
     objects: schemas.Paginated[schemas.Object] = paginate(query, to_summary_schema)
 
     return JSONResponse(objects.dict())
 
 
 @router.get("/all-of/{project_id}", response_model=list[schemas.Object])
-async def get_all_objects(
+def get_all_objects(
     project_id: str,
     db: Session = Depends(get_db),
 ):
@@ -105,7 +118,7 @@ async def get_all_objects(
 
 
 @router.get("/id/{object_id}")
-async def get_object(object_id: str, db: Session = Depends(get_db)):
+def get_object(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
@@ -114,9 +127,7 @@ async def get_object(object_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/finish/{object_id}")
-async def finish_object(
-    object_id: str, finished: bool = True, db: Session = Depends(get_db)
-):
+def finish_object(object_id: str, finished: bool = True, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
@@ -129,7 +140,7 @@ async def finish_object(
 
 
 @router.post("/lock/{object_id}/{session_id}")
-async def lock_object(
+def lock_object(
     object_id: str, session_id: str, force: bool = False, db: Session = Depends(get_db)
 ):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
@@ -145,7 +156,7 @@ async def lock_object(
 
 
 @router.post("/unlock/{object_id}")
-async def unlock_object(
+def unlock_object(
     object_id: str, session_id: str | None = None, db: Session = Depends(get_db)
 ):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
@@ -162,9 +173,7 @@ async def unlock_object(
 
 
 @router.get("/lock/{object_id}/{session_id}")
-async def get_lock_status(
-    object_id: str, session_id: str, db: Session = Depends(get_db)
-):
+def get_lock_status(object_id: str, session_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
@@ -173,7 +182,7 @@ async def get_lock_status(
 
 
 @router.post("/uri/{object_id}")
-async def get_image_uri(
+def get_image_uri(
     object_id: str,
     usage: schemas.ImageRequest,
     db: Session = Depends(get_db),
@@ -195,8 +204,22 @@ async def get_image_uri(
     return JSONResponse(image_uri)
 
 
+@router.get("/describe/{object_id}")
+def get_image_description(
+    object_id: str,
+    db: Session = Depends(get_db),
+    cache: Cache = Depends(Cache),
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    description = get_object_image_description(data_object)
+    return JSONResponse(description)
+
+
 @router.get("/cache/{encoded}")
-async def get_cached_image(
+def get_cached_image(
     encoded: str, db: Session = Depends(get_db), cache: Cache = Depends(Cache)
 ):
     # lazily resolve missed object
@@ -211,14 +234,14 @@ async def get_cached_image(
 
 
 @router.get("/local/{encoded}")
-async def get_local_image(encoded: str):
+def get_local_image(encoded: str):
     decoded = base64.b32decode(encoded).decode()
 
     return FileResponse(decoded)
 
 
 @router.get("/annotations/{object_id}")
-async def get_annotations(object_id: str, db: Session = Depends(get_db)):
+def get_annotations(object_id: str, db: Session = Depends(get_db)):
     data_object: Object = db.query(Object).filter_by(id=object_id).first()
     if not data_object:
         raise HTTPException(status_code=404, detail="Object not found")
@@ -227,7 +250,7 @@ async def get_annotations(object_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/annotations/{object_id}")
-async def store_annotations(
+def store_annotations(
     object_id: str,
     session_id: str | None = None,
     annotation_data: str = Body(),
@@ -241,7 +264,48 @@ async def store_annotations(
         raise HTTPException(status_code=403, detail="Object is locked")
 
     data_object.annotated = False
+    data_object.synced = False
     data_object.annotation_data = annotation_data
+    db.commit()
+
+    return Response()
+
+
+@router.post("/annotations/pull/{object_id}")
+def pull_annotations(object_id: str, db: Session = Depends(get_db)):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    project: Project = db.query(Project).filter_by(id=data_object.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    provider = get_annotations_provider(project)
+    annotations = provider.pull(data_object, project)
+    return JSONResponse(annotations)
+
+
+@router.post("/annotations/push/{object_id}")
+def push_annotations(
+    object_id: str,
+    annotation_data: str = Body(),
+    db: Session = Depends(get_db),
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    project: Project = db.query(Project).filter_by(id=data_object.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    annotations = json.loads(annotation_data)
+    provider = get_annotations_provider(project)
+    provider.push(data_object, annotations, project)
+
+    # mark as synced after successful push
+    data_object.synced = True
     db.commit()
 
     return Response()

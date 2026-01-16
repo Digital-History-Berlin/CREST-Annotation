@@ -6,6 +6,7 @@ interface IProps {
   width?: false | Breakpoint;
   title?: ReactNode;
   description?: ReactNode;
+  icon?: ReactNode;
 }
 
 const defaultProps = {
@@ -16,12 +17,19 @@ const PlaceholderLayout = ({
   width,
   title,
   description,
+  icon,
   children,
 }: PropsWithChildren<IProps>) => {
   return (
     <Container maxWidth={width} sx={{ textAlign: "center" }}>
-      <Logo height={140} color="#ddd" my={4} />
-
+      {icon ? (
+        // placement for custom icons
+        <Box pt={6} pb={4} color="#ddd">
+          {icon}
+        </Box>
+      ) : (
+        <Logo height={140} color="#ddd" my={4} />
+      )}
       {title && <Typography variant="h5">{title}</Typography>}
       {description && (
         <Typography variant="body1" mt={1}>

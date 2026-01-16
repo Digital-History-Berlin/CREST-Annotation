@@ -128,7 +128,6 @@ export const slice = createSlice({
   extraReducers: (builder) => {
     // group modifier
     builder.addCase(addAnnotation, (state, { payload }) => {
-      console.log(payload);
       if (state.selection.modifiers.includes(Modifiers.Group))
         state.modifiers[Modifiers.Group] = payload.id;
     });

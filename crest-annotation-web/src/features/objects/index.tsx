@@ -9,6 +9,7 @@ import { selectObjectFilters, updateObjectFilters } from "../../app/slice";
 import CardLayout from "../../components/layouts/CardLayout";
 import PlaceholderLayout from "../../components/layouts/PlaceholderLayout";
 import StateSelect from "../../components/StateSelect";
+import SyncSelect from "../../components/SyncSelect";
 import Toolbar from "../../components/Toolbar";
 import { ToolbarDivider } from "../../components/ToolbarButton";
 import ToolbarTabs from "../../components/ToolbarTabs";
@@ -18,6 +19,7 @@ const ObjectsPage = withProject(({ projectId }) => {
   const dispatch = useDispatch();
 
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState<string>();
 
   const filters = useAppSelector(selectObjectFilters);
 
@@ -26,19 +28,36 @@ const ObjectsPage = withProject(({ projectId }) => {
     projectId,
     page: page,
     size: 12,
+    search: search,
     ...filters,
   });
 
-  const changeState = (annotated: boolean | undefined) =>
+  const changeState = (annotated: boolean | undefined) => {
     dispatch(updateObjectFilters({ ...filters, annotated, offset: 0 }));
+    // reset the page when filtering
+    setPage(1);
+  };
+
+  const changeSynced = (synced: boolean | undefined) => {
+    dispatch(updateObjectFilters({ ...filters, synced, offset: 0 }));
+    // reset the page when filtering
+    setPage(1);
+  };
+
+  const handleSearch = (search: string | undefined) => {
+    setSearch(search);
+    // reset the page when searching
+    setPage(1);
+  };
 
   const renderCard = (object: SummaryObject) => (
     <ObjectCard projectId={projectId} object={object} />
   );
 
   const renderActions = () => (
-    <Stack direction="row">
+    <Stack direction="row" spacing={1} alignItems="center">
       <StateSelect annotated={filters.annotated} onChange={changeState} />
+      <SyncSelect synced={filters.synced} onChange={changeSynced} />
       <ToolbarDivider />
       <ToolbarTabs active="objects" />
     </Stack>
@@ -48,7 +67,9 @@ const ObjectsPage = withProject(({ projectId }) => {
     <>
       <CardLayout
         onChangePage={setPage}
+        onSearch={handleSearch}
         query={objectsQuery}
+        activeFilters={!!search || !!filters.annotated || !!filters.synced}
         renderCard={renderCard}
         header={
           <Toolbar
@@ -58,7 +79,7 @@ const ObjectsPage = withProject(({ projectId }) => {
         }
         placeholder={
           <PlaceholderLayout
-            title="This project contains no images."
+            title={"This project contains no images."}
             description={
               <>
                 Go to the{" "}

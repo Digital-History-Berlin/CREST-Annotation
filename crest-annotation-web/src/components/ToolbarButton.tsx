@@ -25,8 +25,6 @@ type ToolbarTabButtonProps = {
 export const ToolbarButton = styled(Button)(({ theme }) => ({
   "&": {
     minWidth: 48,
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
     justifyContent: "center",
     color: theme.palette.primary.contrastText,
 
@@ -48,8 +46,6 @@ export const ToolbarButton = styled(Button)(({ theme }) => ({
 export const ToolbarToggleButton = styled(ToggleButton)(({ theme }) => ({
   "&": {
     minWidth: 48,
-    marginLeft: theme.spacing(0.5),
-    marginRight: theme.spacing(0.5),
     justifyContent: "center",
     color: theme.palette.primary.contrastText,
 

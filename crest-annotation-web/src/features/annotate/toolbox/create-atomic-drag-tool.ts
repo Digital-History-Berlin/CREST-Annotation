@@ -60,8 +60,9 @@ export const createAtomicDragTool =
     }
 
     if (
-      gesture.identifier !== GestureIdentifier.DragMove &&
-      gesture.identifier !== GestureIdentifier.DragEnd
+      (gesture.identifier !== GestureIdentifier.DragMove &&
+        gesture.identifier !== GestureIdentifier.DragEnd) ||
+      gesture.overload !== GestureOverload.Primary
     )
       return;
 

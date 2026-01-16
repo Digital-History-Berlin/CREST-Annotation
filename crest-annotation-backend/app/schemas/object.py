@@ -8,6 +8,7 @@ class BaseObject(BaseModel):
     id: str
     object_uuid: str | None
     annotated: bool | None
+    synced: bool | None
     annotation_data: str
 
 
@@ -34,3 +35,5 @@ class ImageRequest(BaseModel):
 
 class ObjectFilters(BaseModel):
     annotated: bool | None
+    synced: bool | None
+    search: str | None
