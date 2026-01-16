@@ -58,7 +58,7 @@ export const useObjectController = () => {
       finished: annotated,
     }).unwrap();
 
-    navigate(`/annotate/${project.id}/${next}`);
+    navigate(`/annotate/${project.id}/${next.id}`);
   }, [
     dispatch,
     navigate,
