@@ -2,9 +2,10 @@ import { useEffect } from "react";
 import { Image as KonvaImage, Layer } from "react-konva";
 import useImage from "use-image";
 import { useAnnotationImage } from "../../slice/annotations";
+import { ImageSize } from "../../utils/canvas-bounds";
 
 interface IProps {
-  onResize?: (width: number, height: number) => void;
+  onResize?: (imageSize: ImageSize) => void;
 }
 
 const BackgroundLayer = ({ onResize }: IProps) => {
@@ -13,7 +14,11 @@ const BackgroundLayer = ({ onResize }: IProps) => {
 
   useEffect(() => {
     // forward to parent component
-    if (image?.width && image.height) onResize?.(image.width, image.height);
+    if (image?.width && image.height)
+      onResize?.({
+        width: image.width,
+        height: image.height,
+      });
   }, [image?.width, image?.height, onResize]);
 
   return (

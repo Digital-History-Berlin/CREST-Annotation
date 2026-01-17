@@ -1,5 +1,6 @@
 import { MutableRefObject, useCallback, useRef } from "react";
 import Konva from "konva";
+import { Stage } from "konva/lib/Stage";
 import { StageProps } from "react-konva";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { Position } from "../../../types/geometry";
@@ -11,6 +12,7 @@ import {
   GestureOverload,
   Positions,
 } from "../types/events";
+import { scaleSize, translateBounds } from "../utils/canvas-bounds";
 
 interface GestureState {
   clickButtons: number;
@@ -69,18 +71,20 @@ const eventLog = ({ identifier, overload }: GestureEvent) => {
  * Provides event handlers for the stage component
  *
  * Collects input from mouse and tablet/touch and unifies them into
- * a simplified interface. Internally extract zoom/pan events and
- * applies the corresponding transformation.
+ * a simplified interface. Internally extract pan events and applies
+ * the corresponding transformation.
  *
  * The gestures are forwarded over a callback.
  */
 export const useInputEvents = ({
   handler,
   cursorRef,
+  containerRef,
   debug,
 }: {
   handler: GestureEventHandler;
   cursorRef?: MutableRefObject<Position>;
+  containerRef?: MutableRefObject<HTMLDivElement | null>;
   debug?: GestureIdentifier[];
 }): StageProps => {
   const dispatch = useAppDispatch();
@@ -126,6 +130,39 @@ export const useInputEvents = ({
     [transform]
   );
 
+  // handle pan with bounds
+  const handlePan = useCallback(
+    (stage: Stage, positions: Positions) => {
+      const { panStart, dragStart } = state.current;
+
+      if (!panStart || !dragStart) return;
+
+      const container = containerRef?.current;
+      const layer = stage?.findOne<Konva.Layer>("Layer");
+      const image = layer?.findOne<Konva.Image>("Image");
+
+      if (!container || !image) return;
+
+      // calculate delta from drag start
+      const dx = positions.absolute.x - dragStart.absolute.x;
+      const dy = positions.absolute.y - dragStart.absolute.y;
+
+      const translate = translateBounds(
+        { x: panStart.x + dx, y: panStart.y + dy },
+        scaleSize(image.size(), transformation.scale),
+        container
+      );
+
+      dispatch(
+        updateTransformation({
+          scale: transformation.scale,
+          translate: translate,
+        })
+      );
+    },
+    [dispatch, containerRef, transformation]
+  );
+
   const handleMouseDown = useCallback(
     (event: Konva.KonvaEventObject<MouseEvent>) => {
       if (!state.current.dragOverload) {
@@ -143,7 +180,8 @@ export const useInputEvents = ({
   const handleMouseMove = useCallback(
     (event: Konva.KonvaEventObject<MouseEvent>) => {
       const positions = getPointerPositions(event);
-      if (!positions) return;
+      const stage = event.target.getStage();
+      if (!positions || !stage) return;
 
       // move without buttons is handled separately
       if (!event.evt.buttons)
@@ -154,25 +192,14 @@ export const useInputEvents = ({
           ...positions,
         });
 
-      const { panStart, dragStart, dragOverload } = state.current;
+      const { dragStart, dragOverload } = state.current;
       // clear click buttons (this is not a click)
       state.current.clickButtons = 0;
 
       // pan gesture overrules others
       const overload = mapOverload(event.evt.buttons, event.evt.shiftKey);
-      if (overload === GestureOverload.Secondary) {
-        if (panStart && dragStart)
-          dispatch(
-            updateTransformation({
-              ...transformation,
-              translate: {
-                x: panStart.x + positions.absolute.x - dragStart.absolute.x,
-                y: panStart.y + positions.absolute.y - dragStart.absolute.y,
-              },
-            })
-          );
-        return;
-      }
+      if (overload === GestureOverload.Secondary)
+        return handlePan(stage, positions);
 
       // check if drag was started
       if (!dragOverload && dragStart) {
@@ -194,7 +221,7 @@ export const useInputEvents = ({
           ...positions,
         });
     },
-    [getPointerPositions, gesture, dispatch, transformation]
+    [getPointerPositions, gesture, handlePan, transformation]
   );
 
   const handleMouseUp = useCallback(
@@ -286,35 +313,6 @@ export const useInputEvents = ({
     [getPointerPositions, gesture, transformation]
   );
 
-  const handleWheel = useCallback(
-    (event: Konva.KonvaEventObject<WheelEvent>) => {
-      const positions = getPointerPositions(event);
-      if (!positions) return;
-
-      // avoid actual scroll
-      event.evt.preventDefault();
-
-      // TODO: maybe configure
-      const distance = 1.05;
-      const scale =
-        event.evt.deltaY > 0
-          ? transformation.scale * distance
-          : transformation.scale / distance;
-
-      dispatch(
-        updateTransformation({
-          translate: {
-            // zoom into cursor position
-            x: positions.absolute.x - positions.transformed.x * scale,
-            y: positions.absolute.y - positions.transformed.y * scale,
-          },
-          scale: scale,
-        })
-      );
-    },
-    [getPointerPositions, dispatch, transformation]
-  );
-
   return {
     onMouseDown: handleMouseDown,
     onMouseMove: handleMouseMove,
@@ -323,6 +321,5 @@ export const useInputEvents = ({
     onTouchStart: handleTouchStart,
     onTouchMove: handleTouchMove,
     onTouchEnd: handleTouchEnd,
-    onWheel: handleWheel,
   };
 };

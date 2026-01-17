@@ -1,21 +1,21 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import Konva from "konva";
 import { Stage } from "react-konva";
 import AnnotationsLayer from "./AnnotationsLayer";
 import BackgroundLayer from "./BackgroundLayer";
 import PreviewLayer from "./PreviewLayer";
-import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { useAppSelector } from "../../../../app/hooks";
 import { Position } from "../../../../types/geometry";
+import { useCanvasGestures } from "../../hooks/use-canvas-gestures";
 import { useInputEvents } from "../../hooks/use-input-events";
 import { useToolController } from "../../hooks/use-tool-controller";
 import { useAnnotationProject } from "../../slice/annotations";
-import { selectTransformation, updateTransformation } from "../../slice/canvas";
+import { selectTransformation } from "../../slice/canvas";
 import { GestureIdentifier } from "../../types/events";
 import LabelsPopup from "../LabelsPopup";
 
 const Canvas = () => {
-  const dispatch = useAppDispatch();
   const project = useAnnotationProject();
 
   const boxRef = useRef<HTMLDivElement>(null);
@@ -26,12 +26,19 @@ const Canvas = () => {
   const events = useInputEvents({
     handler: controller.handleGesture,
     cursorRef,
+    containerRef: boxRef,
     // enable debugging for some of the gestures
     debug: [
       GestureIdentifier.Click,
       GestureIdentifier.DragStart,
       GestureIdentifier.DragEnd,
     ],
+  });
+
+  // enhanced gestures for pan/zoom
+  const { resize, bind } = useCanvasGestures({
+    containerRef: boxRef,
+    stageRef,
   });
 
   const transformation = useAppSelector(selectTransformation);
@@ -43,22 +50,6 @@ const Canvas = () => {
     });
     stageRef.current?.position(transformation.translate);
   }, [transformation, stageRef]);
-
-  // handle image (size) change
-  const resize = useCallback(
-    (width: number, height: number) => {
-      // reset the current transformation
-      if (boxRef.current)
-        dispatch(
-          updateTransformation({
-            translate: { x: 0, y: 0 },
-            // fit image into container height
-            scale: boxRef.current?.clientHeight / height,
-          })
-        );
-    },
-    [dispatch]
-  );
 
   // gets the default cursor that is shown when hovering the canvas
   const defaultCursor = () => /*cursorMap[tool] || */ "crosshair";
@@ -78,6 +69,9 @@ const Canvas = () => {
       overflow="hidden"
       flex="1 1"
       ref={boxRef}
+      // apply pan/zoom gestures
+      sx={{ touchAction: "none" }}
+      {...bind()}
     >
       <div
         style={{
