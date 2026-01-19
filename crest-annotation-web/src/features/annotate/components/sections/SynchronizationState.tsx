@@ -1,13 +1,24 @@
 import { CheckCircle, CloudDone, CloudOff, Error } from "@mui/icons-material";
 import { Chip, CircularProgress, Tooltip } from "@mui/material";
-import { useAppSelector } from "../../../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { errorMessage } from "../../../../utils/error-message";
 import {
   MiddlewareState,
   selectChangesCount,
   selectExternal,
   selectPullState,
   selectPushState,
+  showErrorDetails,
 } from "../../slice/annotations";
+
+const middlewareError = (
+  pulling?: MiddlewareState,
+  pushing?: MiddlewareState
+) => {
+  if (pulling?.error) return errorMessage(pulling.error);
+  if (pushing?.error) return errorMessage(pushing.error);
+  return undefined;
+};
 
 const middlewareLabel = (
   pulling?: MiddlewareState,
@@ -26,6 +37,8 @@ const changeLabel = (changes: number) => {
 };
 
 export const SynchronizationState = () => {
+  const dispatch = useAppDispatch();
+
   const pulling = useAppSelector(selectPullState);
   const pushing = useAppSelector(selectPushState);
   const changes = useAppSelector(selectChangesCount);
@@ -38,6 +51,9 @@ export const SynchronizationState = () => {
         size="small"
         color="error"
         label={middlewareLabel(pulling, pushing)}
+        onClick={() =>
+          dispatch(showErrorDetails(middlewareError(pulling, pushing)))
+        }
       />
     );
 

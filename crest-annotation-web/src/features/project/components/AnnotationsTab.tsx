@@ -35,6 +35,7 @@ const AnnotationsTab = ({ project }: IProps) => {
 
   const handleSave = async (current: Project) => {
     try {
+      console.log(current);
       await updateRequest({ patchProject: current }).unwrap();
       // clear changes to show updates
       setChanged(undefined);
@@ -99,7 +100,7 @@ const AnnotationsTab = ({ project }: IProps) => {
       <Divider />
       {Config && (
         <Config
-          project={project}
+          value={current?.sync_config}
           onChange={(config) =>
             setChanged({
               ...current,

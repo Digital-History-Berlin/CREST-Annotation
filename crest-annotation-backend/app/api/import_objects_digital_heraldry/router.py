@@ -1,9 +1,7 @@
-from pydantic import ValidationError
 from fastapi import Body, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from SPARQLWrapper import SPARQLWrapper, JSON
-from rdflib import Graph
 
 from app.dependencies.db import get_db
 from app.dependencies.logger import get_logger
@@ -12,10 +10,13 @@ from app.models.objects import Object
 
 from .. import import_router as router
 
-from ..bundle_digital_heraldry import SparqlQueryResponse
+from ..bundle_digital_heraldry import (
+    SparqlQueryResponse,
+    get_project_custom_fields,
+    substitute_variables,
+)
 from .dependencies import (
     DigitalHeraldry,
-    DigitalHeraldryObject,
     DigitalHeraldryImport,
 )
 
@@ -35,7 +36,10 @@ def import_digital_heraldry(
         raise HTTPException(status_code=404, detail="Project not found")
 
     try:
-        logger.info(f"Executing SPARQL query on {endpoint}")
+        variables = get_project_custom_fields(project)
+        query = substitute_variables(query, variables)
+
+        logger.info(f"Executing SPARQL query {query} on {endpoint}")
         sparql = SPARQLWrapper(endpoint=endpoint, returnFormat=JSON)
         sparql.setQuery(query)
 

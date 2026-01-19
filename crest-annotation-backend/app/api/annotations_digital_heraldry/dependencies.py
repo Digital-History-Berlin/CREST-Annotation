@@ -11,10 +11,10 @@ from app.models.projects import Project
 from .schemas import DigitalHeraldryAnnotationsConfig
 
 from ..bundle_digital_heraldry import (
-    DigitalHeraldryObjectData,
     SparqlBindings,
     SparqlQueryResponse,
-    SparqlResults,
+    get_project_custom_fields,
+    substitute_variables,
 )
 
 
@@ -28,28 +28,6 @@ class DigitalHeraldryAnnotationsProvider:
 
     type_id = "digital-heraldry"
 
-    def _substitute_variables(self, query: str, variables: dict[str, str]) -> str:
-        """
-        Replace {{variable}} placeholders in query with actual values
-        """
-
-        result = query
-        for key, value in variables.items():
-            result = result.replace(f"{{{{{key}}}}}", value)
-        return result
-
-    def _get_project_custom_fields(self, project: Project) -> dict[str, str]:
-        """
-        Extract custom fields from project
-        """
-
-        if not project.custom_fields:
-            return {}
-        try:
-            return json.loads(project.custom_fields)
-        except json.JSONDecodeError:
-            return {}
-
     def _get_object_variables(self, obj: Object, project: Project) -> dict[str, str]:
         """
         Extract template variables from object data and project custom fields
@@ -59,7 +37,7 @@ class DigitalHeraldryAnnotationsProvider:
 
         return {
             # override project data with object-specific data
-            **self._get_project_custom_fields(project),
+            **get_project_custom_fields(project),
             **object_data.get("bindings"),
         }
 
@@ -101,9 +79,7 @@ class DigitalHeraldryAnnotationsProvider:
         """
 
         for binding in bindings:
-            annotation = binding.optional("annotationImageFile")
-            if not annotation:
-                continue
+            annotation = binding.require("annotationImageFile")
 
             yield {
                 "id": binding.require("blazon"),
@@ -124,9 +100,9 @@ class DigitalHeraldryAnnotationsProvider:
         try:
             config = DigitalHeraldryAnnotationsConfig(**json.loads(project.sync_config))
             variables = self._get_object_variables(data_object, project)
-            query = self._substitute_variables(config.pull_query, variables)
+            query = substitute_variables(config.pull_query, variables)
 
-            logger.info(f"Executing SPARQL query on {config.endpoint}")
+            logger.info(f"Executing SPARQL query {query} on {config.endpoint}")
             sparql = SPARQLWrapper(endpoint=config.endpoint, returnFormat=JSON)
             sparql.setQuery(query)
 

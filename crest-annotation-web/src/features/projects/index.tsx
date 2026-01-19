@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button } from "@mui/material";
+import { Button } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ProjectCard from "./components/ProjectCard";
 import { useGetProjectsQuery } from "../../api/enhancedApi";
@@ -64,9 +64,7 @@ const ProjectsPage = () => {
               </span>
             }
             description="It is time to create your first project and start annotating."
-          >
-            <Box mt={4}>{addButton}</Box>
-          </PlaceholderLayout>
+          />
         }
         footer={addButton}
       />

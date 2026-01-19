@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { Box, Divider, LinearProgress, Stack, TextField } from "@mui/material";
 import { defaultPullQuery } from "./queries";
-import { Project } from "../../../../api/openApi";
 
 interface SyncConfig {
   endpoint: string;
@@ -16,21 +15,21 @@ const defaultConfig: SyncConfig = {
 const MonacoEditor = lazy(() => import("@monaco-editor/react"));
 
 export interface SyncConfigProps {
-  project: Project;
+  value?: string;
   onChange: (config: string) => void;
 }
 
-const DigitalHeraldryConfig = ({ project, onChange }: SyncConfigProps) => {
+const DigitalHeraldryConfig = ({ value, onChange }: SyncConfigProps) => {
   const [config, setConfig] = useState<SyncConfig>();
 
   useEffect(
     () => {
-      if (!project.sync_config) onChange(JSON.stringify(defaultConfig));
-      else setConfig(JSON.parse(project.sync_config));
+      if (!value) onChange(JSON.stringify(defaultConfig));
+      else setConfig(JSON.parse(value));
     },
     // update internal state only when project changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [project]
+    [value]
   );
 
   const handleChange = (change: Partial<SyncConfig>) =>
@@ -55,14 +54,16 @@ const DigitalHeraldryConfig = ({ project, onChange }: SyncConfigProps) => {
         The following fields should be used to identify the object:
         <ul>
           <li style={{ fontFamily: "monospace" }}>manifestIRI</li>
-          <li style={{ fontFamily: "monospace" }}>imageURL</li>
+          <li style={{ fontFamily: "monospace" }}>manuscriptFolio</li>
         </ul>
         The resulting annotations should provide the following bindings:
         <ul>
           <li style={{ fontFamily: "monospace" }}>annotationImageFile</li>
           <li style={{ fontFamily: "monospace" }}>blazon</li>
           <li style={{ fontFamily: "monospace" }}>blazonType</li>
-          <li style={{ fontFamily: "monospace" }}>blazonTextAnnotation</li>
+          <li style={{ fontFamily: "monospace" }}>
+            blazonTextAnnotation <em>(optional)</em>
+          </li>
         </ul>
       </Box>
       <Suspense fallback={<LinearProgress />}>

@@ -85,11 +85,13 @@ const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
       </Stack>
       <Divider />
       <Box padding={2}>
-        Provide a custom SPARQL query to filter the objects to import. The
-        resulting objects should provide the following bindings:
+        {/* TODO: provide actual fields from backend */}
+        Provide a custom SPARQL query to filter the objects to import. Custom
+        project fields are injected into the script. The resulting objects
+        should provide the following bindings:
         <ul>
-          <li style={{ fontFamily: "monospace" }}>manifestIRI</li>
-          <li style={{ fontFamily: "monospace" }}>imageURL</li>
+          <li style={{ fontFamily: "monospace" }}>manuscriptFolio</li>
+          <li style={{ fontFamily: "monospace" }}>folioImageFileURL</li>
         </ul>
         Additional bindings will be stored alongside each object and can be used
         in the synchronization script.

@@ -53,6 +53,8 @@ export interface AnnotationsSlice {
   // middleware state
   pullState?: MiddlewareState;
   pushState?: MiddlewareState;
+  // detailed error that is shown
+  errorDetails?: string;
 }
 
 const initialState: AnnotationsSlice = {
@@ -252,6 +254,9 @@ export const slice = createSlice({
     clearDirty: (state) => {
       state.annotations = withoutDirty(state.annotations);
     },
+    showErrorDetails: (state, action: PayloadAction<string | undefined>) => {
+      state.errorDetails = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addMatcher(isServerMutation, (state) => {
@@ -326,6 +331,7 @@ export const {
   hideAnnotation,
   showAnnotation,
   clearDirty,
+  showErrorDetails,
 } = slice.actions;
 
 export const useAnnotationProject = (): Project =>
@@ -381,31 +387,34 @@ const pullAnnotations = createAsyncThunk(
   "annotations/pullAnnotations",
   async (
     { project, objectId }: { project: Project; objectId: string },
-    { dispatch }
+    { dispatch, rejectWithValue }
   ) => {
-    // pull from default backend source
-    const json = await dispatch(
-      enhancedApi.endpoints.getAnnotations.initiate(
-        { objectId: objectId },
-        { forceRefetch: true }
-      )
-    ).unwrap();
+    try {
+      // pull from default backend source
+      const json = await dispatch(
+        enhancedApi.endpoints.getAnnotations.initiate(
+          { objectId: objectId },
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      const annotations = JSON.parse(json);
+      if (!project?.sync_type) return annotations;
 
-    const annotations = JSON.parse(json);
-    if (!project?.sync_type) return annotations;
+      // merge with external source if configured
+      console.info(`Pulling annotations from ${project.sync_type}`);
 
-    // merge with external source if configured
-    console.info(`Pulling annotations from ${project.sync_type}`);
+      const external = await dispatch(
+        enhancedApi.endpoints.pullAnnotations.initiate({ objectId })
+      ).unwrap();
 
-    const external = await dispatch(
-      enhancedApi.endpoints.pullAnnotations.initiate({ objectId })
-    ).unwrap();
-
-    // merge with external-wins strategy
-    return Object.values({
-      ...normalize(annotations, "id"),
-      ...normalize(external, "id"),
-    });
+      // merge with external-wins strategy
+      return Object.values({
+        ...normalize(annotations, "id"),
+        ...normalize(external, "id"),
+      });
+    } catch (error) {
+      return rejectWithValue(error);
+    }
   }
 );
 
@@ -413,31 +422,35 @@ const resolveLabels = createAppAsyncThunk(
   "annotations/resolveLabels",
   async (
     { project, annotations }: { project: Project; annotations: Annotation[] },
-    { dispatch }
+    { dispatch, rejectWithValue }
   ) => {
-    // request the labels for hydration
-    const labels = await dispatch(
-      enhancedApi.endpoints.getProjectLabels.initiate({
-        projectId: project.id,
-      })
-    ).unwrap();
+    try {
+      // request the labels for hydration
+      const labels = await dispatch(
+        enhancedApi.endpoints.getProjectLabels.initiate({
+          projectId: project.id,
+        })
+      ).unwrap();
 
-    const ids = normalize(labels, "id");
-    const references = normalize(labels, "reference");
+      const ids = normalize(labels, "id");
+      const references = normalize(labels, "reference");
 
-    const resolve = (label?: Partial<Label>) =>
-      (label?.id && ids[label.id]) ||
-      (label?.reference && references[label.reference]);
+      const resolve = (label?: Partial<Label>) =>
+        (label?.id && ids[label.id]) ||
+        (label?.reference && references[label.reference]);
 
-    return annotations.map((annotation) => ({
-      ...annotation,
-      // hydrate label from project labels
-      // (preserve inlineLabel as fallback)
-      label: resolve(annotation.label),
-      inlineLabel: annotation.inlineLabel,
-      // ensure dirty flag is cleared
-      dirty: false,
-    }));
+      return annotations.map((annotation) => ({
+        ...annotation,
+        // hydrate label from project labels
+        // (preserve inlineLabel as fallback)
+        label: resolve(annotation.label),
+        inlineLabel: annotation.inlineLabel,
+        // ensure dirty flag is cleared
+        dirty: false,
+      }));
+    } catch (error) {
+      return rejectWithValue(error);
+    }
   }
 );
 

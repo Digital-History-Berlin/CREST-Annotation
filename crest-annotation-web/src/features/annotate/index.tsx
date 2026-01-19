@@ -10,9 +10,14 @@ import { SynchronizationState } from "./components/sections/SynchronizationState
 import ToolbarActions from "./components/sections/ToolbarActions";
 import ToolbarTools from "./components/sections/ToolbarTools";
 import { withAnnotationMiddleware } from "./hocs/with-annotation-middleware";
-import { cancelEditAnnotation, doneEditAnnotation } from "./slice/annotations";
+import {
+  cancelEditAnnotation,
+  doneEditAnnotation,
+  showErrorDetails,
+} from "./slice/annotations";
 import { Label } from "../../api/openApi";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import ErrorDialog from "../../components/dialogs/ErrorDialog";
 import Layout from "../../components/layouts/Layout";
 import Sidebar from "../../components/Sidebar";
 import Toolbar from "../../components/Toolbar";
@@ -26,14 +31,20 @@ const AnnotatePage = withProject(
     const editingAnnotation = useAppSelector(
       (state) => state.annotations.editing
     );
-
     const doneEditing = useCallback(
       (label: Label) => dispatch(doneEditAnnotation(label)),
       [dispatch]
     );
-
     const cancelEditing = useCallback(
       () => dispatch(cancelEditAnnotation()),
+      [dispatch]
+    );
+
+    const errorDetails = useAppSelector(
+      (state) => state.annotations.errorDetails
+    );
+    const hideError = useCallback(
+      () => dispatch(showErrorDetails(undefined)),
       [dispatch]
     );
 
@@ -92,6 +103,7 @@ const AnnotatePage = withProject(
           onSubmit={doneEditing}
           onClose={cancelEditing}
         />
+        <ErrorDialog error={errorDetails} onClose={hideError} />
         <Canvas />
       </Layout>
     );

@@ -1,6 +1,9 @@
+import json
+
 from pydantic import BaseModel, Field
 
 from app import schemas
+from app.models.projects import Project
 
 
 class SparqlBinding(BaseModel):
@@ -51,7 +54,7 @@ class DigitalHeraldryObjectData(BaseModel):
 
     type = Field(default="dh", const=True)
 
-    manifest: str
+    folio: str
     image: str | None
     bindings: dict[str, str]
 
@@ -59,4 +62,28 @@ class DigitalHeraldryObjectData(BaseModel):
         return self.image
 
     def get_image_description(self):
-        return self.image
+        return self.folio
+
+
+def substitute_variables(query: str, variables: dict[str, str]) -> str:
+    """
+    Replace {{variable}} placeholders in query with actual values
+    """
+
+    result = query
+    for key, value in variables.items():
+        result = result.replace(f"{{{{{key}}}}}", value)
+    return result
+
+
+def get_project_custom_fields(project: Project) -> dict[str, str]:
+    """
+    Extract custom fields from project
+    """
+
+    if not project.custom_fields:
+        return {}
+    try:
+        return json.loads(project.custom_fields)
+    except json.JSONDecodeError:
+        return {}
