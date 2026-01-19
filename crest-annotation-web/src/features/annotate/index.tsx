@@ -3,10 +3,10 @@ import Canvas from "./components/canvas/Canvas";
 import EditAnnotationDialog from "./components/dialogs/EditAnnotationDialog";
 import AnnotationsContainer from "./components/sections/AnnotationsContainer";
 import ConfigurationContainer from "./components/sections/ConfigurationContainer";
-import { ExternalState } from "./components/sections/ExternalState";
 import { ImageDescription } from "./components/sections/ImageDescription";
 import LabelsContainer from "./components/sections/LabelsContainer";
 import { StatusbarProgress } from "./components/sections/StatusbarProgress";
+import { SynchronizationState } from "./components/sections/SynchronizationState";
 import ToolbarActions from "./components/sections/ToolbarActions";
 import ToolbarTools from "./components/sections/ToolbarTools";
 import { withAnnotationMiddleware } from "./hocs/with-annotation-middleware";
@@ -70,7 +70,7 @@ const AnnotatePage = withProject(
         status={
           <>
             <StatusbarProgress>
-              <ExternalState />
+              <SynchronizationState />
               <ImageDescription />
             </StatusbarProgress>
           </>

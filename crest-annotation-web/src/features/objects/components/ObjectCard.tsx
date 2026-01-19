@@ -45,7 +45,7 @@ const ObjectCard = ({ projectId, object }: IProps) => {
             query={imageQuery}
             render={({ data: uri }) => (
               <>
-                {object.position && (
+                {object.position !== undefined && (
                   <Chip
                     label={object.position}
                     sx={{

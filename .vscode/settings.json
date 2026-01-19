@@ -10,6 +10,7 @@
   "javascript.format.enable": false,
   "css.format.enable": false,
   "prettier.enable": true,
+  "prettier.prettierPath": "./node_modules/prettier",
   // apply linter rules if possible
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"

@@ -112,9 +112,7 @@ export const useCanvasGestures = ({
 
   const bind = useGesture(
     {
-      onWheel: ({ event, delta: [, dy] }) => {
-        event.preventDefault();
-
+      onWheel: ({ delta: [, dy] }) => {
         const stage = stageRef.current;
         const container = containerRef.current;
         const current = transformRef.current;
@@ -154,10 +152,19 @@ export const useCanvasGestures = ({
   );
 
   const resize = useCallback(
-    (imageSize: ImageSize) => {
+    (imageSize?: ImageSize) => {
       const container = containerRef.current;
 
-      if (!container) return;
+      // get the current image size if not provided
+      if (!imageSize) {
+        const stage = stageRef.current;
+        const layer = stage?.findOne<Konva.Layer>("Layer");
+        const image = layer?.findOne<Konva.Image>("Image");
+
+        imageSize = image?.size();
+      }
+
+      if (!imageSize || !container) return;
 
       // show the full image (minimum scale) and center it
       const scale = minScale(imageSize, container, fitPadding);
@@ -171,7 +178,7 @@ export const useCanvasGestures = ({
         })
       );
     },
-    [dispatch, containerRef, fitPadding]
+    [dispatch, containerRef, stageRef, fitPadding]
   );
 
   return {

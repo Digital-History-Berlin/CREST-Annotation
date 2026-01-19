@@ -44,7 +44,8 @@ class Iiif3ObjectData(BaseModel):
         return self.canvas
 
 
-class Iiif3Object(schemas.CreateObject):
+class Iiif3Object(BaseModel):
+    object_uuid: str
     object_data: Iiif3ObjectData
 
 

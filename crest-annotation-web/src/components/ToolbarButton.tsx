@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Box,
   Button,
   ButtonProps,
   Divider,
@@ -18,6 +19,19 @@ type ToolbarToggleButtonProps = {
 type ToolbarTabButtonProps = {
   tooltip: string;
 } & ToggleButtonProps;
+
+/**
+ * Button optimized to be used inside the toolbar
+ */
+export const ToolbarIcon = styled(Box)(({ theme }) => ({
+  "&": {
+    display: "flex",
+
+    minWidth: 48,
+    justifyContent: "center",
+    color: theme.palette.primary.contrastText,
+  },
+}));
 
 /**
  * Button optimized to be used inside the toolbar
@@ -94,7 +108,7 @@ export const ToolbarTabButton = styled(ToggleButton)(({ theme }) => ({
 
 export const ToolbarDivider = styled(Divider)(({ theme }) => ({
   "&": {
-    backgroundColor: theme.palette.primary.light,
+    backgroundColor: "#fff",
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
   },

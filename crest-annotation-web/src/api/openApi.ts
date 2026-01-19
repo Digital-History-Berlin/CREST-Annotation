@@ -174,6 +174,15 @@ const injectedRtkApi = api.injectEndpoints({
         body: queryArg.body,
       }),
     }),
+    resetAnnotations: build.mutation<
+      ResetAnnotationsApiResponse,
+      ResetAnnotationsApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/objects/annotations/reset/${queryArg.objectId}`,
+        method: "POST",
+      }),
+    }),
     getProjects: build.query<GetProjectsApiResponse, GetProjectsApiArg>({
       query: (queryArg) => ({
         url: `/projects/`,
@@ -431,6 +440,11 @@ export type PushAnnotationsApiArg = {
   objectId: string;
   body: string;
 };
+export type ResetAnnotationsApiResponse =
+  /** status 200 Successful Response */ any;
+export type ResetAnnotationsApiArg = {
+  objectId: string;
+};
 export type GetProjectsApiResponse =
   /** status 200 Successful Response */ PaginatedProject;
 export type GetProjectsApiArg = {
@@ -638,12 +652,7 @@ export type FilesystemObjectData = {
   type?: string;
 };
 export type FilesystemObject = {
-  id?: string;
-  object_uuid?: string;
-  position: number;
-  annotated?: boolean;
-  synced?: boolean;
-  annotation_data?: string;
+  object_uuid: string;
   object_data: FilesystemObjectData;
 };
 export type FilesystemImport = {
@@ -675,12 +684,7 @@ export type Iiif3ObjectData = {
   type?: string;
 };
 export type Iiif3Object = {
-  id?: string;
-  object_uuid?: string;
-  position: number;
-  annotated?: boolean;
-  synced?: boolean;
-  annotation_data?: string;
+  object_uuid: string;
   object_data: Iiif3ObjectData;
 };
 export type Iiif3Import = {
@@ -706,12 +710,7 @@ export type Iiif2ObjectData = {
   type?: string;
 };
 export type Iiif2Object = {
-  id?: string;
-  object_uuid?: string;
-  position: number;
-  annotated?: boolean;
-  synced?: boolean;
-  annotation_data?: string;
+  object_uuid: string;
   object_data: Iiif2ObjectData;
 };
 export type Iiif2Import = {
@@ -729,12 +728,7 @@ export type DigitalHeraldryObjectData = {
   type?: string;
 };
 export type DigitalHeraldryObject = {
-  id?: string;
-  object_uuid?: string;
-  position: number;
-  annotated?: boolean;
-  synced?: boolean;
-  annotation_data?: string;
+  object_uuid: string;
   object_data: DigitalHeraldryObjectData;
 };
 export type DigitalHeraldryImport = {
@@ -768,6 +762,7 @@ export const {
   useStoreAnnotationsMutation,
   usePullAnnotationsMutation,
   usePushAnnotationsMutation,
+  useResetAnnotationsMutation,
   useGetProjectsQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,

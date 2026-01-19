@@ -1,7 +1,7 @@
 import React, { CSSProperties, Fragment, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { PriorityHigh } from "@mui/icons-material";
-import { CircularProgress, Stack, useTheme } from "@mui/material";
+import { CircularProgress, Skeleton, Stack, useTheme } from "@mui/material";
 import ToolbarUnlock from "./ToolbarUnlock";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import {
@@ -10,6 +10,8 @@ import {
 } from "../../../../components/ToolbarButton";
 import { useObjectLock } from "../../hooks/use-object-lock";
 import { useToolInfo } from "../../hooks/use-tool-info";
+import { selectPullState } from "../../slice/annotations";
+import { selectInitialized } from "../../slice/canvas";
 import {
   activateTool,
   selectToolboxModifiers,
@@ -34,6 +36,9 @@ const ToolbarTools = () => {
   const info = useToolInfo();
   const lock = useObjectLock();
 
+  const initialized = useAppSelector(selectInitialized);
+  const pulling = useAppSelector(selectPullState);
+
   const tool = useAppSelector(selectToolboxTool);
   const handleActivate = useCallback(
     (tool: Tool) => dispatch(activateTool({ tool })),
@@ -46,9 +51,19 @@ const ToolbarTools = () => {
     [dispatch]
   );
 
-  // editing is not allowed if object is not locked
-  if (lock === undefined) return <CircularProgress color="inherit" size={24} />;
+  // editing is not allowed if object is not ready or locked
+  if (!initialized || pulling?.loading || lock === undefined)
+    return (
+      <Skeleton
+        width="200px"
+        sx={{
+          background: "rgba(255, 255, 255, 0.5)",
+        }}
+      />
+    );
+
   if (lock === false) return <ToolbarUnlock />;
+  if (pulling?.error) return null;
 
   return (
     <Stack direction="row">

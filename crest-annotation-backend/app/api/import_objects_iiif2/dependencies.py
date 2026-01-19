@@ -42,7 +42,8 @@ class Iiif2ObjectData(BaseModel):
         return self.image
 
 
-class Iiif2Object(schemas.CreateObject):
+class Iiif2Object(BaseModel):
+    object_uuid: str
     object_data: Iiif2ObjectData
 
 

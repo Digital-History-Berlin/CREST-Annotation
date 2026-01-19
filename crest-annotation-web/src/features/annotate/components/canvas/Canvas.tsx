@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import Konva from "konva";
 import { Stage } from "react-konva";
 import AnnotationsLayer from "./AnnotationsLayer";
@@ -9,9 +9,10 @@ import { useAppSelector } from "../../../../app/hooks";
 import { Position } from "../../../../types/geometry";
 import { useCanvasGestures } from "../../hooks/use-canvas-gestures";
 import { useInputEvents } from "../../hooks/use-input-events";
+import { useResizeObserver } from "../../hooks/use-resize-observer";
 import { useToolController } from "../../hooks/use-tool-controller";
 import { useAnnotationProject } from "../../slice/annotations";
-import { selectTransformation } from "../../slice/canvas";
+import { selectInitialized, selectTransformation } from "../../slice/canvas";
 import { GestureIdentifier } from "../../types/events";
 import LabelsPopup from "../LabelsPopup";
 
@@ -22,6 +23,7 @@ const Canvas = () => {
   const stageRef = useRef<Konva.Stage>(null);
   const cursorRef = useRef<Position>({ x: 0, y: 0 });
   const controller = useToolController({ stageRef, cursorRef });
+  const size = useResizeObserver(boxRef);
 
   const events = useInputEvents({
     handler: controller.handleGesture,
@@ -41,7 +43,12 @@ const Canvas = () => {
     stageRef,
   });
 
+  // update the canvas content
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => resize(), [size]);
+
   const transformation = useAppSelector(selectTransformation);
+  const initialized = useAppSelector(selectInitialized);
   // update the zoom on change
   useEffect(() => {
     stageRef.current?.scale({
@@ -89,21 +96,35 @@ const Canvas = () => {
         />
       </div>
 
+      {!initialized && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <CircularProgress />
+        </div>
+      )}
+
       <Stage
         ref={stageRef}
         // apply style to (inner) stage
         // stage should adapt to box size
         style={{ cursor: defaultCursor(), position: "absolute" }}
-        width={boxRef.current?.clientWidth}
-        height={boxRef.current?.clientHeight}
+        width={size.width}
+        height={size.height}
         // suppress default context menu
         onContextMenu={(e) => e.evt.preventDefault()}
         // handle events
         {...events}
       >
+        {/* IMPORTANT: show the image so that initialization is done */}
         <BackgroundLayer onResize={resize} />
-        <AnnotationsLayer onRequestCursor={changeCursor} />
-        <PreviewLayer transformation={transformation} />
+        {initialized && <AnnotationsLayer onRequestCursor={changeCursor} />}
+        {initialized && <PreviewLayer transformation={transformation} />}
       </Stage>
     </Box>
   );

@@ -342,8 +342,30 @@ def push_annotations(
     provider = get_annotations_provider(project)
     provider.push(data_object, annotations, project)
 
-    # mark as synced after successful push
+    # reset the annotations in the database
     data_object.synced = True
+    data_object.annotation_data = "[]"
+    db.commit()
+
+    return Response()
+
+
+@router.post("/annotations/reset/{object_id}")
+def reset_annotations(
+    object_id: str,
+    db: Session = Depends(get_db),
+):
+    data_object: Object = db.query(Object).filter_by(id=object_id).first()
+    if not data_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+
+    project: Project = db.query(Project).filter_by(id=data_object.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # reset the annotations in the database
+    data_object.synced = True
+    data_object.annotation_data = "[]"
     db.commit()
 
     return Response()

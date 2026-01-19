@@ -18,6 +18,11 @@ export interface InlineLabel {
   reference?: string;
 }
 
+export interface MiddlewareState {
+  error?: unknown;
+  loading: boolean;
+}
+
 export interface Annotation {
   id: string;
   position?: number;
@@ -45,6 +50,9 @@ export interface AnnotationsSlice {
   object: DataObject | null;
   image: string | null;
   session: string | null;
+  // middleware state
+  pullState?: MiddlewareState;
+  pushState?: MiddlewareState;
 }
 
 const initialState: AnnotationsSlice = {
@@ -65,6 +73,12 @@ const replaceAnnotation = (
   state.annotations.map((annotation) =>
     annotation.id === id ? { ...annotation, ...patch } : annotation
   );
+
+const withoutDirty = (annotations: Annotation[]) =>
+  annotations.map((annotation) => ({
+    ...annotation,
+    dirty: false,
+  }));
 
 // actions that will trigger the annotations middleware,
 // which will update the annotations on the server side
@@ -110,9 +124,21 @@ export const slice = createSlice({
       state.project = action.payload?.project || null;
       state.image = action.payload?.image || null;
       state.session = action.payload?.session || null;
+
+      // reset the annotations immediately
+      state.annotations = [];
+      state.pullState = { loading: true };
     },
-    updateAnnotations: (state, action: PayloadAction<Annotation[]>) => {
-      state.annotations = action.payload;
+    updatePull: (
+      state,
+      action: PayloadAction<MiddlewareState & { annotations?: Annotation[] }>
+    ) => {
+      const { annotations, ...pullState } = action.payload;
+      state.annotations = annotations || [];
+      state.pullState = pullState;
+    },
+    updatePush: (state, action: PayloadAction<MiddlewareState>) => {
+      state.pushState = action.payload;
     },
     addAnnotation: (state, action: PayloadAction<Annotation>) => {
       state.annotations.push({
@@ -224,22 +250,66 @@ export const slice = createSlice({
       });
     },
     clearDirty: (state) => {
-      state.annotations = state.annotations.map((annotation) => ({
-        ...annotation,
-        dirty: false,
-      }));
+      state.annotations = withoutDirty(state.annotations);
     },
   },
   extraReducers: (builder) => {
     builder.addMatcher(isServerMutation, (state) => {
       state.latestChange = Date.now();
     });
+    // track store annotation state
+    builder.addMatcher(
+      enhancedApi.endpoints.storeAnnotations.matchPending,
+      (state) => {
+        state.pushState = { loading: true };
+      }
+    );
+    builder.addMatcher(
+      enhancedApi.endpoints.storeAnnotations.matchFulfilled,
+      (state) => {
+        state.pushState = { loading: false };
+
+        // keep the dirty flag if there is an external source
+        // (in that case a push will clear the flag)
+        if (!state.project?.sync_type)
+          state.annotations = withoutDirty(state.annotations);
+      }
+    );
+    builder.addMatcher(
+      enhancedApi.endpoints.storeAnnotations.matchRejected,
+      (state, action) => {
+        state.pushState = { loading: false, error: action.error };
+      }
+    );
+    // track push annotation state
+    builder.addMatcher(
+      enhancedApi.endpoints.pushAnnotations.matchPending,
+      (state) => {
+        state.pushState = { loading: true };
+      }
+    );
+    builder.addMatcher(
+      enhancedApi.endpoints.pushAnnotations.matchFulfilled,
+      (state) => {
+        state.pushState = { loading: false };
+
+        // make sure the dirty flag is cleared after pushing
+        state.annotations = withoutDirty(state.annotations);
+      }
+    );
+    builder.addMatcher(
+      enhancedApi.endpoints.pushAnnotations.matchRejected,
+      (state, action) => {
+        state.pushState = { loading: false, error: action.error };
+      }
+    );
   },
 });
 
 export const {
   updateObject,
-  updateAnnotations,
+  updatePull,
+  updatePush,
   addAnnotation,
   addShape,
   updateShape,
@@ -283,6 +353,10 @@ export const selectAnnotations = (state: RootState) =>
   state.annotations.annotations;
 export const selectExternal = (state: RootState) =>
   !!state.annotations.project?.sync_type;
+export const selectPullState = (state: RootState) =>
+  state.annotations.pullState;
+export const selectPushState = (state: RootState) =>
+  state.annotations.pushState;
 export const selectChangesCount = (state: RootState) =>
   state.annotations.annotations.filter(({ dirty }) => !!dirty).length;
 
@@ -321,7 +395,7 @@ const pullAnnotations = createAsyncThunk(
     if (!project?.sync_type) return annotations;
 
     // merge with external source if configured
-    console.info(`Pulling annotations from ${project.sync_type} backend`);
+    console.info(`Pulling annotations from ${project.sync_type}`);
 
     const external = await dispatch(
       enhancedApi.endpoints.pullAnnotations.initiate({ objectId })
@@ -350,7 +424,6 @@ const resolveLabels = createAppAsyncThunk(
 
     const ids = normalize(labels, "id");
     const references = normalize(labels, "reference");
-    console.log(annotations, references);
 
     const resolve = (label?: Partial<Label>) =>
       (label?.id && ids[label.id]) ||
@@ -362,12 +435,14 @@ const resolveLabels = createAppAsyncThunk(
       // (preserve inlineLabel as fallback)
       label: resolve(annotation.label),
       inlineLabel: annotation.inlineLabel,
+      // ensure dirty flag is cleared
+      dirty: false,
     }));
   }
 );
 
 const resolveAnnotations = createAppAsyncThunk(
-  "annotations/pullAnnotations",
+  "annotations/resolveAnnotations",
   async ({ objectId }: { objectId: string }, { dispatch, getState }) => {
     const state = getState() as RootState;
     const project = state.annotations.project;
@@ -376,16 +451,63 @@ const resolveAnnotations = createAppAsyncThunk(
     // re-fetch object lock
     dispatch(enhancedApi.util.invalidateTags(["Lock"]));
 
-    // fetch and hydrate annotations
-    const annotations = await dispatch(
-      pullAnnotations({ project, objectId })
-    ).unwrap();
-    const resolved = await dispatch(
-      resolveLabels({ project, annotations })
+    try {
+      // fetch and hydrate annotations
+      const data = await dispatch(
+        pullAnnotations({ project, objectId })
+      ).unwrap();
+      const annotations = await dispatch(
+        resolveLabels({ project, annotations: data })
+      ).unwrap();
+
+      // update the store
+      dispatch(updatePull({ annotations, loading: false }));
+    } catch (error) {
+      dispatch(updatePull({ loading: false, error }));
+    }
+  }
+);
+
+export const pushAnnotations = createAsyncThunk(
+  "annotations/pushAnnotations",
+  async (_, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const { project, object, annotations } = state.annotations;
+    if (!project?.sync_type || !object) return;
+
+    // merge with external source if configured
+    console.info(`Pushing annotations to ${project.sync_type}`);
+
+    await dispatch(
+      enhancedApi.endpoints.pushAnnotations.initiate({
+        objectId: object.id,
+        body: JSON.stringify(annotations),
+      })
     ).unwrap();
 
     // update the store
-    dispatch(updateAnnotations(resolved));
+    // @ts-expect-error circular dependency
+    dispatch(resolveAnnotations({ objectId: object.id }));
+  }
+);
+
+export const resetAnnotations = createAsyncThunk(
+  "annotations/resetAnnotations",
+  async (_, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const { project, object } = state.annotations;
+    if (!project?.sync_type || !object) return;
+
+    // merge with external source if configured
+    console.info(`Pulling annotations from ${project.sync_type}`);
+
+    await dispatch(
+      enhancedApi.endpoints.resetAnnotations.initiate({ objectId: object.id })
+    ).unwrap();
+
+    // update the store
+    // @ts-expect-error circular dependency
+    dispatch(resolveAnnotations({ objectId: object.id }));
   }
 );
 

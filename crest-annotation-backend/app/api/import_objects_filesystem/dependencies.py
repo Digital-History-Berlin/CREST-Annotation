@@ -26,7 +26,8 @@ class FilesystemObjectData(BaseModel):
         return self.path
 
 
-class FilesystemObject(schemas.CreateObject):
+class FilesystemObject(BaseModel):
+    object_uuid: str
     object_data: FilesystemObjectData
 
 

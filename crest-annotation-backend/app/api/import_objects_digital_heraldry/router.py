@@ -34,40 +34,44 @@ def import_digital_heraldry(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    logger.info(f"Executing SPARQL query on {endpoint}")
-    sparql = SPARQLWrapper(endpoint=endpoint, returnFormat=JSON)
-    sparql.setQuery(query)
+    try:
+        logger.info(f"Executing SPARQL query on {endpoint}")
+        sparql = SPARQLWrapper(endpoint=endpoint, returnFormat=JSON)
+        sparql.setQuery(query)
 
-    problems = []
+        problems = []
 
-    # TODO: error handling
-    result = sparql.queryAndConvert()
-    response = SparqlQueryResponse(**result)
-    objects = digital_heraldry.extract_objects(response)
+        # TODO: error handling
+        result = sparql.queryAndConvert()
+        response = SparqlQueryResponse(**result)
+        objects = digital_heraldry.extract_objects(response)
 
-    # compare against known objects
-    query = db.query(Object.object_uuid).filter_by(project_id=project_id)
-    known = set(obj.object_uuid for obj in query)
-    added = list(obj for obj in objects if obj.object_uuid not in known)
-    count = len(known)
+        # compare against known objects
+        query = db.query(Object.object_uuid).filter_by(project_id=project_id)
+        known = set(obj.object_uuid for obj in query)
+        added = list(obj for obj in objects if obj.object_uuid not in known)
+        count = len(known)
 
-    # insert new objects
-    if commit:
-        db.add_all(
-            Object(
-                project_id=project_id,
-                object_uuid=obj.object_uuid,
-                position=count + i,
-                object_data=obj.object_data.json(),
+        # insert new objects
+        if commit:
+            db.add_all(
+                Object(
+                    project_id=project_id,
+                    object_uuid=obj.object_uuid,
+                    position=count + i + 1,
+                    object_data=obj.object_data.json(),
+                )
+                for i, obj in enumerate(objects)
             )
-            for i, obj in enumerate(objects)
-        )
-        db.commit()
+            db.commit()
 
-    return JSONResponse(
-        DigitalHeraldryImport(
-            objects=[],
-            added=added,
-            problems=[],
-        ).dict()
-    )
+        return JSONResponse(
+            DigitalHeraldryImport(
+                objects=[],
+                added=added,
+                problems=[],
+            ).dict()
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

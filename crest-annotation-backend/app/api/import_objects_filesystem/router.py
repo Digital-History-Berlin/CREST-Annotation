@@ -39,7 +39,7 @@ def import_filesystem(
             Object(
                 project_id=project_id,
                 object_uuid=obj.object_uuid,
-                position=count + i,
+                position=count + i + 1,
                 object_data=obj.object_data.json(),
             )
             for i, obj in enumerate(objects)

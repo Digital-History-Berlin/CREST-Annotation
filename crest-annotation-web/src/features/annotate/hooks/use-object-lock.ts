@@ -8,10 +8,11 @@ export const useObjectLock = (): boolean | undefined => {
   const object = useAnnotationObject();
   const session = useAnnotationSession();
 
-  const { currentData: lock } = useGetLockStatusQuery({
+  const { currentData: lock, isFetching } = useGetLockStatusQuery({
     objectId: object.id,
     sessionId: session,
   });
 
-  return lock?.locked;
+  // ensure lock is stale while fetching
+  return isFetching ? undefined : lock?.locked;
 };

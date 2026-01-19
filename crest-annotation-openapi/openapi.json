@@ -1252,6 +1252,49 @@
     }
    }
   },
+  "/objects/annotations/reset/{object_id}": {
+   "post": {
+    "tags": [
+     "object"
+    ],
+    "summary": "Reset Annotations",
+    "operationId": "reset_annotations",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "title": "Object Id",
+       "type": "string"
+      },
+      "name": "object_id",
+      "in": "path"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "404": {
+      "description": "Not found"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/projects/": {
    "get": {
     "tags": [
@@ -2043,33 +2086,13 @@
    "DigitalHeraldryObject": {
     "title": "DigitalHeraldryObject",
     "required": [
-     "position",
+     "object_uuid",
      "object_data"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "object_uuid": {
       "title": "Object Uuid",
-      "type": "string"
-     },
-     "position": {
-      "title": "Position",
-      "type": "integer"
-     },
-     "annotated": {
-      "title": "Annotated",
-      "type": "boolean"
-     },
-     "synced": {
-      "title": "Synced",
-      "type": "boolean"
-     },
-     "annotation_data": {
-      "title": "Annotation Data",
       "type": "string"
      },
      "object_data": {
@@ -2136,33 +2159,13 @@
    "FilesystemObject": {
     "title": "FilesystemObject",
     "required": [
-     "position",
+     "object_uuid",
      "object_data"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "object_uuid": {
       "title": "Object Uuid",
-      "type": "string"
-     },
-     "position": {
-      "title": "Position",
-      "type": "integer"
-     },
-     "annotated": {
-      "title": "Annotated",
-      "type": "boolean"
-     },
-     "synced": {
-      "title": "Synced",
-      "type": "boolean"
-     },
-     "annotation_data": {
-      "title": "Annotation Data",
       "type": "string"
      },
      "object_data": {
@@ -2249,33 +2252,13 @@
    "Iiif2Object": {
     "title": "Iiif2Object",
     "required": [
-     "position",
+     "object_uuid",
      "object_data"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "object_uuid": {
       "title": "Object Uuid",
-      "type": "string"
-     },
-     "position": {
-      "title": "Position",
-      "type": "integer"
-     },
-     "annotated": {
-      "title": "Annotated",
-      "type": "boolean"
-     },
-     "synced": {
-      "title": "Synced",
-      "type": "boolean"
-     },
-     "annotation_data": {
-      "title": "Annotation Data",
       "type": "string"
      },
      "object_data": {
@@ -2370,33 +2353,13 @@
    "Iiif3Object": {
     "title": "Iiif3Object",
     "required": [
-     "position",
+     "object_uuid",
      "object_data"
     ],
     "type": "object",
     "properties": {
-     "id": {
-      "title": "Id",
-      "type": "string"
-     },
      "object_uuid": {
       "title": "Object Uuid",
-      "type": "string"
-     },
-     "position": {
-      "title": "Position",
-      "type": "integer"
-     },
-     "annotated": {
-      "title": "Annotated",
-      "type": "boolean"
-     },
-     "synced": {
-      "title": "Synced",
-      "type": "boolean"
-     },
-     "annotation_data": {
-      "title": "Annotation Data",
       "type": "string"
      },
      "object_data": {

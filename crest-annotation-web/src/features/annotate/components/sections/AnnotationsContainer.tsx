@@ -27,11 +27,13 @@ import {
   lockAnnotation,
   selectAnnotations,
   selectExternal,
+  selectPullState,
   showAnnotation,
   startEditAnnotation,
   toggleAnnotation,
   unlockAnnotation,
 } from "../../slice/annotations";
+import { selectInitialized } from "../../slice/canvas";
 
 const AnnotationsContainer = () => {
   const theme = useTheme();
@@ -39,6 +41,8 @@ const AnnotationsContainer = () => {
 
   const annotations = useAppSelector(selectAnnotations);
   const external = useAppSelector(selectExternal);
+  const pulling = useAppSelector(selectPullState);
+  const initialized = useAppSelector(selectInitialized);
   const lock = useObjectLock();
 
   const [reference, setReference] = useState(false);
@@ -72,7 +76,7 @@ const AnnotationsContainer = () => {
 
   const renderItemActions = (annotation: Annotation) => {
     // editing is not allowed if object is not locked
-    if (!lock) return null;
+    if (!initialized || !lock) return null;
 
     return (
       <Stack direction="row">
@@ -134,8 +138,16 @@ const AnnotationsContainer = () => {
   return (
     <SidebarContainer title="Annotations" actions={renderListActions()}>
       <Loader
-        emptyPlaceholder={"Start drawing to create annotations."}
-        query={{ data: annotations }}
+        emptyPlaceholder={
+          initialized
+            ? "Start drawing to create annotations."
+            : "The image is loading..."
+        }
+        query={{
+          data: annotations,
+          isLoading: !!pulling?.loading,
+          isError: !!pulling?.error,
+        }}
         render={({ data: annotations }) => (
           <List disablePadding>
             {annotations.map((annotation) => (

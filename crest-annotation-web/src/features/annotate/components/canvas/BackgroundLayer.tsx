@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { Image as KonvaImage, Layer } from "react-konva";
 import useImage from "use-image";
+import { useAppSelector } from "../../../../app/hooks";
 import { useAnnotationImage } from "../../slice/annotations";
+import { selectInitialized } from "../../slice/canvas";
 import { ImageSize } from "../../utils/canvas-bounds";
 
 interface IProps {
@@ -9,6 +11,7 @@ interface IProps {
 }
 
 const BackgroundLayer = ({ onResize }: IProps) => {
+  const initialized = useAppSelector(selectInitialized);
   const source = useAnnotationImage();
   const [image] = useImage(source);
 
@@ -20,6 +23,9 @@ const BackgroundLayer = ({ onResize }: IProps) => {
         height: image.height,
       });
   }, [image?.width, image?.height, onResize]);
+
+  // avoid flickering
+  if (!initialized) return null;
 
   return (
     <Layer>

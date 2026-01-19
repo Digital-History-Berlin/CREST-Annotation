@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   Button,
   Divider,
@@ -12,6 +13,7 @@ import {
 import { defaultQuery } from "./queries";
 import { useImportDigitalHeraldryMutation } from "../../../../api/enhancedApi";
 import { DigitalHeraldryImport, Project } from "../../../../api/openApi";
+import { errorMessage } from "../../../../utils/error-message";
 import Layout from "../../components/Layout";
 
 const MonacoEditor = lazy(() => import("@monaco-editor/react"));
@@ -67,6 +69,9 @@ const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
       }
     >
       <Stack padding={2} spacing={1}>
+        {importQuery.error && (
+          <Alert severity="error">{errorMessage(importQuery.error)}</Alert>
+        )}
         <Typography variant="h4">
           Import from the Digital Heraldry Ontology
         </Typography>

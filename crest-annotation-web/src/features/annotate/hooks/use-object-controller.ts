@@ -1,17 +1,13 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useFinishObjectMutation,
-  usePushAnnotationsMutation,
-} from "../../../api/enhancedApi";
-import { useAppDispatch, useAppSelector } from "../../../app/hooks";
+import { useFinishObjectMutation } from "../../../api/enhancedApi";
+import { useAppDispatch } from "../../../app/hooks";
 import {
   ObjectFilters,
   getObjectFrom,
   updateObjectFilters,
 } from "../../../app/slice";
 import {
-  selectAnnotations,
   useAnnotationObject,
   useAnnotationProject,
 } from "../slice/annotations";
@@ -25,28 +21,11 @@ export const useObjectController = () => {
 
   const project = useAnnotationProject();
   const object = useAnnotationObject();
-  const annotations = useAppSelector(selectAnnotations);
 
   const [requestFinishObject] = useFinishObjectMutation();
-  const [requestPush] = usePushAnnotationsMutation();
 
   const finishObject = useCallback(async () => {
     const annotated = !object.annotated;
-
-    // push to external sync source if configured and marking as finished
-    if (project.sync_type && annotated) {
-      try {
-        const body = JSON.stringify(
-          annotations.map((a) => ({
-            ...a,
-            label: a.label && { id: a.label.id },
-          }))
-        );
-        await requestPush({ objectId: object.id, body }).unwrap();
-      } catch {
-        // sync push failed, continue anyway
-      }
-    }
 
     // retrieve next object before this object is completed
     const next = await dispatch(
@@ -59,15 +38,7 @@ export const useObjectController = () => {
     }).unwrap();
 
     navigate(`/annotate/${project.id}/${next.id}`);
-  }, [
-    dispatch,
-    navigate,
-    requestFinishObject,
-    requestPush,
-    project,
-    object,
-    annotations,
-  ]);
+  }, [dispatch, navigate, requestFinishObject, project, object]);
 
   const navigateFromObject = useCallback(
     async (offset: number) => {

@@ -14,7 +14,8 @@ from ..bundle_digital_heraldry import (
 )
 
 
-class DigitalHeraldryObject(schemas.CreateObject):
+class DigitalHeraldryObject(BaseModel):
+    object_uuid: str
     object_data: DigitalHeraldryObjectData
 
 
