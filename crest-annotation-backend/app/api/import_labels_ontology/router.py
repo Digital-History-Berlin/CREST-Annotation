@@ -79,10 +79,14 @@ def import_ontology(
             label_id = uuid4()
             db.add(
                 Label(
+                    # HACK: fix incorrect label IRIs
                     id=label_id,
                     parent_id=parent_id,
                     project_id=project_id,
-                    reference=label["id"],
+                    reference=label["id"].replace(
+                        "http://digitalheraldry.org/digital-heraldry-ontology",
+                        "http://digitalheraldry.org/dho",
+                    ),
                     name=label["name"],
                     # TODO: use index as color, so labels adapt when color table changes
                     color=color_table.get(),
@@ -96,7 +100,7 @@ def import_ontology(
         raise HTTPException(status_code=404, detail="Project not found")
 
     # delete existing labels
-    if method == "override":
+    if method == "overwrite":
         db.query(Label).filter_by(project_id=project_id).delete()
 
     # ensure project does not yet contain any labels

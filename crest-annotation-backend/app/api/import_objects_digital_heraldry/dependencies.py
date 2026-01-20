@@ -39,10 +39,10 @@ class DigitalHeraldry:
         for bindings in results.bindings:
             try:
                 yield DigitalHeraldryObject(
-                    object_uuid=bindings["manuscriptFolio"].value,
+                    object_uuid=bindings["manuscriptFolioIRI"].value,
                     object_data=DigitalHeraldryObjectData(
-                        folio=bindings["manuscriptFolio"].value,
-                        image=bindings["folioImageFileURL"].value,
+                        folio=bindings["manuscriptFolioIRI"].value,
+                        image=bindings["folioImageFile"].value,
                         bindings={
                             # ensure bindings are stored for later use
                             key: binding.value

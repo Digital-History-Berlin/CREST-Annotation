@@ -185,7 +185,14 @@ const AnnotationsContainer = () => {
                       annotation.inlineLabel?.name ??
                       "Unnamed"
                     }
-                    secondary={reference && annotation.id}
+                    secondary={
+                      reference && (
+                        <Stack>
+                          <span>{annotation.id}</span>
+                          <span>{annotation.secondary}</span>
+                        </Stack>
+                      )
+                    }
                     secondaryTypographyProps={{
                       // HACK: avoid overflowing action buttons
                       sx: { wordWrap: "break-word", pr: "100px" },

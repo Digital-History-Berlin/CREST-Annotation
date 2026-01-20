@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { defaultQuery } from "./queries";
+import { defaultEndpoint, defaultQuery } from "./queries";
 import { useImportDigitalHeraldryMutation } from "../../../../api/enhancedApi";
 import { DigitalHeraldryImport, Project } from "../../../../api/openApi";
 import { errorMessage } from "../../../../utils/error-message";
@@ -29,7 +29,7 @@ interface IProps {
 }
 
 const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
-  const [source, setSource] = useState<string>();
+  const [source, setSource] = useState<string>(defaultEndpoint);
   const [query, setQuery] = useState<string | undefined>(defaultQuery);
 
   const [importRequest, importQuery] = useImportDigitalHeraldryMutation();
@@ -69,12 +69,12 @@ const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
       }
     >
       <Stack padding={2} spacing={1}>
-        {importQuery.error && (
-          <Alert severity="error">{errorMessage(importQuery.error)}</Alert>
-        )}
         <Typography variant="h4">
           Import from the Digital Heraldry Ontology
         </Typography>
+        {importQuery.error && (
+          <Alert severity="error">{errorMessage(importQuery.error)}</Alert>
+        )}
         <TextField
           label="SPARQL endpoint"
           variant="filled"
@@ -87,11 +87,11 @@ const SourcePage = ({ project, onCancel, onProceed }: IProps) => {
       <Box padding={2}>
         {/* TODO: provide actual fields from backend */}
         Provide a custom SPARQL query to filter the objects to import. Custom
-        project fields are injected into the script. The resulting objects
-        should provide the following bindings:
+        project fields are injected into the script. The resulting objects must
+        at least provide the following bindings:
         <ul>
-          <li style={{ fontFamily: "monospace" }}>manuscriptFolio</li>
-          <li style={{ fontFamily: "monospace" }}>folioImageFileURL</li>
+          <li style={{ fontFamily: "monospace" }}>manuscriptFolioIRI</li>
+          <li style={{ fontFamily: "monospace" }}>folioImageFile</li>
         </ul>
         Additional bindings will be stored alongside each object and can be used
         in the synchronization script.

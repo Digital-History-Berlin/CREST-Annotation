@@ -1,26 +1,29 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
-import { Box, Divider, LinearProgress, Stack, TextField } from "@mui/material";
-import { defaultPullQuery } from "./queries";
+import React, { useEffect, useState } from "react";
+import { Divider, Stack, Tab, Tabs, TextField } from "@mui/material";
+import PullQuery from "./PullQuery";
+import PushQuery from "./PushQuery";
+import { defaultEndpoint, defaultPullQuery, defaultPushQuery } from "./queries";
 
 interface SyncConfig {
   endpoint: string;
   pull_query: string;
+  push_query: string;
 }
 
 const defaultConfig: SyncConfig = {
-  endpoint: "http://localhost:8889/blazegraph/namespace/kb/sparql",
+  endpoint: defaultEndpoint,
   pull_query: defaultPullQuery,
+  push_query: defaultPushQuery,
 };
 
-const MonacoEditor = lazy(() => import("@monaco-editor/react"));
-
-export interface SyncConfigProps {
+interface IProps {
   value?: string;
   onChange: (config: string) => void;
 }
 
-const DigitalHeraldryConfig = ({ value, onChange }: SyncConfigProps) => {
+const DigitalHeraldryConfig = ({ value, onChange }: IProps) => {
   const [config, setConfig] = useState<SyncConfig>();
+  const [tab, setTab] = useState("pull");
 
   useEffect(
     () => {
@@ -47,34 +50,23 @@ const DigitalHeraldryConfig = ({ value, onChange }: SyncConfigProps) => {
         />
       </Stack>
       <Divider />
-      <Box padding={2}>
-        {/* TODO: provide actual fields from backend */}
-        Provide a custom SPARQL query to pull annotations. Bindings from the
-        wizard are injected into the script along with custom project fields.
-        The following fields should be used to identify the object:
-        <ul>
-          <li style={{ fontFamily: "monospace" }}>manifestIRI</li>
-          <li style={{ fontFamily: "monospace" }}>manuscriptFolio</li>
-        </ul>
-        The resulting annotations should provide the following bindings:
-        <ul>
-          <li style={{ fontFamily: "monospace" }}>annotationImageFile</li>
-          <li style={{ fontFamily: "monospace" }}>blazon</li>
-          <li style={{ fontFamily: "monospace" }}>blazonType</li>
-          <li style={{ fontFamily: "monospace" }}>
-            blazonTextAnnotation <em>(optional)</em>
-          </li>
-        </ul>
-      </Box>
-      <Suspense fallback={<LinearProgress />}>
-        <MonacoEditor
-          theme="vs-dark"
-          language="sparql"
-          value={config?.pull_query || ""}
-          onChange={(value) => handleChange({ pull_query: value })}
-          height="400px"
+      <Tabs value={tab} onChange={(_, value) => setTab(value)}>
+        <Tab label="Pull" value="pull" />
+        <Tab label="Push" value="push" />
+      </Tabs>
+      <Divider />
+      {tab === "pull" && (
+        <PullQuery
+          query={config?.pull_query}
+          onChange={(pull_query) => handleChange({ pull_query })}
         />
-      </Suspense>
+      )}
+      {tab === "push" && (
+        <PushQuery
+          query={config?.push_query}
+          onChange={(push_query) => handleChange({ push_query })}
+        />
+      )}
     </>
   );
 };

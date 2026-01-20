@@ -25,6 +25,7 @@ export interface MiddlewareState {
 
 export interface Annotation {
   id: string;
+  secondary?: string;
   position?: number;
   label?: Label;
   inlineLabel?: InlineLabel;

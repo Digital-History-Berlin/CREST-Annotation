@@ -35,12 +35,12 @@ const MergeLabelsDialog = ({ open, disabled, onClose, onConfirm }: IProps) => {
         </Button>
         <Box flexGrow={1} />
         <Button
-          onClick={() => onConfirm("override")}
+          onClick={() => onConfirm("overwrite")}
           disabled={disabled}
           variant="outlined"
           color="error"
         >
-          Override
+          Overwrite
         </Button>
         <Button disabled={true} variant="outlined">
           Merge

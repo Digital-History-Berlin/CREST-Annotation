@@ -18,7 +18,7 @@ const InfoPage = ({ ontology, onCancel, onProceed }: IProps) => {
   ) => {
     return (
       entries?.find((entry) => entry.language === language) ||
-      entries?.find((entry) => entry.language === undefined)
+      entries?.find((entry) => !entry.language)
     );
   };
 

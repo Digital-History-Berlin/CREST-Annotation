@@ -12,25 +12,45 @@ PREFIX iiif: <http://iiif.io/api/presentation/2#>
 PREFIX oa: <http://www.w3.org/ns/oa#>
 PREFIX dhoh: <http://digitalheraldry.org/dho/heraldry#>
 
-SELECT ?annotationImageFile ?blazon ?blazonType ?blazonTextAnnotation
+SELECT ?annotationImageFile ?blazonActIRI ?blazonIRI ?blazonTypeIRI ?blazonTextAnnotation
 WHERE {
   ?manuscriptIRI a dhoo:Manuscript ;
-           dhoo:hasIIIFResource <{{manifestIRI}}> .
+    dhoo:hasIIIFResource <{{manifestIRI}}> .
   
   # Load annotations
-  ?coaRepresentation dhoo:locatedOnFolio <{{manuscriptFolio}}> ;
-                      dhoo:hasImageFile ?annotationImageFile .
+  ?coaRepresentation dhoo:locatedOnFolio <{{manuscriptFolioIRI}}> ;
+    dhoo:hasImageFile ?annotationImageFile .
   
   # Load KG entity that describes the annotation
   OPTIONAL {
-    ?coaRepresentation dhor:hasBlazoningAct ?blazonAct .
-    ?blazonAct dhor:hasBlazon ?blazon .
+    ?coaRepresentation dhor:hasBlazoningAct ?blazonActIRI .
+    ?blazonActIRI dhor:hasBlazon ?blazonIRI .
     
     # Load annotation label
     OPTIONAL {
-      ?blazon dhoh:hasBlazonFromOMA ?blazonTextAnnotation .
-      
-      ?blazon rdf:type ?blazonType .
+      ?blazonIRI dhoh:hasBlazonFromOMA ?blazonTextAnnotation .
+      ?blazonIRI rdf:type ?blazonTypeIRI ;
+        FILTER(STRSTARTS(STR(?blazonTypeIRI), "http://digitalheraldry.org/dho/")) .
     }
   }
 }`;
+
+export const defaultPushQuery = `
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX dhor: <http://digitalheraldry.org/dho/representation#>
+PREFIX dhoo: <http://digitalheraldry.org/dho/object#>
+
+INSERT {
+  <{{blazonIRI}}> a dhor:CoatOfArmsVisualRepresentation ;
+    a dhor:CoatOfArmsRepresentation ;
+    a owl:NamedIndividual ;
+    dhor:folioNumber "{{folioNumber}}" ;
+    dhor:locatedOnObject <{{manuscriptIRI}}> ;
+    dhoo:locatedOnFolio <{{manuscriptFolioIRI}}> ;
+    dhoo:hasImageFile <{{annotationImageFile}}> .
+}
+WHERE {
+}`;
+
+export const defaultEndpoint =
+  "http://localhost:8889/blazegraph/namespace/kb/sparql";

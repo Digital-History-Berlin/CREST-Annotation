@@ -12,11 +12,15 @@ PREFIX iiif: <http://iiif.io/api/presentation/2#>
 PREFIX oa: <http://www.w3.org/ns/oa#>
 PREFIX dhoh: <http://digitalheraldry.org/dho/heraldry#>
 
-SELECT ?manuscriptFolio ?folioImageFileURL
+SELECT ?manuscriptIRI ?manuscriptFolioIRI ?folioNumber ?folioImageFile
 WHERE {
   ?manuscriptIRI a dhoo:Manuscript ;
-           dhoo:hasIIIFResource <{{manifestIRI}}> .
+    dhoo:hasIIIFResource <{{manifestIRI}}> .
   
-  ?manuscriptFolio dhoo:partOfObject ?manuscriptIRI ;
-                   dhoo:hasImageFile ?folioImageFileURL .
+  ?manuscriptFolioIRI dhoo:partOfObject ?manuscriptIRI ;
+    dhoo:hasImageFile ?folioImageFile ;
+    dhoo:folioNumber ?folioNumber .
 }`;
+
+export const defaultEndpoint =
+  "http://localhost:8889/blazegraph/namespace/kb/sparql";

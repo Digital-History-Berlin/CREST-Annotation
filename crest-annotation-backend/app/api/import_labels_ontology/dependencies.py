@@ -11,10 +11,18 @@ class OntologyMetaData:
     def __init__(self, data):
         self._data = data
 
+        print(self._data)
+
         self.creators = self._data.get("http://purl.org/dc/terms/creator", [])
-        self.titles = self._data.get("http://purl.org/dc/terms/title", [])
+        self.titles = [
+            *self._data.get("http://purl.org/dc/terms/title", []),
+            *self._data.get("http://purl.org/dc/elements/1.1/title", []),
+        ]
         self.licenses = self._data.get("http://purl.org/dc/terms/license", [])
-        self.descriptions = self._data.get("http://purl.org/dc/terms/description", [])
+        self.descriptions = [
+            *self._data.get("http://purl.org/dc/terms/description", []),
+            *self._data.get("http://www.w3.org/2000/01/rdf-schema#comment", []),
+        ]
 
     def _creator_json(self, creator):
         """

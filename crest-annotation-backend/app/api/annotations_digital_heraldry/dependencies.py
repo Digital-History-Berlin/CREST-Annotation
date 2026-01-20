@@ -62,7 +62,7 @@ class DigitalHeraldryAnnotationsProvider:
         return []
 
     def _parse_label(self, binding: SparqlBindings) -> dict:
-        reference = binding.optional("blazonType")
+        reference = binding.optional("blazonTypeIRI")
         name = binding.optional("blazonTextAnnotation")
 
         if reference:
@@ -82,7 +82,8 @@ class DigitalHeraldryAnnotationsProvider:
             annotation = binding.require("annotationImageFile")
 
             yield {
-                "id": binding.require("blazon"),
+                "id": binding.require("blazonActIRI"),
+                "secondary": binding.optional("blazonIRI"),
                 "label": self._parse_label(binding),
                 "shapes": self._parse_iiif_shapes(annotation),
                 "external": True,
